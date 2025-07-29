@@ -1,4 +1,32 @@
 @import 'tailwindcss';
+
+@font-face {
+  font-family: Anton;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Anton.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400 500 600 700;
+  font-display: swap;
+  src: url('./fonts/Inter.woff2') format('woff2');
+}
+
+@theme {
+  --font-Anton: 'Anton';
+  --font-Inter: 'Inter';
+  --color-maroon: #5a0000;
+  --color-red: #ad1f23;
+  --color-yellow: #f9c000;
+  --color-blue: #6e86c4;
+  --color-black: #000000;
+  --color-white: #ffffff;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

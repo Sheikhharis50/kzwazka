@@ -11,7 +11,7 @@ interface ButtonProps {
 const Button = ({ link, isActive }: ButtonProps) => {
   const btn = () => (
     <button
-      className={`${isActive ? 'relative before:content-start before:absolute before:left-[-4px] before:w-full before:h-[110%] before:rounded-full before:border-l-[1px] before:border-red before:pointer-events-none bg-red text-white' : ''} w-full flex gap-3 items-center py-2 px-3 rounded-full cursor-pointer text-sm xl:text-base`}
+      className={`${isActive ? 'relative before:content-start before:absolute before:left-[-6px] before:w-full before:h-[110%] before:rounded-full before:border-l-2 before:border-red before:pointer-events-none bg-red text-white' : ''} w-full flex gap-3 items-center py-2 px-3 rounded-full cursor-pointer text-sm xl:text-base`}
     >
       <Image
         src={link.icon}
@@ -24,11 +24,11 @@ const Button = ({ link, isActive }: ButtonProps) => {
     </button>
   );
   return link.url ? (
-    <Link href={link.url} className="w-full">
+    <Link href={link.url} className="w-[95%]">
       {btn()}
     </Link>
   ) : (
-    btn()
+    <div className="w-[95%]">{btn()}</div>
   );
 };
 

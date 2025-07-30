@@ -5,7 +5,13 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/components/*": ["app/components/*"],
+      "@/icons/*": ["public/icons/*"],
+      "@/images/*": ["public/images/*"],
+    },
   },
   "include": [
     "**/*.ts",

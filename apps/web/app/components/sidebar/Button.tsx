@@ -24,11 +24,11 @@ const Button = ({ link, isActive }: ButtonProps) => {
     </button>
   );
   return link.url ? (
-    <Link href={link.url} className="w-[95%]">
+    <Link href={link.url} className="w-[96%]">
       {btn()}
     </Link>
   ) : (
-    <div className="w-[95%]">{btn()}</div>
+    <div className="w-[96%]">{btn()}</div>
   );
 };
 

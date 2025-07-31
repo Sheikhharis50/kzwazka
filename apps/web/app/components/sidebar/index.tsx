@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Logo from '@/icons/logo.svg';
 import Image from 'next/image';
 import { sidebarLinks } from 'app/data';
 import { usePathname } from 'next/navigation';
@@ -9,6 +8,7 @@ import Button from './Button';
 import { ProfileIcon, LogoutIcon } from '@/icons/sidebarIcons';
 import Ribbon from '@/images/sidebar-ribbon.png';
 import { useAppContext } from 'app/context/appContext';
+import Logo from '@/components/Logo';
 
 const Sidebar = () => {
   const { isSidebarVisible, hideSidebar } = useAppContext();
@@ -26,13 +26,7 @@ const Sidebar = () => {
           alt="ribbon"
           className="absolute bottom-0 right-0 w-4/5 h-1/5 pointer-events-none"
         />
-        <Image
-          src={Logo}
-          width={500}
-          height={500}
-          alt="kzwazka logo"
-          className="w-full max-w-[86px] xl:max-w-24 2xl:max-w-[105px] h-auto object-contain relative"
-        />
+        <Logo />
         <div className="w-full flex flex-col justify-between h-full overflow-y-auto relative pt-1">
           <div className="flex flex-col gap-1 xl:gap-2 2xl:gap-3 w-full items-end">
             {sidebarLinks.map((link) => {

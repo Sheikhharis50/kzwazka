@@ -1,44 +1,93 @@
 @import 'tailwindcss';
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+@font-face {
+  font-family: Anton;
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Anton.woff2') format('woff2');
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400 500 600 700;
+  font-display: swap;
+  src: url('./fonts/Inter.woff2') format('woff2');
+}
+
+@theme {
+  --font-Anton: 'Anton';
+  --font-Inter: 'Inter';
+  --color-maroon: #5a0000;
+  --color-red: #ad1f23;
+  --color-yellow: #f9c000;
+  --color-blue: #6e86c4;
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-mute: #00000099;
+  --color-border: #8787876e;
 }
 
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-}
-
-body {
+  padding: 0;
+  margin: 0;
   color: var(--foreground);
   background: var(--background);
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+button {
+  cursor: pointer;
 }
 
-.imgDark {
-  display: none;
+button:disabled {
+  cursor: not-allowed !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+p,
+a,
+span,
+li,
+button {
+  font-family: var(--font-Inter);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-Anton);
+}
+
+.divider-text {
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.divider-text:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0px;
+  width: 100%;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.divider-text span {
+  position: relative;
+  display: inline-block;
+  padding: 0px 10px;
+  background: var(--color-white);
+  z-index: 1;
 }

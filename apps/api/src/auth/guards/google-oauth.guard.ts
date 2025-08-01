@@ -9,8 +9,7 @@ export class GoogleOAuthGuard extends AuthGuard('google') {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const activate = (await super.canActivate(context)) as boolean;
-    const request = context.switchToHttp().getRequest();
-    await super.logIn(request);
+    // Remove the session-based login call since we're using JWT
     return activate;
   }
 }

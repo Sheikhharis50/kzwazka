@@ -190,40 +190,100 @@ export class AuthService {
   }
 
   async validateChildOAuthLogin(userData: any, provider: string) {
-    const { email, firstName, lastName, picture } = userData;
+    const { email, firstName, lastName, picture, id: googleId } = userData;
     
-    // Check if user already exists
+    // Check if user already exists by email
     const existingUser = await getUserByEmail(this.drizzle, email);
 
     if (existingUser.length > 0) {
-      // Check if the user was created via OAuth or password-based auth
-      if (existingUser[0].password !== null) {
-        // User exists with password-based authentication
-
-    // Get the child role
-    const childRole = await getChildRoleId(this.drizzle);
+      const user = existingUser[0];
+      
+      // Scenario 1: User exists with password-based authentication
+      if (user.password !== null) {
         throw new UnauthorizedException('An account with this email already exists. Please sign in with your password.');
-      } else if ((provider === 'google' && existingUser[0].google_social_id !== null)) {
-        // User exists but used a different OAuth provider
-        throw new UnauthorizedException(`This email is already associated with a Google account. Please sign in with Google.`);
       }
       
-      // User exists and used this OAuth provider before
-      return {
-        id: existingUser[0].id,
-        email: existingUser[0].email,
-        first_name: existingUser[0].first_name,
-        last_name: existingUser[0].last_name,
-        role: existingUser[0].role_id ? 'children' : 'children', // Default to children role
-        provider,
-        require_parent_info: false
-      };
+      // Scenario 2: User exists with Google OAuth but different Google ID
+      if (provider === 'google' && user.google_social_id && user.google_social_id !== googleId) {
+        throw new UnauthorizedException('This email is already associated with a different Google account. Please use the correct Google account.');
+      }
+      
+      // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
+      if (provider === 'google' && user.google_social_id === googleId) {
+        // Update user information if it has changed
+        const updates: any = {};
+        let hasUpdates = false;
+        
+        if (user.first_name !== firstName) {
+          updates.first_name = firstName;
+          hasUpdates = true;
+        }
+        
+        if (user.last_name !== lastName) {
+          updates.last_name = lastName;
+          hasUpdates = true;
+        }
+        
+        // Update user if there are changes
+        if (hasUpdates) {
+          await this.drizzle.db
+            .update(userSchema)
+            .set(updates)
+            .where(eq(userSchema.id, user.id));
+        }
+        
+        // Get the role name for the response
+        const role = await this.drizzle.db
+          .select({ name: roleSchema.name })
+          .from(roleSchema)
+          .where(eq(roleSchema.id, user.role_id))
+          .limit(1);
+        
+        return {
+          id: user.id,
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role[0]?.name || 'children',
+          provider,
+        };
+      }
+      
+      // Scenario 4: User exists but no Google ID set - link the account
+      if (provider === 'google' && !user.google_social_id) {
+        // Update user with Google ID and verify the account
+        await this.drizzle.db
+          .update(userSchema)
+          .set({
+            google_social_id: googleId,
+            is_verified: true,
+            first_name: firstName,
+            last_name: lastName
+          })
+          .where(eq(userSchema.id, user.id));
+        
+        // Get the role name for the response
+        const role = await this.drizzle.db
+          .select({ name: roleSchema.name })
+          .from(roleSchema)
+          .where(eq(roleSchema.id, user.role_id))
+          .limit(1);
+        
+        return {
+          id: user.id,
+          email: user.email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role[0]?.name || 'children',
+          provider,
+        };
+      }
     }
 
-    // Get the child role
+    // Scenario 5: User doesn't exist - create new user
     const childRole = await getChildRoleId(this.drizzle);
 
-    // Create new user if not exists
+    // Create new user
     const userId = uuidv4();
     const newUser = await this.drizzle.db
       .insert(userSchema)
@@ -236,11 +296,11 @@ export class AuthService {
         role_id: childRole.id,
         is_active: true,
         is_verified: true, // Already verified through OAuth
-        google_social_id: provider === 'google' ? userData.id : null
+        google_social_id: provider === 'google' ? googleId : null
       })
       .returning();
 
-    // Create temporary child record
+    // Create child record
     const newChild = await this.drizzle.db
       .insert(childrenSchema)
       .values({
@@ -261,7 +321,15 @@ export class AuthService {
       last_name: newUser[0].last_name,
       role: childRole.name,
       provider,
-      require_parent_info: true
     };
+  }
+
+  generateTokenForOAuthUser(user: any) {
+    return generateToken(
+      this.jwtService,
+      user.id,
+      user.email,
+      user.role
+    );
   }
 }

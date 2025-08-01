@@ -6,9 +6,11 @@ import { AuthService } from './auth.service';
 import { GoogleStrategy } from './strategies/google-oauth-strategy';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { AuthController } from './auth.controller';
+import { DbModule } from 'src/db/db.module';
 
 @Module({
   imports: [
+    DbModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

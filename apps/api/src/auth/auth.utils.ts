@@ -28,7 +28,7 @@ export const getChildRoleId = async (drizzle: DrizzleService) => {
   const childRole = await drizzle.db
     .select()
     .from(roleSchema)
-    .where(eq(roleSchema.name, 'child'))
+    .where(eq(roleSchema.name, 'children'))
     .limit(1);
 
   if (childRole.length === 0) {

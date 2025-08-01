@@ -42,6 +42,7 @@ export class AuthController {
   async getChildren(@Request() req) {
     return this.authService.getChildren(req.user.sub);
   }
+
   @Get('google/login')
   @UseGuards(GoogleOAuthGuard)
   googleLogin() {
@@ -51,29 +52,44 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
   async googleCallback(@Req() req, @Res() res) {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    
     try {
-      // User data from Google authentication
-      const user = req.user;
-      console.log('Google user data:', user);
-      
-      if (!user) {
-        throw new UnauthorizedException('Google authentication failed');
+      if (!req.user) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Authentication failed',
+          error: 'No user data received from Google OAuth'
+        });
       }
-      // Generate JWT token
-      const token = await this.authService.signIn(user);
-      // Otherwise redirect to dashboard
-      return res.redirect(`${frontendUrl}/dashboard?token=${token}`);
+
+      // Generate JWT token for the authenticated user
+      const token = this.authService.generateTokenForOAuthUser(req.user);
+      
+      // Return the token in the response body instead of setting a cookie
+      return res.status(HttpStatus.OK).json({
+        message: 'Login successful',
+        access_token: token,
+        user: {
+          id: req.user.id,
+          email: req.user.email,
+          first_name: req.user.first_name,
+          last_name: req.user.last_name,
+          role: req.user.role,
+        }
+      });
     } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      
+      // Handle specific error types
       if (error instanceof UnauthorizedException) {
-        // Redirect to login page with error message
-        return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error.message)}`);
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Authentication failed',
+          error: error.message
+        });
       }
       
-      // Handle other errors
-      console.error('Google OAuth callback error:', error);
-      return res.redirect(`${frontendUrl}/login?error=Authentication failed`);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Internal server error',
+        error: 'An unexpected error occurred during authentication'
+      });
     }
   }
 }

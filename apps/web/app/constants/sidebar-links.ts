@@ -6,7 +6,7 @@ import {
   InsuranceIcon,
 } from '@/icons/sidebarIcons';
 
-const sidebarLinks = [
+export const sidebarLinks = [
   {
     id: 'dashboard',
     name: 'Main Dashboard',
@@ -38,5 +38,3 @@ const sidebarLinks = [
     url: '/dashboard/payment',
   },
 ];
-
-export { sidebarLinks };

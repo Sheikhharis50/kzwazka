@@ -3,10 +3,10 @@ import Image from 'next/image';
 import React from 'react';
 import MenuIcon from '@/icons/menu.svg';
 import Logo from '@/icons/logo-mobile.svg';
-import { useAppContext } from 'app/context/appContext';
+import { useSettingsContext } from '@/hooks/useSettingsContext';
 
 const Navbar = () => {
-  const { toggleSidebar: toggleNavbar } = useAppContext();
+  const { toggleSidebar: toggleNavbar } = useSettingsContext();
   return (
     <div className="px-3 md:px-5 py-3 flex justify-between items-center bg-yellow lg:hidden">
       <Image
@@ -22,7 +22,7 @@ const Navbar = () => {
         height={300}
         width={300}
         alt="menu"
-        className="w-16 md:w-20 h-auto object-contain"
+        className="w-[50px] sm:w-16 md:w-20 h-auto object-contain"
       />
     </div>
   );

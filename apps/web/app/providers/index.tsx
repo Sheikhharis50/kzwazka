@@ -1,7 +1,7 @@
 'use client';
 import React, { ReactNode } from 'react';
-import { AppProvider } from './appContext';
+import { SettingsProvider } from './SettingsProvider';
 
 export const AppContextsProvider = ({ children }: { children: ReactNode }) => {
-  return <AppProvider>{children}</AppProvider>;
+  return <SettingsProvider>{children}</SettingsProvider>;
 };

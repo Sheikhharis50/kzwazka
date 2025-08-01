@@ -2,16 +2,16 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { sidebarLinks } from 'app/data';
+import { sidebarLinks } from 'app/constants/sidebar-links';
 import { usePathname } from 'next/navigation';
 import Button from './Button';
 import { ProfileIcon, LogoutIcon } from '@/icons/sidebarIcons';
 import Ribbon from '@/images/sidebar-ribbon.png';
-import { useAppContext } from 'app/context/appContext';
+import { useSettingsContext } from '@/hooks/useSettingsContext';
 import Logo from '@/components/Logo';
 
 const Sidebar = () => {
-  const { isSidebarVisible, hideSidebar } = useAppContext();
+  const { isSidebarVisible, hideSidebar } = useSettingsContext();
   const pathname = usePathname().split('/').pop();
 
   return (

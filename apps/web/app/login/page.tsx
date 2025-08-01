@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import React from 'react';
 import ImageSrc from '@/images/login.png';
@@ -6,9 +8,11 @@ import Logo from '@/components/Logo';
 import ArrowLeft from '@/icons/left-arrow.svg';
 import Link from 'next/link';
 import GoogleIcon from '@/icons/google.svg';
-import XIcon from '@/icons/X.svg';
+import XIcon from '@/icons/x.svg';
+import { usePreviousPath } from 'app/hooks/usePreviousPath';
 
 const LoginPage = () => {
+  const goBack = usePreviousPath();
   return (
     <div className="grid grid-cols-[1.5fr_2fr] w-full gap-5 h-dvh overflow-hidden p-1.5">
       <div className="h-[calc(100dvh-12px)] bg-yellow rounded-[42px] overflow-hidden relative p-5">
@@ -29,7 +33,7 @@ const LoginPage = () => {
         />
         <div className="flex items-center justify-between relative">
           <Logo />
-          <button className="flex gap-1 items-center text-lg">
+          <button className="flex gap-1 items-center text-lg" onClick={goBack}>
             <Image
               src={ArrowLeft}
               width={0}
@@ -75,10 +79,10 @@ const LoginPage = () => {
               />
             </div>
             <div className="flex flex-col gap-1 w-full mb-8 2xl:mb-12">
-              <label htmlFor="email">Password*</label>
+              <label htmlFor="password">Password*</label>
               <input
                 className="py-2 px-3 rounded-lg border border-border w-full"
-                type="email"
+                type="password"
                 placeholder="Enter your password"
               />
             </div>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import '../globals.css';
 import Sidebar from '@/components/sidebar';
 import Navbar from '@/components/Navbar';
-import { AppContextsProvider } from 'app/context';
+import { AppContextsProvider } from 'app/providers';
 
 export const metadata: Metadata = {
   title: 'Kzwazka | Dashboard',

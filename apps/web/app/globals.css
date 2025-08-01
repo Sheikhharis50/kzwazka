@@ -37,6 +37,7 @@ body {
   margin: 0;
   color: var(--foreground);
   background: var(--background);
+  font-family: var(--font-Inter);
 }
 
 * {
@@ -49,14 +50,6 @@ button {
 
 button:disabled {
   cursor: not-allowed !important;
-}
-
-p,
-a,
-span,
-li,
-button {
-  font-family: var(--font-Inter);
 }
 
 h1,
@@ -84,7 +77,7 @@ h6 {
   background: var(--color-border);
 }
 
-.divider-text span {
+.divider-text p {
   position: relative;
   display: inline-block;
   padding: 0px 10px;

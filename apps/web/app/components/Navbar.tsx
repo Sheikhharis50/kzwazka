@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import React from 'react';
 import MenuIcon from '@/icons/menu.svg';
-import Logo from '@/icons/logo-mobile.svg';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
+import LogoMobile from './LogoMobile';
 
 const Navbar = () => {
   const { toggleSidebar: toggleNavbar } = useSettingsContext();
@@ -17,13 +17,7 @@ const Navbar = () => {
         className="w-8 md:w-10 h-auto object-contain"
         onClick={toggleNavbar}
       />
-      <Image
-        src={Logo}
-        height={300}
-        width={300}
-        alt="menu"
-        className="w-[50px] sm:w-16 md:w-20 h-auto object-contain"
-      />
+      <LogoMobile />
     </div>
   );
 };

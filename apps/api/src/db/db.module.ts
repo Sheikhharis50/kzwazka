@@ -1,15 +1,15 @@
 import { Module } from "@nestjs/common";
-import { DrizzleService } from "./drizzle.service";
+import { DatabaseService } from "./drizzle.service";
 
 @Module({
   providers: [
-    DrizzleService,
+    DatabaseService,
     {
       provide: 'DATABASE',
-      useFactory: (drizzleService: DrizzleService) => drizzleService.db,
-      inject: [DrizzleService],
+      useFactory: (databaseService: DatabaseService) => databaseService.db,
+      inject: [DatabaseService],
     },
   ],
-  exports: [DrizzleService, 'DATABASE'],
+  exports: [DatabaseService, 'DATABASE'],
 })
 export class DbModule {}

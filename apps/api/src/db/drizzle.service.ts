@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import * as schema from './schemas';
 
 @Injectable()
-export class DrizzleService {
+export class DatabaseService {
   public db: ReturnType<typeof drizzle>;
 
   constructor() {

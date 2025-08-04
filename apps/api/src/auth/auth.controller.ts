@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpException, HttpStatus, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpStatus, Req, Res, UnauthorizedException, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
+import { VerifyOtpDto, ResendOtpDto, LoginDto } from './dto/verify-otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
@@ -9,38 +10,39 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
-  async signUp(@Body() signUpDto: SignUpDto) {
-    try {
-      console.log('Received signup data:', signUpDto); // Debug log
-      console.log('Body type:', typeof signUpDto);
-      console.log('Body keys:', Object.keys(signUpDto || {}));
-      
-      if (!signUpDto || Object.keys(signUpDto).length === 0) {
-        throw new HttpException('Request body is empty', HttpStatus.BAD_REQUEST);
-      }
-      
-      return await this.authService.signUp(signUpDto);
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
+  async signUp(@Body() body: SignUpDto) {
+    return await this.authService.signUp(body);
   }
 
-  @Post('signin')
-  async signIn(@Body() signInDto: { email: string; password: string }) {
-    return this.authService.signIn(signInDto);
+  @Post('verify-otp/:userId')
+  async verifyOtp(@Param('userId') userId: string, @Body() body: VerifyOtpDto) {
+    return await this.authService.verifyOtp(userId, body);
+  }
+
+  @Post('resend-otp')
+  async resendOtp(@Body() body: ResendOtpDto) {
+    return await this.authService.resendOtp(body.userId);
+  }
+
+  @Post('login')
+  async signIn(@Body() body: LoginDto) {
+    return this.authService.signIn(body);
+  }
+
+  @Get('test-jwt')
+  @UseGuards(JwtAuthGuard)
+  async testJwt(@Request() req) {
+    return {
+      message: 'JWT authentication working!',
+      userId: req.user.sub,
+      note: 'Token only contains user ID for security',
+    };
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
+  @Get('me')
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.sub);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('children')
-  async getChildren(@Request() req) {
-    return this.authService.getChildren(req.user.sub);
   }
 
   @Get('google/login')
@@ -73,11 +75,10 @@ export class AuthController {
           first_name: req.user.first_name,
           last_name: req.user.last_name,
           role: req.user.role,
+          is_verified: req.user.is_verified,
         }
       });
     } catch (error) {
-      console.error('Google OAuth callback error:', error);
-      
       // Handle specific error types
       if (error instanceof UnauthorizedException) {
         return res.status(HttpStatus.UNAUTHORIZED).json({

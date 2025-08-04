@@ -1,7 +1,8 @@
-import React, { RefObject, useId } from 'react';
+import React, { useId } from 'react';
 import Label from './Label';
+import { Option } from 'app/types';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
   error?: string;
@@ -11,18 +12,20 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     error?: string;
     root?: string;
   };
-  ref?: RefObject<HTMLInputElement | null>;
+  placeholder?: string;
+  options: Option[];
 }
 
-const Input = ({
+const Select = ({
   label,
   labelProps,
   error,
   classes = {},
   id,
-  ref,
+  placeholder,
+  options,
   ...rest
-}: InputProps) => {
+}: SelectProps) => {
   const generatedId = useId();
   const inputId = id || generatedId;
 
@@ -36,12 +39,21 @@ const Input = ({
           {...labelProps}
         />
       )}
-      <input
-        ref={ref}
+      <select
         id={inputId}
-        className={`py-1.5 md:py-2 px-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
+        className={`py-2 md:py-2.5 ps-2 pe-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
+        defaultValue={''}
         {...rest}
-      />
+      >
+        <option value={''} disabled className="text-mute!">
+          {placeholder || 'Select option'}
+        </option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
       {error && (
         <span
           className={`text-[10px] md:text-xs xl:text-sm text-red ${classes.error}`}
@@ -53,4 +65,4 @@ const Input = ({
   );
 };
 
-export default Input;
+export default Select;

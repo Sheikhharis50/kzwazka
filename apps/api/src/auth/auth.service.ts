@@ -4,13 +4,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from "src/db/drizzle.service";
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from "./dto/create-auth.dto";
-import { VerifyOtpDto, LoginDto } from "./dto/verify-otp.dto";
+import { VerifyOtpDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./dto/verify-otp.dto";
 import { roleSchema, userSchema } from "src/db/schemas";
 import { UserService } from "../user/user.service";
 import { ChildrenService } from "../children/children.service";
 
-import { EmailService } from "./email.service";
-import { generateToken } from './auth.utils';
+import { AppService } from "../app.service";
+import { 
+  generateToken,
+  generatePasswordResetToken, 
+  hashResetToken, 
+  verifyResetToken, 
+  generateResetUrl, 
+  isResetTokenExpired 
+} from './auth.utils';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +25,7 @@ export class AuthService {
     private readonly db: DatabaseService,
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
-    private readonly emailService: EmailService,
+    private readonly appService: AppService,
     private jwtService: JwtService
   ) {}
 
@@ -61,7 +68,7 @@ export class AuthService {
 
     // Send OTP email
     try {
-      await this.emailService.sendOtpEmail(email, otp, first_name);
+      await this.appService.sendOtpEmail(email, otp, first_name);
     } catch (error) {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
@@ -123,7 +130,7 @@ export class AuthService {
 
     // Send welcome email
     try {
-      await this.emailService.sendWelcomeEmail(userData.email, userData.first_name);
+      await this.appService.sendWelcomeEmail(userData.email, userData.first_name);
     } catch (error) {
       // Don't fail the verification process if email fails
     }
@@ -164,7 +171,7 @@ export class AuthService {
 
     // Send new OTP email
     try {
-      await this.emailService.sendOtpEmail(user.email, otp, user.first_name);
+      await this.appService.sendOtpEmail(user.email, otp, user.first_name);
     } catch (error) {
       throw new BadRequestException('Failed to send OTP email. Please try again later.');
     }
@@ -488,5 +495,142 @@ export class AuthService {
       .limit(1);
 
     return user.length > 0 && user[0].is_verified === true;
+  }
+
+  // Password Reset Methods
+
+  /**
+   * Initiate password reset process
+   */
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const { email } = forgotPasswordDto;
+
+    // Find user by email
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return {
+        message: 'If an account with this email exists, a password reset link has been sent.',
+      };
+    }
+
+    // Check if user is active
+    if (!user.is_active) {
+      return {
+        message: 'If an account with this email exists, a password reset link has been sent.',
+      };
+    }
+
+    // Generate secure reset token
+    const resetToken = generatePasswordResetToken();
+    const hashedToken = hashResetToken(resetToken);
+
+    // Store hashed token in database
+    await this.db.db
+      .update(userSchema)
+      .set({
+        token: hashedToken,
+        updated_at: new Date(),
+      })
+      .where(eq(userSchema.id, user.id));
+
+    // Generate reset URL
+    const resetUrl = generateResetUrl(resetToken);
+
+    // Send password reset email
+    try {
+      await this.appService.sendPasswordResetEmail(
+        user.email,
+        user.first_name,
+        resetToken,
+        resetUrl
+      );
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Failed to send password reset email:', error);
+    }
+
+    return {
+      message: 'If an account with this email exists, a password reset link has been sent.',
+    };
+  }
+
+  /**
+   * Reset password using reset token
+   */
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, password, confirmPassword } = resetPasswordDto;
+
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    // Find user with this reset token
+    const users = await this.db.db
+      .select({
+        id: userSchema.id,
+        email: userSchema.email,
+        first_name: userSchema.first_name,
+        token: userSchema.token,
+        updated_at: userSchema.updated_at,
+      })
+      .from(userSchema)
+      .where(eq(userSchema.token, hashResetToken(token)))
+      .limit(1);
+
+    if (users.length === 0) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const user = users[0];
+
+    // Check if token has expired
+    if (user.updated_at && isResetTokenExpired(user.updated_at)) {
+      // Clear expired token
+      await this.clearResetToken(user.id);
+      throw new BadRequestException('Reset token has expired. Please request a new one.');
+    }
+
+    // Hash new password
+    const hashedPassword = await this.userService.hashPassword(password);
+
+    // Update user password and clear reset token
+    await this.db.db
+      .update(userSchema)
+      .set({
+        password: hashedPassword,
+        token: null, // Clear the reset token
+        updated_at: new Date(),
+      })
+      .where(eq(userSchema.id, user.id));
+
+    // Send confirmation email
+    try {
+      await this.appService.sendPasswordResetConfirmationEmail(
+        user.email,
+        user.first_name
+      );
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Failed to send password reset confirmation email:', error);
+    }
+
+    return {
+      message: 'Password has been successfully reset. You can now log in with your new password.',
+    };
+  }
+
+  /**
+   * Clear reset token for user
+   */
+  private async clearResetToken(userId: string): Promise<void> {
+    await this.db.db
+      .update(userSchema)
+      .set({
+        token: null,
+        updated_at: new Date(),
+      })
+      .where(eq(userSchema.id, userId));
   }
 }

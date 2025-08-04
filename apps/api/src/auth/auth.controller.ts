@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards, Request, HttpStatus, Req, Res, UnauthorizedException, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
-import { VerifyOtpDto, ResendOtpDto, LoginDto } from './dto/verify-otp.dto';
+import { VerifyOtpDto, ResendOtpDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto/verify-otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
@@ -27,6 +27,16 @@ export class AuthController {
   @Post('login')
   async signIn(@Body() body: LoginDto) {
     return this.authService.signIn(body);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return await this.authService.forgotPassword(body);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return await this.authService.resetPassword(body);
   }
 
   @Get('test-jwt')

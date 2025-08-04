@@ -179,4 +179,11 @@ export class UserService {
 
     return role.length > 0 ? role[0] : null;
   }
+
+  /**
+   * Hash a password using bcrypt
+   */
+  async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
 }

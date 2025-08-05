@@ -17,13 +17,17 @@
       "cache": false,
       "persistent": true
     },
-    "generate": {
+    "db:generate": {
       "cache": false
     },
-    "migrate": {
+    "db:migrate": {
       "cache": false
     },
-    "migration:rollback": {
+    "db:rollback": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:push": {
       "cache": false,
       "persistent": true
     }

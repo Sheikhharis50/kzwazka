@@ -7,9 +7,10 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "generate": "turbo run generate",
-    "migrate": "turbo run migrate",
-    "migration:rollback": "turbo run migration:rollback"
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:rollback": "turbo run db:rollback",
+    "db:push": "turbo run db:push"
   },
   "devDependencies": {
     "@types/pg": "^8.15.4",

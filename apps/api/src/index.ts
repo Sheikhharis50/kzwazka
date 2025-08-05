@@ -1,21 +1,25 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { usersTable } from './db/schemas';
-
+import { userSchema, roleSchema, childrenSchema } from 'src/db/schemas';
 const db = drizzle(process.env.DATABASE_URL!);
 async function main() {
-  const user: typeof usersTable.$inferInsert = {
-    name: 'John',
-    age: 30,
+  const user: typeof userSchema.$inferInsert = {
+    id: '1',
+    password: '123456',
+    role_id: '1',
+    first_name: 'John',
+    last_name: 'Doe',
     email: 'john@example.com',
+    created_at: new Date(),
+    updated_at: new Date(),
   };
 
-  await db.insert(usersTable).values(user);
+  await db.insert(userSchema).values(user);
   console.log('New user created!');
 
-  const users = await db.select().from(usersTable);
-  console.log('Getting all users from the database: ', users);
+  const usersData = await db.select().from(userSchema);
+  console.log('Getting all users from the database: ', usersData);
   /*
   const users: {
     id: number;
@@ -26,14 +30,17 @@ async function main() {
   */
 
   await db
-    .update(usersTable)
+    .update(userSchema)
     .set({
-      age: 31,
+      first_name: 'John',
+      last_name: 'Doe',
+      email: 'john@example.com',
+      updated_at: new Date(),
     })
-    .where(eq(usersTable.email, user.email));
+  .where(eq(userSchema.email, user.email));
   console.log('User info updated!');
 
-  await db.delete(usersTable).where(eq(usersTable.email, user.email));
+  await db.delete(userSchema).where(eq(userSchema.email, user.email));
   console.log('User deleted!');
 }
 

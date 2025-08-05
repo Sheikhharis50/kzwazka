@@ -9,43 +9,47 @@ export class AppService {
   private transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
-    this.initializeTransporter();
+    // Initialize email transporter asynchronously without blocking the app startup
+    this.initializeTransporter().catch(error => {
+      this.logger.warn('Email service initialization failed, but application will continue to run:', error.message);
+    });
   }
 
   getHello(): string {
     return 'Hello World!';
   }
 
-  /**
-   * Initialize email transporter
-   */
   private async initializeTransporter() {
-    try {
-      const emailConfig = getEmailConfig(this.configService);
-      
-      this.transporter = nodemailer.createTransport({
-        host: emailConfig.host,
-        port: emailConfig.port,
-        secure: emailConfig.secure,
-        auth: {
-          user: emailConfig.auth.user,
-          pass: emailConfig.auth.pass,
-        },
-      });
-
-      // Verify connection configuration
-      await this.transporter.verify();
-      this.logger.log('Email transporter initialized successfully');
-    } catch (error) {
-      this.logger.error('Failed to initialize email transporter:', error);
-      throw new Error('Email configuration is invalid. Please check your environment variables.');
+  try {
+    const emailConfig = getEmailConfig(this.configService);
+    
+    // Simplified transporter configuration - using Gmail
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailConfig.auth.user,
+        pass: emailConfig.auth.pass,
+      }
+    });
+    
+    // Simple verification
+    await this.transporter.verify();
+    this.logger.log('Email transporter initialized successfully');
+  } catch (error) {
+    this.logger.error('Failed to initialize email transporter:', error.message);
+    if (error.code === 'EAUTH') {
+      this.logger.error('Authentication failed. Check your Gmail credentials or App Password.');
     }
+    throw error;
   }
+}
 
-  /**
-   * Send email using nodemailer
-   */
-  private async sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
+/**
+ * Send email using nodemailer with minimal retry logic
+ */
+  private async sendEmail(to: string, subject: string, html: string, text: string, retryCount = 0): Promise<void> {
+    const maxRetries = 1;
+    
     try {
       if (!this.transporter) {
         await this.initializeTransporter();
@@ -61,14 +65,21 @@ export class AppService {
         text,
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email sent to ${to}`);
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}:`, error);
+      this.logger.error(`Failed to send email to ${to}:`, error.message);
+      
+      // Simple retry for network-related errors
+      if (retryCount < maxRetries && ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED'].includes(error.code)) {
+        this.logger.log(`Retrying email send to ${to}...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return this.sendEmail(to, subject, html, text, retryCount + 1);
+      }
+      
       throw new Error('Failed to send email. Please try again later.');
     }
   }
-
   /**
    * Send OTP email to user
    */

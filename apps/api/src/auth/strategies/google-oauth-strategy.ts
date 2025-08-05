@@ -18,7 +18,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       throw new Error('Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.');
     }
 
-    console.log('Google OAuth Config:', { clientID, clientSecret, callbackURL });
     
     super({
       clientID,
@@ -55,7 +54,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         id: id,
       };
       
-      console.log('Google OAuth User:', user);
 
       const authenticatedUser = await this.authService.validateChildOAuthLogin(user, 'google');
       

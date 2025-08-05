@@ -30,7 +30,7 @@ const Select = ({
   const inputId = id || generatedId;
 
   return (
-    <div className={'flex flex-col gap-1 ' + classes.root || ''}>
+    <div className={`flex flex-col gap-1 ${classes.root || ''}`}>
       {label && (
         <Label
           htmlFor={inputId}

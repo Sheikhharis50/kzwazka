@@ -18,10 +18,11 @@ const RegisterPage = () => {
   console.log('prview' + preview);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('e.target', e.target);
-
     const file = e.target.files?.[0];
     if (file) {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
       const url = URL.createObjectURL(file);
       setPreview(url);
     }
@@ -32,6 +33,15 @@ const RegisterPage = () => {
     setStep(2);
     e.currentTarget.reset();
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   return (
     <>
       <div className="flex gap-3 items-center justify-center mb-5 xl:mb-8 2xl:mb-10 pt-5 2xl:pt-0">

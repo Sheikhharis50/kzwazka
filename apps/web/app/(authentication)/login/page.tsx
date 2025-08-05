@@ -31,7 +31,7 @@ const LoginPage = () => {
         <button className="flex gap-3 w-full items-center justify-center text-black rounded-lg p-2 border-border border-[1px]">
           <Image
             src={XIcon}
-            alt="Google icon"
+            alt="X icon"
             width={24}
             height={24}
             className="w-4 md:w-5 xl:w-6"

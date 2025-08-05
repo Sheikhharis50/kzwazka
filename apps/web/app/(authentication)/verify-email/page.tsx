@@ -9,13 +9,19 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 
 const VerifyEmailPage = () => {
+  const [otp, setOtp] = React.useState<string[]>(Array(6).fill(''));
   const inputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
     const value = e.target.value.replace(/\D/g, '');
     e.target.value = value;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
 
     if (value && index < 5) {
       inputsRef.current[index + 1]?.focus();
@@ -41,6 +47,16 @@ const VerifyEmailPage = () => {
     }
     e.preventDefault();
   };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpValue = otp.join('');
+    if (otpValue.length === 6) {
+      // Handle OTP verification
+      console.log('OTP:', otpValue);
+    }
+  };
+
   return (
     <>
       <div className="text-center mb-5">
@@ -61,7 +77,7 @@ const VerifyEmailPage = () => {
           className="size-4 md:size-6"
         />
       </div>
-      <form>
+      <form onSubmit={handleSubmit}>
         <div className="flex gap-2 py-10 md:py-16 justify-center">
           {Array.from({ length: 6 }).map((_, i) => (
             <Input

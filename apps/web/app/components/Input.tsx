@@ -1,5 +1,9 @@
+'use client';
 import React, { forwardRef, useId } from 'react';
 import Label from './Label';
+import EyeIcon from '@/icons/eye.svg';
+import EyeSlashIcon from '@/icons/eye-slash.svg';
+import Image from 'next/image';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -14,9 +18,15 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, labelProps, error, classes = {}, id, ...rest }, ref) => {
+  ({ label, labelProps, error, classes = {}, id, type, ...rest }, ref) => {
+    const [showPassword, setShowPassword] = React.useState(false);
     const generatedId = useId();
     const inputId = id || generatedId;
+    const isPasswordType = type === 'password';
+
+    const handleTogglePassword = () => {
+      setShowPassword((prev) => !prev);
+    };
 
     return (
       <div className={'flex flex-col gap-1 ' + classes.root || ''}>
@@ -28,12 +38,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...labelProps}
           />
         )}
-        <input
-          ref={ref}
-          id={inputId}
-          className={`py-1.5 md:py-2 px-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
-          {...rest}
-        />
+        <div className="relative">
+          <input
+            ref={ref}
+            type={isPasswordType ? (showPassword ? 'text' : 'password') : type}
+            id={inputId}
+            className={`py-1.5 md:py-2 ${isPasswordType ? 'ps-3 pe-8' : 'px-3'} rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
+            {...rest}
+          />
+          {isPasswordType && (
+            <Image
+              src={showPassword ? EyeSlashIcon : EyeIcon}
+              alt="toggle password visibility"
+              height={50}
+              width={50}
+              className="absolute top-1/2 -translate-y-1/2 right-3 w-4 h-auto cursor-pointer bg-white"
+              onClick={handleTogglePassword}
+            />
+          )}
+        </div>
         {error && (
           <span
             className={`text-[10px] md:text-xs xl:text-sm text-red ${classes.error}`}

@@ -7,4 +7,9 @@ type SidebarLink = {
   url: string;
 };
 
-export type { SidebarLink };
+type Option = {
+  value: string | number;
+  label: string;
+};
+
+export type { SidebarLink, Option };

@@ -23,5 +23,5 @@ export function usePreviousPath(fallback: string = '/') {
     }
   };
 
-  return goBack;
+  return { goBack, currentPath: pathname };
 }

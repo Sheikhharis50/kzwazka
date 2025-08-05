@@ -17,8 +17,8 @@ const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
   const isLoginPage = currentPath.includes('login');
 
   return (
-    <div className="grid lg:grid-cols-[1.5fr_2fr] w-full gap-5 md:gap-8 lg:gap-5 lg:h-dvh lg:overflow-hidden lg:p-1.5">
-      <div className="lg:h-[calc(100dvh-12px)] bg-yellow rounded-b-3xl lg:rounded-[42px] overflow-hidden relative p-3 lg:p-5">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1.5fr_2fr] w-full gap-5 md:gap-8 lg:gap-5 lg:h-dvh min-h-dvh lg:min-h-auto lg:overflow-hidden lg:p-1.5">
+      <div className="h-fit lg:h-[calc(100dvh-12px)] bg-yellow rounded-b-3xl lg:rounded-[42px] overflow-hidden relative p-3 lg:p-5">
         <Image
           src={Ribbon}
           alt="ribbon"
@@ -52,8 +52,10 @@ const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
         </div>
       </div>
-      <div className="h-full lg:overflow-y-auto lg:h-[calc(100dvh-12px)] flex flex-col gap-10 lg:gap-0 items-center px-3 lg:px-0 relative lg:pb-10">
-        <div className="flex-1 flex flex-col justify-center">{children}</div>
+      <div className="flex-1 lg:overflow-y-auto lg:h-[calc(100dvh-12px)] flex flex-col gap-10 lg:gap-0 items-center px-3 lg:px-0 relative lg:pb-10">
+        <div className="flex-1 flex flex-col justify-start lg:justify-center">
+          {children}
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-1 pb-2 text-mute lg:fixed bottom-0 bg-white">
           <Paragraph text="By creating an account, you agree to our" />
           <Link href="/terms-and-condition" className="underline">

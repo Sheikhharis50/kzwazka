@@ -17,8 +17,11 @@
 }
 
 @theme {
+  /* Font Family */
   --font-Anton: 'Anton';
   --font-Inter: 'Inter';
+
+  /* Colors */
   --color-maroon: #5a0000;
   --color-red: #ad1f23;
   --color-yellow: #f9c000;
@@ -27,6 +30,9 @@
   --color-white: #ffffff;
   --color-mute: #00000099;
   --color-border: #8787876e;
+
+  /* Breakpoints */
+  --breakpoint-xs: 30rem;
 }
 
 html,

@@ -542,7 +542,6 @@ export class AuthService {
       await this.appService.sendPasswordResetEmail(
         user.email,
         user.first_name,
-        resetToken,
         resetUrl
       );
     } catch (error) {

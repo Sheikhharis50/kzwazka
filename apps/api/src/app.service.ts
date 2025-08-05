@@ -99,7 +99,7 @@ export class AppService {
   /**
    * Send password reset email with reset token
    */
-  async sendPasswordResetEmail(email: string, userName: string, resetToken: string, resetUrl: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, userName: string, resetUrl: string): Promise<void> {
     const template = emailTemplates.passwordReset(userName, resetUrl);
     await this.sendEmail(email, template.subject, template.html, template.text);
   }

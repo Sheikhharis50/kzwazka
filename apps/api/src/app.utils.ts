@@ -69,19 +69,21 @@ export function getAppConfig(configService: ConfigService): AppConfig {
   const databaseUrl = configService.get<string>('DATABASE_URL');
   const googleClientId = configService.get<string>('GOOGLE_CLIENT_ID');
   const googleClientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-
-  if (!databaseUrl || !googleClientId || !googleClientSecret) {
+  const jwtSecret = configService.get<string>('JWT_SECRET');
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const googleCallbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL');
+  if (!databaseUrl || !googleClientId || !googleClientSecret || !jwtSecret || !frontendUrl || !googleCallbackUrl) {
     throw new Error('Missing required application configuration. Please check your environment variables.');
   }
 
   return {
     email: getEmailConfig(configService),
-    frontendUrl: configService.get<string>('FRONTEND_URL', 'http://localhost:3000'),
-    jwtSecret: configService.get<string>('JWT_SECRET', 'fallback-secret-key'),
+    frontendUrl,
+    jwtSecret,
     databaseUrl,
     googleClientId,
     googleClientSecret,
-    googleCallbackUrl: configService.get<string>('GOOGLE_CALLBACK_URL', 'http://localhost:8000/api/auth/google/callback'),
+    googleCallbackUrl,
   };
 }
 

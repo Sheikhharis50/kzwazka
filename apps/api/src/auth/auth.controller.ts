@@ -39,16 +39,6 @@ export class AuthController {
     return await this.authService.resetPassword(body);
   }
 
-  @Get('test-jwt')
-  @UseGuards(JwtAuthGuard)
-  async testJwt(@Request() req) {
-    return {
-      message: 'JWT authentication working!',
-      userId: req.user.sub,
-      note: 'Token only contains user ID for security',
-    };
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Request() req) {

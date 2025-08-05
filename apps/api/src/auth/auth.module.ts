@@ -8,7 +8,7 @@ import { GoogleStrategy } from './strategies/google-oauth-strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { AuthController } from './auth.controller';
-import { DbModule } from 'src/db/db.module';
+import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
 import { ChildrenModule } from '../children/children.module';
 import { AppService } from '../app.service';
@@ -23,8 +23,8 @@ import { AppService } from '../app.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'fallback-secret-key',
-        signOptions: { expiresIn: '1h' },
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: configService.get<string>('ACCESS_TOKEN_EXPIRY', '1h') },
       }),
     }),
     ConfigModule,

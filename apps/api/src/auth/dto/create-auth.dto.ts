@@ -40,14 +40,14 @@ export class SignUpDto {
       const inputDate = new Date(datePart);
       const today = new Date();
       if (inputDate > today) {
-        throw new Error('Date of birth cannot be in the future');
+        return null;
       }
       
       // Validate that the person is not too old (e.g., over 120 years)
       const minDate = new Date();
       minDate.setFullYear(today.getFullYear() - 120);
       if (inputDate < minDate) {
-        throw new Error('Date of birth seems invalid (person would be over 120 years old)');
+        return null;
       }
       
       return datePart;

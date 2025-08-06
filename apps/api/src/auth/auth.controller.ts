@@ -23,7 +23,7 @@ import {
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
-@Controller('auth')
+@Controller('api/auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 

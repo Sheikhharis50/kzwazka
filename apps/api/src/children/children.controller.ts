@@ -13,7 +13,7 @@ import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('children')
+@Controller('api/children')
 @UseGuards(JwtAuthGuard)
 export class ChildrenController {
   constructor(private readonly childrenService: ChildrenService) {}

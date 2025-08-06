@@ -18,8 +18,8 @@ export class AppService {
     });
   }
 
-  getHello(): string {
-    return 'Hello World!';
+  health(): string {
+    return 'API server is running';
   }
 
   private async initializeTransporter() {

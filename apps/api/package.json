@@ -6,7 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "npx nest build",
+    "postinstall": "nest --version",
+    "build": "nest build",
+    "build:render": "cd ../../ && npm install && cd apps/api && nest build",
+    "build:shell": "./build.sh",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "npx nest start",
     "dev": "npx nest start --watch",

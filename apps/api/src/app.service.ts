@@ -27,7 +27,7 @@ export class AppService {
     this.transporter = nodemailer.createTransport({
       host: emailConfig.host,
       port: emailConfig.port,
-      secure: false,
+      secure: emailConfig.secure ?? (emailConfig.port === 465),
       auth: {
         user: emailConfig.auth.user,
         pass: emailConfig.auth.pass,

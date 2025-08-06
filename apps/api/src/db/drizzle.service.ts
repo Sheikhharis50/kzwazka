@@ -25,7 +25,7 @@ export class DatabaseService {
         port: parseInt(url.port || '5432'),
         user: url.username,
         password: url.password,
-        database: url.pathname.slice(1), // Remove leading slash
+        database: url.pathname.length > 1 ? url.pathname.slice(1) : undefined,
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         // Connection pool configuration for production
         max: parseInt(process.env.DB_POOL_MAX || '20'),

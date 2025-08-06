@@ -1,5 +1,5 @@
-import { Module } from "@nestjs/common";
-import { DatabaseService } from "./drizzle.service";
+import { Module } from '@nestjs/common';
+import { DatabaseService } from './drizzle.service';
 
 @Module({
   providers: [

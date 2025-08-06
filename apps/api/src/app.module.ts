@@ -14,7 +14,7 @@ import { ChildrenModule } from './children/children.module';
     }),
     AuthModule,
     UserModule,
-    ChildrenModule
+    ChildrenModule,
   ],
   controllers: [AppController],
   providers: [AppService],

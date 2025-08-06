@@ -24,13 +24,21 @@ import { AppService } from '../app.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('ACCESS_TOKEN_EXPIRY', '1h') },
+        signOptions: {
+          expiresIn: configService.get<string>('ACCESS_TOKEN_EXPIRY', '1h'),
+        },
       }),
     }),
     ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AppService, GoogleStrategy, JwtStrategy, GoogleOAuthGuard],
+  providers: [
+    AuthService,
+    AppService,
+    GoogleStrategy,
+    JwtStrategy,
+    GoogleOAuthGuard,
+  ],
   exports: [AuthService, GoogleOAuthGuard],
 })
 export class AuthModule {}

@@ -37,7 +37,7 @@ async function main() {
       email: 'john@example.com',
       updated_at: new Date(),
     })
-  .where(eq(userSchema.email, user.email));
+    .where(eq(userSchema.email, user.email));
   console.log('User info updated!');
 
   await db.delete(userSchema).where(eq(userSchema.email, user.email));

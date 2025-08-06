@@ -12,7 +12,7 @@ export class LocationService {
   async create(createLocationDto: CreateLocationDto) {
     const locationId = uuidv4();
     const { opening_time, closing_time, ...locationData } = createLocationDto;
-    
+
     const newLocation = await this.db.db
       .insert(locationSchema)
       .values({
@@ -50,7 +50,7 @@ export class LocationService {
 
   async update(id: string, updateLocationDto: Partial<CreateLocationDto>) {
     const { opening_time, closing_time, ...updateData } = updateLocationDto;
-    
+
     const updateValues = {
       ...updateData,
       ...(opening_time !== undefined && { opening_time }),
@@ -100,4 +100,4 @@ export class LocationService {
 
     return updatedLocation[0];
   }
-} 
+}

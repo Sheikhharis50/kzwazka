@@ -8,17 +8,20 @@ import { AuthService } from '../auth.service';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
     private configService: ConfigService,
-    private authService: AuthService,
+    private authService: AuthService
   ) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL') || 'http://localhost:8000/api/auth/google/callback';
+    const callbackURL =
+      configService.get<string>('GOOGLE_CALLBACK_URL') ||
+      'http://localhost:8000/api/auth/google/callback';
 
     if (!clientID || !clientSecret) {
-      throw new Error('Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.');
+      throw new Error(
+        'Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.'
+      );
     }
 
-    
     super({
       clientID,
       clientSecret,
@@ -31,18 +34,21 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     accessToken: string,
     refreshToken: string,
     profile: any,
-    done: VerifyCallback,
+    done: VerifyCallback
   ): Promise<any> {
     try {
       const { name, emails, photos, id } = profile;
-      
+
       // Validate required fields
       if (!emails || emails.length === 0) {
         return done(new Error('Email is required for authentication'), null);
       }
 
       if (!name || !name.givenName || !name.familyName) {
-        return done(new Error('Name information is required for authentication'), null);
+        return done(
+          new Error('Name information is required for authentication'),
+          null
+        );
       }
 
       const user = {
@@ -53,10 +59,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         accessToken,
         id: id,
       };
-      
 
-      const authenticatedUser = await this.authService.validateChildOAuthLogin(user, 'google');
-      
+      const authenticatedUser = await this.authService.validateChildOAuthLogin(
+        user,
+        'google'
+      );
+
       done(null, authenticatedUser);
     } catch (error) {
       console.error('Google OAuth validation error:', error);

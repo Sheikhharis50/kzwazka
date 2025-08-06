@@ -1,7 +1,25 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpStatus, Req, Res, UnauthorizedException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Request,
+  HttpStatus,
+  Req,
+  Res,
+  UnauthorizedException,
+  Param,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
-import { VerifyOtpDto, ResendOtpDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto/verify-otp.dto';
+import {
+  VerifyOtpDto,
+  ResendOtpDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/verify-otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
@@ -58,13 +76,13 @@ export class AuthController {
       if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
           message: 'Authentication failed',
-          error: 'No user data received from Google OAuth'
+          error: 'No user data received from Google OAuth',
         });
       }
 
       // Generate JWT token for the authenticated user
       const token = this.authService.generateTokenForOAuthUser(req.user);
-      
+
       // Return the token in the response body instead of setting a cookie
       return res.status(HttpStatus.OK).json({
         message: 'Login successful',
@@ -76,20 +94,20 @@ export class AuthController {
           last_name: req.user.last_name,
           role: req.user.role,
           is_verified: req.user.is_verified,
-        }
+        },
       });
     } catch (error) {
       // Handle specific error types
       if (error instanceof UnauthorizedException) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
           message: 'Authentication failed',
-          error: error.message
+          error: error.message,
         });
       }
-      
+
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         message: 'Internal server error',
-        error: 'An unexpected error occurred during authentication'
+        error: 'An unexpected error occurred during authentication',
       });
     }
   }

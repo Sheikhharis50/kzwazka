@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, MinLength, MaxLength, Matches, IsNumberString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsNumberString,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class CreateLocationDto {
@@ -45,12 +54,16 @@ export class CreateLocationDto {
 
   @IsString({ message: 'Opening time must be a string' })
   @IsOptional()
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: 'Opening time must be in HH:MM format (24-hour)' })
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: 'Opening time must be in HH:MM format (24-hour)',
+  })
   opening_time?: string;
 
   @IsString({ message: 'Closing time must be a string' })
   @IsOptional()
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: 'Closing time must be in HH:MM format (24-hour)' })
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: 'Closing time must be in HH:MM format (24-hour)',
+  })
   closing_time?: string;
 
   @IsString({ message: 'Description must be a string' })
@@ -61,7 +74,9 @@ export class CreateLocationDto {
 
   @IsString({ message: 'Amount must be a string' })
   @IsOptional()
-  @Matches(/^\d+(\.\d{1,2})?$/, { message: 'Amount must be a valid number with up to 2 decimal places' })
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message: 'Amount must be a valid number with up to 2 decimal places',
+  })
   amount?: string;
 
   @IsString({ message: 'External ID must be a string' })
@@ -79,4 +94,4 @@ export class CreateLocationDto {
     return value;
   })
   is_active?: boolean;
-} 
+}

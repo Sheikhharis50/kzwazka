@@ -1,10 +1,17 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 /**
  * Custom validation decorator to ensure password and confirmPassword match
  */
-export function IsPasswordMatch(property: string, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+export function IsPasswordMatch(
+  property: string,
+  validationOptions?: ValidationOptions
+) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isPasswordMatch',
       target: object.constructor,
@@ -24,4 +31,4 @@ export function IsPasswordMatch(property: string, validationOptions?: Validation
       },
     });
   };
-} 
+}

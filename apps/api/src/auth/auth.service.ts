@@ -1,22 +1,32 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from "src/db/drizzle.service";
+import { DatabaseService } from 'src/db/drizzle.service';
 import { eq } from 'drizzle-orm';
-import { SignUpDto } from "./dto/create-auth.dto";
-import { VerifyOtpDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./dto/verify-otp.dto";
-import { roleSchema, userSchema } from "src/db/schemas";
-import { UserService } from "../user/user.service";
-import { ChildrenService } from "../children/children.service";
+import { SignUpDto } from './dto/create-auth.dto';
+import {
+  VerifyOtpDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/verify-otp.dto';
+import { roleSchema, userSchema } from 'src/db/schemas';
+import { UserService } from '../user/user.service';
+import { ChildrenService } from '../children/children.service';
 
-import { AppService } from "../app.service";
-import { 
+import { AppService } from '../app.service';
+import {
   generateToken,
-  generatePasswordResetToken, 
-  hashResetToken, 
-  verifyResetToken, 
-  generateResetUrl, 
-  isResetTokenExpired 
+  generatePasswordResetToken,
+  hashResetToken,
+  verifyResetToken,
+  generateResetUrl,
+  isResetTokenExpired,
 } from './auth.utils';
 
 @Injectable()
@@ -30,7 +40,15 @@ export class AuthService {
   ) {}
 
   async signUp(signUpDto: SignUpDto) {
-    const { email, password, first_name, last_name, dob, parent_first_name, parent_last_name } = signUpDto;
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      dob,
+      parent_first_name,
+      parent_last_name,
+    } = signUpDto;
 
     // Check if user already exists
     const existingUser = await this.userService.findByEmail(email);
@@ -75,7 +93,8 @@ export class AuthService {
     }
 
     return {
-      message: 'User created successfully. Please verify your email with the OTP sent to your email address.',
+      message:
+        'User created successfully. Please verify your email with the OTP sent to your email address.',
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -130,16 +149,16 @@ export class AuthService {
 
     // Send welcome email
     try {
-      await this.appService.sendWelcomeEmail(userData.email, userData.first_name);
+      await this.appService.sendWelcomeEmail(
+        userData.email,
+        userData.first_name
+      );
     } catch (error) {
       // Don't fail the verification process if email fails
     }
 
     // Generate JWT token (only contains user ID)
-    const access_token = generateToken(
-      this.jwtService,
-      userData.id
-    );
+    const access_token = generateToken(this.jwtService, userData.id);
 
     return {
       message: 'Email verified successfully',
@@ -173,7 +192,9 @@ export class AuthService {
     try {
       await this.appService.sendOtpEmail(user.email, otp, user.first_name);
     } catch (error) {
-      throw new BadRequestException('Failed to send OTP email. Please try again later.');
+      throw new BadRequestException(
+        'Failed to send OTP email. Please try again later.'
+      );
     }
 
     return {
@@ -196,18 +217,25 @@ export class AuthService {
 
     // Check if user has a password (might be null for OAuth users)
     if (user.password === null) {
-      throw new UnauthorizedException('Please use your OAuth provider to sign in');
+      throw new UnauthorizedException(
+        'Please use your OAuth provider to sign in'
+      );
     }
 
     // Verify password
-    const isPasswordValid = await this.userService.verifyPassword(user.id, password);
+    const isPasswordValid = await this.userService.verifyPassword(
+      user.id,
+      password
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Check if user is verified (for non-OAuth users)
     if (!user.is_verified) {
-      throw new UnauthorizedException('Please verify your email before signing in');
+      throw new UnauthorizedException(
+        'Please verify your email before signing in'
+      );
     }
 
     // Get role name
@@ -218,11 +246,8 @@ export class AuthService {
       .limit(1);
 
     // Generate JWT token (only contains user ID)
-    const access_token = generateToken(
-      this.jwtService,
-      user.id
-    );
-    
+    const access_token = generateToken(this.jwtService, user.id);
+
     return {
       access_token,
       user: {
@@ -286,49 +311,57 @@ export class AuthService {
 
   async validateChildOAuthLogin(userData: any, provider: string) {
     const { email, firstName, lastName, picture, id: googleId } = userData;
-    
+
     // Check if user already exists by email
     const existingUser = await this.userService.findByEmail(email);
 
     if (existingUser) {
       // Scenario 1: User exists with password-based authentication
       if (existingUser.password !== null) {
-        throw new UnauthorizedException('An account with this email already exists. Please sign in with your password.');
+        throw new UnauthorizedException(
+          'An account with this email already exists. Please sign in with your password.'
+        );
       }
-      
+
       // Scenario 2: User exists with Google OAuth but different Google ID
-      if (provider === 'google' && existingUser.google_social_id && existingUser.google_social_id !== googleId) {
-        throw new UnauthorizedException('This email is already associated with a different Google account. Please use the correct Google account.');
+      if (
+        provider === 'google' &&
+        existingUser.google_social_id &&
+        existingUser.google_social_id !== googleId
+      ) {
+        throw new UnauthorizedException(
+          'This email is already associated with a different Google account. Please use the correct Google account.'
+        );
       }
-      
+
       // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
       if (provider === 'google' && existingUser.google_social_id === googleId) {
         // Update user information if it has changed
         const updates: any = {};
         let hasUpdates = false;
-        
+
         if (existingUser.first_name !== firstName) {
           updates.first_name = firstName;
           hasUpdates = true;
         }
-        
+
         if (existingUser.last_name !== lastName) {
           updates.last_name = lastName;
           hasUpdates = true;
         }
-        
+
         // Update user if there are changes
         if (hasUpdates) {
           await this.userService.update(existingUser.id, updates);
         }
-        
+
         // Get the role name for the response
         const role = await this.db.db
           .select({ name: roleSchema.name })
           .from(roleSchema)
           .where(eq(roleSchema.id, existingUser.role_id))
           .limit(1);
-        
+
         return {
           id: existingUser.id,
           email: existingUser.email,
@@ -339,19 +372,19 @@ export class AuthService {
           is_verified: existingUser.is_verified, // OAuth users are automatically verified
         };
       }
-      
+
       // Scenario 4: User exists but no Google ID set - link the account
       if (provider === 'google' && !existingUser.google_social_id) {
         // Update user with Google ID and verify the account
         await this.userService.updateGoogleSocialId(existingUser.id, googleId);
-        
+
         // Get the role name for the response
         const role = await this.db.db
           .select({ name: roleSchema.name })
           .from(roleSchema)
           .where(eq(roleSchema.id, existingUser.role_id))
           .limit(1);
-        
+
         return {
           id: existingUser.id,
           email: existingUser.email,
@@ -379,7 +412,7 @@ export class AuthService {
       role_id: childRole.id,
       is_active: true,
       is_verified: true, // OAuth users are automatically verified
-      google_social_id: provider === 'google' ? googleId : null
+      google_social_id: provider === 'google' ? googleId : null,
     });
 
     // Create child record
@@ -403,10 +436,7 @@ export class AuthService {
   }
 
   generateTokenForOAuthUser(user: any) {
-    return generateToken(
-      this.jwtService,
-      user.id
-    );
+    return generateToken(this.jwtService, user.id);
   }
 
   // OTP Methods (moved from OtpService)
@@ -510,14 +540,16 @@ export class AuthService {
     if (!user) {
       // Don't reveal if user exists or not for security
       return {
-        message: 'If an account with this email exists, a password reset link has been sent.',
+        message:
+          'If an account with this email exists, a password reset link has been sent.',
       };
     }
 
     // Check if user is active
     if (!user.is_active) {
       return {
-        message: 'If an account with this email exists, a password reset link has been sent.',
+        message:
+          'If an account with this email exists, a password reset link has been sent.',
       };
     }
 
@@ -550,7 +582,8 @@ export class AuthService {
     }
 
     return {
-      message: 'If an account with this email exists, a password reset link has been sent.',
+      message:
+        'If an account with this email exists, a password reset link has been sent.',
     };
   }
 
@@ -588,7 +621,9 @@ export class AuthService {
     if (user.updated_at && isResetTokenExpired(user.updated_at)) {
       // Clear expired token
       await this.clearResetToken(user.id);
-      throw new BadRequestException('Reset token has expired. Please request a new one.');
+      throw new BadRequestException(
+        'Reset token has expired. Please request a new one.'
+      );
     }
 
     // Hash new password
@@ -616,7 +651,8 @@ export class AuthService {
     }
 
     return {
-      message: 'Password has been successfully reset. You can now log in with your new password.',
+      message:
+        'Password has been successfully reset. You can now log in with your new password.',
     };
   }
 

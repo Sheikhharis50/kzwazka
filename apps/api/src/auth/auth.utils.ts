@@ -7,12 +7,12 @@ import { randomBytes, createHash } from 'crypto';
  */
 export const generateToken = (
   jwtService: JwtService,
-  userId: string,
+  userId: string
 ): string => {
   const payload = {
     sub: userId,
   };
-  
+
   return jwtService.sign(payload);
 };
 
@@ -58,6 +58,6 @@ export const isResetTokenExpired = (createdAt: Date): boolean => {
   const now = new Date();
   const tokenAge = now.getTime() - createdAt.getTime();
   const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
-  
+
   return tokenAge > oneHour;
 };

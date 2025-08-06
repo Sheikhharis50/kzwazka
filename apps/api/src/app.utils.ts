@@ -39,7 +39,9 @@ export function getEmailConfig(configService: ConfigService): EmailConfig {
   const from = configService.get<string>('EMAIL_FROM') || user; // Use user email as fallback for from
 
   if (!host || !port || !user || !pass) {
-    throw new Error('Missing required email configuration. Please check your environment variables.');
+    throw new Error(
+      'Missing required email configuration. Please check your environment variables.'
+    );
   }
 
   // Auto-detect secure setting based on port
@@ -72,8 +74,17 @@ export function getAppConfig(configService: ConfigService): AppConfig {
   const jwtSecret = configService.get<string>('JWT_SECRET');
   const frontendUrl = configService.get<string>('FRONTEND_URL');
   const googleCallbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL');
-  if (!databaseUrl || !googleClientId || !googleClientSecret || !jwtSecret || !frontendUrl || !googleCallbackUrl) {
-    throw new Error('Missing required application configuration. Please check your environment variables.');
+  if (
+    !databaseUrl ||
+    !googleClientId ||
+    !googleClientSecret ||
+    !jwtSecret ||
+    !frontendUrl ||
+    !googleCallbackUrl
+  ) {
+    throw new Error(
+      'Missing required application configuration. Please check your environment variables.'
+    );
   }
 
   return {
@@ -91,7 +102,13 @@ export function getAppConfig(configService: ConfigService): AppConfig {
  * Validate email configuration
  */
 export function validateEmailConfig(config: EmailConfig): boolean {
-  return !!(config.host && config.port && config.auth.user && config.auth.pass && config.from);
+  return !!(
+    config.host &&
+    config.port &&
+    config.auth.user &&
+    config.auth.pass &&
+    config.from
+  );
 }
 
 /**
@@ -128,7 +145,7 @@ export const emailTemplates = {
       
       Best regards,
       The Kzwazka Team
-    `
+    `,
   }),
 
   welcome: (userName: string) => ({
@@ -156,7 +173,7 @@ export const emailTemplates = {
       
       Best regards,
       The Kzwazka Team
-    `
+    `,
   }),
 
   passwordReset: (userName: string, resetUrl: string) => ({
@@ -191,7 +208,7 @@ export const emailTemplates = {
       
       Best regards,
       The Kzwazka Team
-    `
+    `,
   }),
 
   passwordResetConfirmation: (userName: string) => ({
@@ -216,6 +233,6 @@ export const emailTemplates = {
       
       Best regards,
       The Kzwazka Team
-    `
-  })
-}; 
+    `,
+  }),
+};

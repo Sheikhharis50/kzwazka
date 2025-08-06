@@ -1,6 +1,6 @@
-import { pgTable, text } from "drizzle-orm/pg-core";
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { rolePermissionSchema } from "./rolePermissionSchema";
+import { rolePermissionSchema } from './rolePermissionSchema';
 
 export const permissionSchema = pgTable('permission', {
   id: text('id').primaryKey().notNull(),

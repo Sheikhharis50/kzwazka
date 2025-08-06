@@ -5,7 +5,9 @@ import { locationSchema } from './locationSchema';
 
 export const childrenSchema = pgTable('children', {
   id: text('id').primaryKey().notNull(),
-  user_id: text('user_id').notNull().references(() => userSchema.id),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => userSchema.id),
   dob: date('dob').notNull(),
   photo_url: varchar('photo_url', { length: 500 }),
   parent_first_name: varchar('parent_first_name', { length: 100 }),

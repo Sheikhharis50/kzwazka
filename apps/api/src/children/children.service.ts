@@ -50,7 +50,10 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(locationSchema, eq(childrenSchema.location_id, locationSchema.id));
+      .leftJoin(
+        locationSchema,
+        eq(childrenSchema.location_id, locationSchema.id)
+      );
   }
 
   async findOne(id: string) {
@@ -79,7 +82,10 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(locationSchema, eq(childrenSchema.location_id, locationSchema.id))
+      .leftJoin(
+        locationSchema,
+        eq(childrenSchema.location_id, locationSchema.id)
+      )
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
@@ -116,14 +122,19 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(locationSchema, eq(childrenSchema.location_id, locationSchema.id))
+      .leftJoin(
+        locationSchema,
+        eq(childrenSchema.location_id, locationSchema.id)
+      )
       .where(eq(childrenSchema.user_id, userId));
   }
 
   async update(id: string, updateChildDto: UpdateChildDto) {
     const updateValues = {
       ...updateChildDto,
-      ...(updateChildDto.dob && { dob: new Date(updateChildDto.dob).toISOString() }),
+      ...(updateChildDto.dob && {
+        dob: new Date(updateChildDto.dob).toISOString(),
+      }),
       updated_at: new Date(),
     };
 

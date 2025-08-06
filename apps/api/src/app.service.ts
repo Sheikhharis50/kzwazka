@@ -25,7 +25,9 @@ export class AppService {
     
     // Simplified transporter configuration - using Gmail
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: emailConfig.secure ?? (emailConfig.port === 465),
       auth: {
         user: emailConfig.auth.user,
         pass: emailConfig.auth.pass,

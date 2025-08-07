@@ -3,6 +3,7 @@
   "ui": "tui",
   "tasks": {
     "build": {
+      "env": ["API_BASE_URL"],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
@@ -14,6 +15,8 @@
       "dependsOn": ["^check-types"]
     },
     "dev": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["API_BASE_URL"],
       "cache": false,
       "persistent": true
     },

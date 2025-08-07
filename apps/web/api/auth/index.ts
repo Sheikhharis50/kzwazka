@@ -1,0 +1,48 @@
+import { apiClient } from 'api/client';
+import { RegisterPayload, IUser } from './type';
+import { API_BASE_URL } from '@config';
+import { handleApiError } from 'utils/apiErrorHandler';
+
+export const auth = {
+  register: async (
+    payload: RegisterPayload
+  ): Promise<{ message: string; user: IUser }> => {
+    try {
+      console.log(API_BASE_URL);
+
+      const response = await apiClient.post(`/auth/signup`, payload);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to create user, please try again later');
+    }
+  },
+
+  login: async (payload: {
+    email: string;
+    password: string;
+  }): Promise<{ access_token: string; user: IUser }> => {
+    try {
+      const response = await apiClient.post(`/auth/login`, payload);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to login, please try again later');
+    }
+  },
+
+  verifyOtp: async ({
+    userId,
+    otp,
+  }: {
+    userId: string;
+    otp: string;
+  }): Promise<{ access_token: string; user: IUser }> => {
+    try {
+      const response = await apiClient.post(`/auth/verify-otp/${userId}`, {
+        otp,
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to verify OTP, please try again later');
+    }
+  },
+};

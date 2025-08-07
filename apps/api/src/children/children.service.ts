@@ -4,7 +4,6 @@ import { UpdateChildDto } from './dto/update-child.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
-import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_PAGE_SIZE } from '../app.constants';
 import { getPageOffset } from '../utils/pagination';
 
@@ -13,11 +12,9 @@ export class ChildrenService {
   constructor(private readonly dbService: DatabaseService) {}
 
   async create(body: CreateChildDto) {
-    const childId = uuidv4();
     const newChild = await this.dbService.db
       .insert(childrenSchema)
       .values({
-        id: childId,
         ...body,
         dob: new Date(body.dob).toISOString(),
       })
@@ -86,7 +83,7 @@ export class ChildrenService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const child = await this.dbService.db
       .select({
         id: childrenSchema.id,
@@ -126,7 +123,7 @@ export class ChildrenService {
     return child[0];
   }
 
-  async findByUserId(userId: string) {
+  async findByUserId(userId: number) {
     return await this.dbService.db
       .select({
         id: childrenSchema.id,
@@ -159,7 +156,7 @@ export class ChildrenService {
       .where(eq(childrenSchema.user_id, userId));
   }
 
-  async update(id: string, updateChildDto: UpdateChildDto) {
+  async update(id: number, updateChildDto: UpdateChildDto) {
     const updateValues = {
       ...updateChildDto,
       ...(updateChildDto.dob && {
@@ -181,7 +178,7 @@ export class ChildrenService {
     return updatedChild[0];
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     const deletedChild = await this.dbService.db
       .delete(childrenSchema)
       .where(eq(childrenSchema.id, id))
@@ -194,7 +191,7 @@ export class ChildrenService {
     return { message: 'Child deleted successfully' };
   }
 
-  async updatePhotoUrl(id: string, photoUrl: string) {
+  async updatePhotoUrl(id: number, photoUrl: string) {
     const updatedChild = await this.dbService.db
       .update(childrenSchema)
       .set({
@@ -211,7 +208,7 @@ export class ChildrenService {
     return updatedChild[0];
   }
 
-  async assignLocation(childId: string, locationId: string) {
+  async assignLocation(childId: number, locationId: number) {
     const updatedChild = await this.dbService.db
       .update(childrenSchema)
       .set({

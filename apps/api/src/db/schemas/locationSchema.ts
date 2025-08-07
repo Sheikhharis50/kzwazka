@@ -6,12 +6,13 @@ import {
   boolean,
   time,
   numeric,
+  integer,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { childrenSchema } from './childrenSchema';
 
 export const locationSchema = pgTable('locations', {
-  id: text('id').primaryKey().notNull(),
+  id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
   name: varchar('name', { length: 200 }),
   address1: varchar('address1', { length: 500 }).notNull(),
   address2: varchar('address2', { length: 500 }),

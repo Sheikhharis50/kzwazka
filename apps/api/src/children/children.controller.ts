@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ChildrenService } from './children.service';
 import { CreateChildDto } from './dto/create-child.dto';
@@ -29,22 +30,22 @@ export class ChildrenController {
   }
 
   @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
+  findByUserId(@Param('userId', ParseIntPipe) userId: number) {
     return this.childrenService.findByUserId(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.childrenService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: UpdateChildDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateChildDto) {
     return this.childrenService.update(id, body);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.childrenService.remove(id);
   }
 }

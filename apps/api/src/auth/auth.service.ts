@@ -5,8 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from 'src/db/drizzle.service';
+import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from './dto/create-auth.dto';
 import {

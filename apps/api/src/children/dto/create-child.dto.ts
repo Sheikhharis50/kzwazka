@@ -3,18 +3,18 @@ import {
   IsNotEmpty,
   IsOptional,
   IsDateString,
-  IsUUID,
+  IsNumber,
   IsUrl,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateChildDto {
-  @IsString({ message: 'User ID must be a string' })
+  @IsNumber({}, { message: 'User ID must be a number' })
   @IsNotEmpty({ message: 'User ID is required' })
-  @IsUUID(4, { message: 'User ID must be a valid UUID' })
-  user_id: string;
+  @Type(() => Number)
+  user_id: number;
 
   @IsDateString({}, { message: 'Date of birth must be a valid date string' })
   @IsNotEmpty({ message: 'Date of birth is required' })
@@ -68,8 +68,8 @@ export class CreateChildDto {
   @Transform(({ value }) => value?.trim())
   parent_last_name?: string;
 
-  @IsString({ message: 'Location ID must be a string' })
+  @IsNumber({}, { message: 'Location ID must be a number' })
   @IsOptional()
-  @IsUUID(4, { message: 'Location ID must be a valid UUID' })
-  location_id?: string;
+  @Type(() => Number)
+  location_id?: number;
 }

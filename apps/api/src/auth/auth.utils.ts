@@ -7,7 +7,7 @@ import { randomBytes, createHash } from 'crypto';
  */
 export const generateToken = (
   jwtService: JwtService,
-  userId: string
+  userId: number
 ): string => {
   const payload = {
     sub: userId,

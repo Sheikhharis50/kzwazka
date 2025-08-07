@@ -25,8 +25,10 @@ export class ChildrenController {
   }
 
   @Get()
-  findAll() {
-    return this.childrenService.findAll();
+  findAll(
+    @Param('params', ParseIntPipe) params: { page: string; limit: string }
+  ) {
+    return this.childrenService.findAll(params);
   }
 
   @Get('user/:userId')

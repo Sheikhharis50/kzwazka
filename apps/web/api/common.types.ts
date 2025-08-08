@@ -1,5 +1,5 @@
 export interface APIListResponse<T> {
-  detail: string;
+  message: string;
   status: number;
   count: number;
   page?: number;
@@ -7,7 +7,7 @@ export interface APIListResponse<T> {
 }
 
 export interface APIResponse<T> {
-  detail: string;
+  message: string;
   status: number;
   data?: T;
 }

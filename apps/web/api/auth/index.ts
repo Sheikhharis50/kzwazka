@@ -1,12 +1,18 @@
 import { apiClient } from 'api/client';
-import { RegisterPayload, IUser } from './type';
+import {
+  RegisterPayload,
+  IUser,
+  IRegisterResponse,
+  ILoginResponse,
+} from './type';
 import { API_BASE_URL } from '@config';
 import { handleApiError } from 'utils/apiErrorHandler';
+import { APIResponse } from 'api/type';
 
 export const auth = {
   register: async (
     payload: RegisterPayload
-  ): Promise<{ message: string; user: IUser }> => {
+  ): Promise<APIResponse<IRegisterResponse>> => {
     try {
       console.log(API_BASE_URL);
 
@@ -35,7 +41,7 @@ export const auth = {
   }: {
     userId: string;
     otp: string;
-  }): Promise<{ access_token: string; user: IUser }> => {
+  }): Promise<APIResponse<ILoginResponse>> => {
     try {
       const response = await apiClient.post(`/auth/verify-otp/${userId}`, {
         otp,

@@ -18,3 +18,12 @@ export type IUser = {
   role: string;
   is_verified: boolean;
 };
+
+export type IRegisterResponse = {
+  user: IUser;
+};
+
+export type ILoginResponse = {
+  access_token: string;
+  user: IUser;
+};

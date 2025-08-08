@@ -61,6 +61,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
     mutationFn: (credentials: RegisterPayload) =>
       api.auth.register(credentials),
     onSuccess: (data) => {
+      localStorage.setItem('userId', data.data?.user.id || '');
       toast(data.message, { type: 'success' });
       setTimeout(() => {
         redirect('/verify-email');

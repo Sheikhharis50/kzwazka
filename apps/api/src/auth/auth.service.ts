@@ -17,8 +17,8 @@ import {
 import { roleSchema, userSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
+import { EmailService } from '../services/email.service';
 
-import { AppService } from '../app.service';
 import {
   generateToken,
   generatePasswordResetToken,
@@ -26,7 +26,7 @@ import {
   verifyResetToken,
   generateResetUrl,
   isResetTokenExpired,
-} from './auth.utils';
+} from '../utils/auth.utils';
 
 @Injectable()
 export class AuthService {
@@ -34,7 +34,7 @@ export class AuthService {
     private readonly db: DatabaseService,
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
-    private readonly appService: AppService,
+    private readonly emailService: EmailService,
     private jwtService: JwtService
   ) {}
 
@@ -45,6 +45,7 @@ export class AuthService {
       first_name,
       last_name,
       dob,
+      phone,
       parent_first_name,
       parent_last_name,
     } = signUpDto;
@@ -67,6 +68,7 @@ export class AuthService {
       password,
       first_name,
       last_name,
+      phone,
       role_id: childRole.id,
       is_active: true,
       is_verified: false, // Will be verified after OTP confirmation
@@ -85,7 +87,7 @@ export class AuthService {
 
     // Send OTP email
     try {
-      await this.appService.sendOtpEmail(email, otp, first_name);
+      await this.emailService.sendOtpEmail(email, otp, first_name);
     } catch (error) {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
@@ -149,7 +151,7 @@ export class AuthService {
 
     // Send welcome email
     try {
-      await this.appService.sendWelcomeEmail(
+      await this.emailService.sendWelcomeEmail(
         userData.email,
         userData.first_name
       );
@@ -192,7 +194,7 @@ export class AuthService {
 
     // Send new OTP email
     try {
-      await this.appService.sendOtpEmail(user.email, otp, user.first_name);
+      await this.emailService.sendOtpEmail(user.email, otp, user.first_name);
     } catch (error) {
       throw new BadRequestException(
         'Failed to send OTP email. Please try again later.'
@@ -584,7 +586,7 @@ export class AuthService {
 
     // Send password reset email
     try {
-      await this.appService.sendPasswordResetEmail(
+      await this.emailService.sendPasswordResetEmail(
         user.email,
         user.first_name,
         resetUrl
@@ -654,7 +656,7 @@ export class AuthService {
 
     // Send confirmation email
     try {
-      await this.appService.sendPasswordResetConfirmationEmail(
+      await this.emailService.sendPasswordResetConfirmationEmail(
         user.email,
         user.first_name
       );

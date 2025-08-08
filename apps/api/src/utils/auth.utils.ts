@@ -60,4 +60,4 @@ export const isResetTokenExpired = (createdAt: Date): boolean => {
   const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
   return tokenAge > oneHour;
-};
+}; 

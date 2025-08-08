@@ -1,121 +1,17 @@
-import { ConfigService } from '@nestjs/config';
-
 /**
- * Email configuration interface
+ * Email template interface
  */
-export interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-  from: string;
-}
-
-/**
- * Application configuration interface
- */
-export interface AppConfig {
-  email: EmailConfig;
-  frontendUrl: string;
-  jwtSecret: string;
-  databaseUrl: string;
-  googleClientId: string;
-  googleClientSecret: string;
-  googleCallbackUrl: string;
-}
-
-/**
- * Get email configuration from environment variables
- */
-export function getEmailConfig(configService: ConfigService): EmailConfig {
-  const host = configService.get<string>('EMAIL_HOST');
-  const port = configService.get<number>('EMAIL_PORT');
-  const secure = configService.get<boolean>('EMAIL_SECURE', false);
-  const user = configService.get<string>('EMAIL_USER');
-  const pass = configService.get<string>('EMAIL_PASS');
-  const from = configService.get<string>('EMAIL_FROM') || user; // Use user email as fallback for from
-
-  if (!host || !port || !user || !pass) {
-    throw new Error(
-      'Missing required email configuration. Please check your environment variables.'
-    );
-  }
-
-  // Auto-detect secure setting based on port
-  let finalSecure = secure;
-  if (port === 465) {
-    finalSecure = true; // Port 465 requires SSL/TLS
-  } else if (port === 587) {
-    finalSecure = false; // Port 587 uses STARTTLS
-  }
-
-  return {
-    host,
-    port,
-    secure: finalSecure,
-    auth: {
-      user,
-      pass,
-    },
-    from: from || user, // Ensure from is always set
-  };
-}
-
-/**
- * Get application configuration
- */
-export function getAppConfig(configService: ConfigService): AppConfig {
-  const databaseUrl = configService.get<string>('DATABASE_URL');
-  const googleClientId = configService.get<string>('GOOGLE_CLIENT_ID');
-  const googleClientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-  const jwtSecret = configService.get<string>('JWT_SECRET');
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
-  const googleCallbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL');
-  if (
-    !databaseUrl ||
-    !googleClientId ||
-    !googleClientSecret ||
-    !jwtSecret ||
-    !frontendUrl ||
-    !googleCallbackUrl
-  ) {
-    throw new Error(
-      'Missing required application configuration. Please check your environment variables.'
-    );
-  }
-
-  return {
-    email: getEmailConfig(configService),
-    frontendUrl,
-    jwtSecret,
-    databaseUrl,
-    googleClientId,
-    googleClientSecret,
-    googleCallbackUrl,
-  };
-}
-
-/**
- * Validate email configuration
- */
-export function validateEmailConfig(config: EmailConfig): boolean {
-  return !!(
-    config.host &&
-    config.port &&
-    config.auth.user &&
-    config.auth.pass &&
-    config.from
-  );
+export interface EmailTemplate {
+  subject: string;
+  html: string;
+  text: string;
 }
 
 /**
  * Generate email templates
  */
 export const emailTemplates = {
-  otp: (userName: string, otp: string) => ({
+  otp: (userName: string, otp: string): EmailTemplate => ({
     subject: 'Email Verification - Kzwazka',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -148,7 +44,7 @@ export const emailTemplates = {
     `,
   }),
 
-  welcome: (userName: string) => ({
+  welcome: (userName: string): EmailTemplate => ({
     subject: 'Welcome to Kzwazka!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -176,7 +72,7 @@ export const emailTemplates = {
     `,
   }),
 
-  passwordReset: (userName: string, resetUrl: string) => ({
+  passwordReset: (userName: string, resetUrl: string): EmailTemplate => ({
     subject: 'Password Reset Request - Kzwazka',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -211,7 +107,7 @@ export const emailTemplates = {
     `,
   }),
 
-  passwordResetConfirmation: (userName: string) => ({
+  passwordResetConfirmation: (userName: string): EmailTemplate => ({
     subject: 'Password Reset Successful - Kzwazka',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

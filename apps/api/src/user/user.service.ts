@@ -36,6 +36,7 @@ export class UserService {
         email,
         password: hashedPassword,
         ...userData,
+        phone: userData.phone,
         is_active: userData.is_active ?? true,
         is_verified: userData.is_verified ?? false,
       })

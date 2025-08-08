@@ -7,7 +7,6 @@ import {
   MinLength,
   MaxLength,
   Matches,
-  IsNumber,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 

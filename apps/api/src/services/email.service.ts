@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { getEmailConfig } from '../config/email.config';
 import { emailTemplates } from '../templates/email.templates';
+import { APP_CONSTANTS } from '../utils/constants';
 
 @Injectable()
 export class EmailService {
@@ -11,10 +12,12 @@ export class EmailService {
 
   constructor(private readonly configService: ConfigService) {
     // Initialize email transporter asynchronously without blocking the app startup
-    this.initializeTransporter().catch((error: any) => {
+    this.initializeTransporter().catch((error: unknown) => {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn(
         'Email service initialization failed, but application will continue to run:',
-        error.message
+        errorMessage
       );
     });
   }
@@ -37,12 +40,19 @@ export class EmailService {
       // Simple verification
       await this.transporter.verify();
       this.logger.log('Email transporter initialized successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         'Failed to initialize email transporter:',
-        error.message
+        errorMessage
       );
-      if (error.code === 'EAUTH') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'EAUTH'
+      ) {
         this.logger.error(
           'Authentication failed. Check your Gmail credentials or App Password.'
         );
@@ -61,7 +71,7 @@ export class EmailService {
     text: string,
     retryCount = 0
   ): Promise<void> {
-    const maxRetries = 1;
+    const maxRetries = APP_CONSTANTS.EMAIL.MAX_RETRIES;
 
     try {
       if (!this.transporter) {
@@ -80,16 +90,24 @@ export class EmailService {
 
       await this.transporter.sendMail(mailOptions);
       this.logger.log(`Email sent to ${to}`);
-    } catch (error: any) {
-      this.logger.error(`Failed to send email to ${to}:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to send email to ${to}:`, errorMessage);
 
       // Simple retry for network-related errors
       if (
         retryCount < maxRetries &&
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        typeof error.code === 'string' &&
         ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED'].includes(error.code)
       ) {
         this.logger.log(`Retrying email send to ${to}...`);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, APP_CONSTANTS.EMAIL.RETRY_DELAY_MS)
+        );
         return this.sendEmail(to, subject, html, text, retryCount + 1);
       }
 
@@ -105,7 +123,11 @@ export class EmailService {
     otp: string,
     userName: string
   ): Promise<void> {
-    const template = emailTemplates.otp(userName, otp);
+    const template = emailTemplates.otp(
+      userName,
+      otp,
+      APP_CONSTANTS.OTP.EXPIRY_MINUTES
+    );
     await this.sendEmail(email, template.subject, template.html, template.text);
   }
 

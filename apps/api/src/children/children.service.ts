@@ -20,10 +20,7 @@ export class ChildrenService {
       })
       .returning();
 
-    return {
-      detail: 'Children created successfully',
-      data: newChild[0],
-    };
+    return newChild[0];
   }
 
   async count() {
@@ -78,7 +75,7 @@ export class ChildrenService {
     ]);
 
     return {
-      detail: 'Children records',
+      message: 'Children records',
       data: results,
       page,
       limit,
@@ -124,7 +121,7 @@ export class ChildrenService {
     }
 
     return {
-      detail: 'Child record',
+      message: 'Child record',
       data: child[0],
     };
   }
@@ -182,7 +179,7 @@ export class ChildrenService {
     }
 
     return {
-      detail: 'Child updated successfully',
+      message: 'Child updated successfully',
       data: updatedChild[0],
     };
   }
@@ -198,7 +195,7 @@ export class ChildrenService {
     }
 
     return {
-      detail: 'Child deleted successfully',
+      message: 'Child deleted successfully',
     };
   }
 
@@ -217,7 +214,7 @@ export class ChildrenService {
     }
 
     return {
-      detail: 'Photo URL updated successfully',
+      message: 'Photo URL updated successfully',
       data: updatedChild[0],
     };
   }
@@ -237,7 +234,7 @@ export class ChildrenService {
     }
 
     return {
-      detail: 'Location assigned successfully',
+      message: 'Location assigned successfully',
       data: updatedChild[0],
     };
   }

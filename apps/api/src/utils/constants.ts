@@ -16,6 +16,13 @@ export const APP_CONSTANTS = {
     RETRY_DELAY_MS: 1000,
   },
 
+  // OTP Configuration
+  OTP: {
+    EXPIRY_MINUTES: 10,
+    LENGTH: 6,
+    MAX_ATTEMPTS: 3,
+  },
+
   // Database Configuration
   DATABASE: {
     POOL_MAX: 20,
@@ -69,6 +76,7 @@ export const APP_CONSTANTS = {
       INVALID_CREDENTIALS: 'Invalid credentials',
       EMAIL_ALREADY_EXISTS: 'Email already exists',
       INVALID_OTP: 'Invalid OTP',
+      OTP_EXPIRED: 'OTP has expired',
       TOKEN_EXPIRED: 'Token expired',
       UNAUTHORIZED: 'Unauthorized access',
       FORBIDDEN: 'Access forbidden',

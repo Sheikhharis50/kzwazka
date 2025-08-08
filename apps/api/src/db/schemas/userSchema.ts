@@ -24,6 +24,7 @@ export const userSchema = pgTable('user', {
   google_social_id: varchar('google_social_id', { length: 255 }),
   token: text('token'),
   otp: varchar('otp', { length: 10 }),
+  otp_created_at: timestamp('otp_created_at'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at'),
 });

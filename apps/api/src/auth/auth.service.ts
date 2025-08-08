@@ -18,15 +18,26 @@ import { roleSchema, userSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
+import { APP_CONSTANTS } from '../utils/constants';
 
 import {
   generateToken,
   generatePasswordResetToken,
   hashResetToken,
-  verifyResetToken,
   generateResetUrl,
   isResetTokenExpired,
+  generateOTP,
+  isOTPExpired,
 } from '../utils/auth.utils';
+
+// Interface for OAuth user data
+interface OAuthUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture?: string;
+  id: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -90,7 +101,7 @@ export class AuthService {
     // Send OTP email
     try {
       await this.emailService.sendOtpEmail(email, otp, first_name);
-    } catch (error) {
+    } catch {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
     }
@@ -118,7 +129,7 @@ export class AuthService {
     // Verify OTP
     const isValidOtp = await this.verifyOTP(userId, otp);
     if (!isValidOtp) {
-      throw new BadRequestException('Invalid OTP');
+      throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.INVALID_OTP);
     }
 
     // Mark user as verified
@@ -157,7 +168,7 @@ export class AuthService {
         userData.email,
         userData.first_name
       );
-    } catch (error) {
+    } catch {
       // Don't fail the verification process if email fails
     }
 
@@ -197,7 +208,7 @@ export class AuthService {
     // Send new OTP email
     try {
       await this.emailService.sendOtpEmail(user.email, otp, user.first_name);
-    } catch (error) {
+    } catch {
       throw new BadRequestException(
         'Failed to send OTP email. Please try again later.'
       );
@@ -237,13 +248,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if user is verified (for non-OAuth users)
-    if (!user.is_verified) {
-      throw new UnauthorizedException(
-        'Please verify your email before signing in'
-      );
-    }
-
     // Get role name
     const role = await this.db.db
       .select({ name: roleSchema.name })
@@ -251,10 +255,30 @@ export class AuthService {
       .where(eq(roleSchema.id, user.role_id))
       .limit(1);
 
-    // Generate JWT token (only contains user ID)
+    // Check if user is verified
+    if (!user.is_verified) {
+      // Return user data without token when unverified
+      return {
+        message: 'Please verify your email before signing in',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            role: role[0]?.name || 'children',
+            is_verified: user.is_verified,
+          },
+        },
+        requiresVerification: true,
+      };
+    }
+
+    // Generate JWT token (only contains user ID) for verified users
     const access_token = generateToken(this.jwtService, user.id);
 
     return {
+      message: 'Login successful',
       data: {
         access_token,
         user: {
@@ -320,7 +344,7 @@ export class AuthService {
     };
   }
 
-  async validateChildOAuthLogin(userData: any, provider: string) {
+  async validateChildOAuthLogin(userData: OAuthUserData, provider: string) {
     const { email, firstName, lastName, picture, id: googleId } = userData;
 
     // Check if user already exists by email
@@ -348,7 +372,7 @@ export class AuthService {
       // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
       if (provider === 'google' && existingUser.google_social_id === googleId) {
         // Update user information if it has changed
-        const updates: any = {};
+        const updates: Record<string, string> = {};
         let hasUpdates = false;
 
         if (existingUser.first_name !== firstName) {
@@ -426,11 +450,11 @@ export class AuthService {
       role_id: childRole.id,
       is_active: true,
       is_verified: true, // OAuth users are automatically verified
-      google_social_id: provider === 'google' ? googleId : null,
+      google_social_id: provider === 'google' ? googleId : undefined,
     });
 
     // Create child record
-    const newChild = await this.childrenService.create({
+    await this.childrenService.create({
       user_id: newUser.id,
       dob: new Date().toISOString(), // Temporary date that will be updated later
       photo_url: picture,
@@ -452,27 +476,21 @@ export class AuthService {
     };
   }
 
-  generateTokenForOAuthUser(user: any) {
+  generateTokenForOAuthUser(user: { id: number }) {
     return generateToken(this.jwtService, user.id);
   }
 
-  // OTP Methods (moved from OtpService)
+  // OTP Methods (updated with expiration)
 
   /**
-   * Generate a random 6-digit OTP
-   */
-  private generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  /**
-   * Store OTP in user record
+   * Store OTP in user record with creation timestamp
    */
   async storeOTP(userId: number, otp: string): Promise<void> {
     await this.db.db
       .update(userSchema)
       .set({
         otp,
+        otp_created_at: new Date(),
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
@@ -482,23 +500,31 @@ export class AuthService {
    * Generate and store OTP for user
    */
   async generateAndStoreOTP(userId: number): Promise<string> {
-    const otp = this.generateOTP();
+    const otp = generateOTP();
     await this.storeOTP(userId, otp);
     return otp;
   }
 
   /**
-   * Verify OTP for user
+   * Verify OTP for user with expiration check
    */
   async verifyOTP(userId: number, otp: string): Promise<boolean> {
     const user = await this.db.db
-      .select({ otp: userSchema.otp })
+      .select({
+        otp: userSchema.otp,
+        otp_created_at: userSchema.otp_created_at,
+      })
       .from(userSchema)
       .where(eq(userSchema.id, userId))
       .limit(1);
 
     if (user.length === 0 || !user[0].otp) {
       return false;
+    }
+
+    // Check if OTP has expired
+    if (isOTPExpired(user[0].otp_created_at)) {
+      throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.OTP_EXPIRED);
     }
 
     return user[0].otp === otp;
@@ -513,6 +539,7 @@ export class AuthService {
       .set({
         is_verified: true,
         otp: null,
+        otp_created_at: null,
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
@@ -526,6 +553,7 @@ export class AuthService {
       .update(userSchema)
       .set({
         otp: null,
+        otp_created_at: null,
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));

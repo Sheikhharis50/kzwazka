@@ -7,10 +7,16 @@ import EditIcon from '@/icons/edit.svg';
 import Image from 'next/image';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
+import * as api from 'api';
+import { useMutation } from '@tanstack/react-query';
+import { APIError } from 'api/type';
+import { toast } from 'react-toastify';
+import { redirect } from 'next/navigation';
 
 const VerifyEmailPage = () => {
   const [otp, setOtp] = React.useState<string[]>(Array(6).fill(''));
   const inputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -40,20 +46,38 @@ const VerifyEmailPage = () => {
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const pasteData = e.clipboardData.getData('text').replace(/\D/g, '');
     if (pasteData.length === 6) {
-      pasteData.split('').forEach((char, i) => {
-        if (inputsRef.current[i]) inputsRef.current[i]!.value = char;
-      });
+      const newOtp = pasteData.split('');
+      setOtp(newOtp);
       inputsRef.current[5]?.focus();
     }
     e.preventDefault();
   };
 
+  const verifyEmailMutation = useMutation({
+    mutationFn: (credentials: { userId: string; otp: string }) =>
+      api.auth.verifyOtp(credentials),
+    onSuccess: (data) => {
+      localStorage.setItem('token', data.data?.access_token || '');
+      toast(data.message, { type: 'success' });
+      setTimeout(() => {
+        redirect('/dashboard');
+      }, 1000);
+    },
+    onError: (error: APIError) => {
+      console.error('Login failed:', error);
+      toast(error.message, { type: 'error' });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
-      // Handle OTP verification
-      console.log('OTP:', otpValue);
+      setError(null);
+      const userId = localStorage.getItem('userId');
+      verifyEmailMutation.mutate({ userId: userId || '', otp: otpValue });
+    } else {
+      setError('Please enter a valid 6-digit OTP.');
     }
   };
 
@@ -78,26 +102,39 @@ const VerifyEmailPage = () => {
         />
       </div>
       <form onSubmit={handleSubmit}>
-        <div className="flex gap-2 py-10 md:py-16 justify-center">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Input
-              key={i}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              ref={(el: HTMLInputElement | null) => {
-                inputsRef.current[i] = el;
-              }}
-              onChange={(e) => handleChange(e, i)}
-              onKeyDown={(e) => handleKeyDown(e, i)}
-              onPaste={handlePaste}
-              classes={{
-                input: 'max-w-10 md:max-w-12 h-12 md:h-14 text-center',
-              }}
-            />
-          ))}
+        <div className="py-10 md:py-16 text-center">
+          <div className="flex gap-2 justify-center">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Input
+                key={i}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={otp[i]}
+                ref={(el: HTMLInputElement | null) => {
+                  inputsRef.current[i] = el;
+                }}
+                onChange={(e) => handleChange(e, i)}
+                onKeyDown={(e) => handleKeyDown(e, i)}
+                onPaste={handlePaste}
+                classes={{
+                  input: 'max-w-10 md:max-w-12 h-12 md:h-14 text-center',
+                }}
+              />
+            ))}
+          </div>
+          {error && (
+            <span className="text-[10px] md:text-xs xl:text-sm text-red mt-1 xl:mt-2">
+              {error}
+            </span>
+          )}
         </div>
-        <Button type="submit" text="Verify" className="w-1/2 mx-auto mb-2" />
+        <Button
+          isLoading={verifyEmailMutation.isPending}
+          type="submit"
+          text="Verify"
+          className="w-1/2 mx-auto mb-2"
+        />
         <Paragraph text="Resend OTP" mute className="text-center" />
       </form>
     </>

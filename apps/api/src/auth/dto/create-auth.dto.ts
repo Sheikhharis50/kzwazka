@@ -6,6 +6,8 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsPhoneNumber,
+  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -67,6 +69,14 @@ export class SignUpDto {
     return value;
   })
   dob: string;
+
+  @IsString({ message: 'Phone must be a string' })
+  @IsOptional()
+  @Matches(/^\+?[\d\s\-\(\)]+$/, {
+    message: 'Please provide a valid phone number',
+  })
+  @Transform(({ value }) => value?.trim())
+  phone?: string;
 
   @IsString({ message: 'Parent first name must be a string' })
   @IsNotEmpty({ message: 'Parent first name is required' })

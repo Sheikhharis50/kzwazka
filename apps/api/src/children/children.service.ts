@@ -4,7 +4,7 @@ import { UpdateChildDto } from './dto/update-child.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
-import { DEFAULT_PAGE_SIZE } from '../app.constants';
+import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 
 @Injectable()
@@ -35,7 +35,7 @@ export class ChildrenService {
   }
 
   async findAll(params: { page: string; limit: string }) {
-    const { page = '1', limit = DEFAULT_PAGE_SIZE } = params;
+    const { page = '1', limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString() } = params;
 
     const offset = getPageOffset(page, limit);
 
@@ -120,7 +120,10 @@ export class ChildrenService {
       throw new NotFoundException('Child not found');
     }
 
-    return child[0];
+    return {
+      detail: 'Child record',
+      data: child[0],
+    };
   }
 
   async findByUserId(userId: number) {
@@ -175,7 +178,10 @@ export class ChildrenService {
       throw new NotFoundException('Child not found');
     }
 
-    return updatedChild[0];
+    return {
+      detail: 'Child updated successfully',
+      data: updatedChild[0],
+    };
   }
 
   async remove(id: number) {
@@ -188,7 +194,9 @@ export class ChildrenService {
       throw new NotFoundException('Child not found');
     }
 
-    return { message: 'Child deleted successfully' };
+    return {
+      detail: 'Child deleted successfully',
+    };
   }
 
   async updatePhotoUrl(id: number, photoUrl: string) {
@@ -205,7 +213,10 @@ export class ChildrenService {
       throw new NotFoundException('Child not found');
     }
 
-    return updatedChild[0];
+    return {
+      detail: 'Photo URL updated successfully',
+      data: updatedChild[0],
+    };
   }
 
   async assignLocation(childId: number, locationId: number) {
@@ -222,6 +233,9 @@ export class ChildrenService {
       throw new NotFoundException('Child not found');
     }
 
-    return updatedChild[0];
+    return {
+      detail: 'Location assigned successfully',
+      data: updatedChild[0],
+    };
   }
 }

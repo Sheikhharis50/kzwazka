@@ -48,10 +48,10 @@ export class CreateUserDto {
   @Transform(({ value }) => value?.trim())
   phone?: string;
 
-  @IsNumber({}, { message: 'Role ID must be a number' })
+  @IsString({ message: 'Role ID must be a string' })
   @IsNotEmpty({ message: 'Role ID is required' })
-  @Type(() => Number)
-  role_id: number;
+  @Type(() => String)
+  role_id: string;
 
   @IsBoolean({ message: 'Is active must be a boolean' })
   @IsOptional()

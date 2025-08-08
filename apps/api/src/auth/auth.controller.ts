@@ -33,7 +33,7 @@ export class AuthController {
   }
 
   @Post('verify-otp/:userId')
-  async verifyOtp(@Param('userId') userId: string, @Body() body: VerifyOtpDto) {
+  async verifyOtp(@Param('userId') userId: number, @Body() body: VerifyOtpDto) {
     return await this.authService.verifyOtp(userId, body);
   }
 

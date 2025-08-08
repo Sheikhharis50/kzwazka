@@ -11,10 +11,12 @@ async function bootstrap() {
   });
 
   // Enable CORS with production-ready configuration
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0) || ['http://localhost:3000'];
+
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',')
-      .map((origin) => origin.trim())
-      .filter((origin) => origin.length > 0) || ['http://localhost:3000'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

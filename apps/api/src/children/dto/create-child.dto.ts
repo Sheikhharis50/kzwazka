@@ -4,9 +4,9 @@ import {
   IsOptional,
   IsDateString,
   IsNumber,
-  IsUrl,
   MinLength,
   MaxLength,
+  IsBase64,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
@@ -46,7 +46,7 @@ export class CreateChildDto {
 
   @IsString({ message: 'Photo URL must be a string' })
   @IsOptional()
-  @IsUrl({}, { message: 'Please provide a valid URL for the photo' })
+  @IsBase64()
   @Transform(({ value }) => value?.trim())
   photo_url?: string;
 

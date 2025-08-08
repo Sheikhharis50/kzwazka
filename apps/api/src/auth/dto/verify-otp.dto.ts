@@ -5,6 +5,7 @@ import {
   IsEmail,
   MinLength,
   Matches,
+  IsNumber,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { IsPasswordMatch } from '../decorators/password-match.decorator';
@@ -18,9 +19,9 @@ export class VerifyOtpDto {
 }
 
 export class ResendOtpDto {
-  @IsString({ message: 'User ID must be a string' })
+  @IsNumber({}, { message: 'User ID must be a number' })
   @IsNotEmpty({ message: 'User ID is required' })
-  userId: string;
+  userId: number;
 }
 
 export class LoginDto {

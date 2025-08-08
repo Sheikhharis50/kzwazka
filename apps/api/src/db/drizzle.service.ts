@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schemas';
+import { getDatabaseConfig } from '../config/database.config';
 
 @Injectable()
 export class DatabaseService {

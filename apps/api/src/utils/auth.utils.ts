@@ -7,7 +7,7 @@ import { randomBytes, createHash } from 'crypto';
  */
 export const generateToken = (
   jwtService: JwtService,
-  userId: string
+  userId: number
 ): string => {
   const payload = {
     sub: userId,
@@ -60,4 +60,4 @@ export const isResetTokenExpired = (createdAt: Date): boolean => {
   const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
   return tokenAge > oneHour;
-};
+}; 

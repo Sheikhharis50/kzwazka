@@ -2,7 +2,7 @@ import React from 'react';
 
 const Loader = () => {
   return (
-    <div className="size-4 lg:size-5 border-4 border-white border-t-gray-300 rounded-full block mx-auto animate-spin" />
+    <div className="size-5 lg:size-6 border-[3px] border-gray-300 border-t-white rounded-full block mx-auto animate-spin" />
   );
 };
 

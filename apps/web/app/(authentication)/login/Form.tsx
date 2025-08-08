@@ -26,11 +26,22 @@ const LoginForm = () => {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginFormData) => api.auth.login(credentials),
     onSuccess: (data) => {
-      localStorage.setItem('token', data.access_token);
-      toast('Login successful!', { type: 'success' });
-      setTimeout(() => {
-        redirect('/dashboard');
-      }, 1000);
+      const isVerified = data.data?.user.is_verified;
+      if (isVerified) {
+        localStorage.setItem('token', data.data?.access_token || '');
+        toast(data.message, { type: 'success' });
+        setTimeout(() => {
+          redirect('/dashboard');
+        }, 1000);
+      } else {
+        const userId = data.data?.user.id;
+        api.auth.resendOtp({ userId: userId! });
+        localStorage.setItem('userId', userId || '');
+        toast(data.message, { type: 'info' });
+        setTimeout(() => {
+          redirect(`/verify-email`);
+        }, 1000);
+      }
 
       reset();
     },
@@ -64,7 +75,12 @@ const LoginForm = () => {
         {...register('password')}
         error={errors.password?.message}
       />
-      <Button text="Sign In" className="w-4/5 mb-2 mx-auto" type="submit" />
+      <Button
+        isLoading={loginMutation.isPending}
+        text="Sign In"
+        className="w-4/5 mb-2 mx-auto"
+        type="submit"
+      />
       <div className="flex items-center justify-center gap-1">
         <Paragraph text="Don’t have account?" mute />
         <Link href="/register">

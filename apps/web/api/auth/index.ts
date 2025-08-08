@@ -26,7 +26,7 @@ export const auth = {
   login: async (payload: {
     email: string;
     password: string;
-  }): Promise<{ access_token: string; user: IUser }> => {
+  }): Promise<APIResponse<ILoginResponse>> => {
     try {
       const response = await apiClient.post(`/auth/login`, payload);
       return response.data;
@@ -49,6 +49,19 @@ export const auth = {
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to verify OTP, please try again later');
+    }
+  },
+
+  resendOtp: async ({
+    userId,
+  }: {
+    userId: string;
+  }): Promise<APIResponse<ILoginResponse>> => {
+    try {
+      const response = await apiClient.post(`/auth/resend-otp`, { userId });
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to resend OTP, please try again later');
     }
   },
 };

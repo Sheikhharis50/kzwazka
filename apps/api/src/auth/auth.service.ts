@@ -46,6 +46,7 @@ export class AuthService {
       last_name,
       dob,
       phone,
+      photo_url,
       parent_first_name,
       parent_last_name,
     } = signUpDto;
@@ -78,6 +79,7 @@ export class AuthService {
     const newChild = await this.childrenService.create({
       user_id: newUser.id,
       dob,
+      photo_url,
       parent_first_name,
       parent_last_name,
     });

@@ -35,7 +35,10 @@ export class ChildrenService {
   }
 
   async findAll(params: { page: string; limit: string }) {
-    const { page = '1', limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString() } = params;
+    const {
+      page = '1',
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+    } = params;
 
     const offset = getPageOffset(page, limit);
 

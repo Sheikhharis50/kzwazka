@@ -4,6 +4,7 @@ import {
   timestamp,
   date,
   integer,
+  text,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { userSchema } from './userSchema';
@@ -15,7 +16,7 @@ export const childrenSchema = pgTable('children', {
     .notNull()
     .references(() => userSchema.id),
   dob: date('dob').notNull(),
-  photo_url: varchar('photo_url', { length: 500 }),
+  photo_url: text('photo_url'),
   parent_first_name: varchar('parent_first_name', { length: 100 }),
   parent_last_name: varchar('parent_last_name', { length: 100 }),
   location_id: integer('location_id').references(() => locationSchema.id),

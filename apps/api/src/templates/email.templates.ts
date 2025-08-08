@@ -11,7 +11,11 @@ export interface EmailTemplate {
  * Generate email templates
  */
 export const emailTemplates = {
-  otp: (userName: string, otp: string): EmailTemplate => ({
+  otp: (
+    userName: string,
+    otp: string,
+    expiryMinutes: number = 10
+  ): EmailTemplate => ({
     subject: 'Email Verification - Kzwazka',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -21,7 +25,7 @@ export const emailTemplates = {
         <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
           <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
         </div>
-        <p>This OTP will expire in 10 minutes.</p>
+        <p>This OTP will expire in ${expiryMinutes} minutes.</p>
         <p>If you didn't request this verification, please ignore this email.</p>
         <p>Best regards,<br>The Kzwazka Team</p>
       </div>
@@ -35,7 +39,7 @@ export const emailTemplates = {
       
       ${otp}
       
-      This OTP will expire in 10 minutes.
+      This OTP will expire in ${expiryMinutes} minutes.
       
       If you didn't request this verification, please ignore this email.
       

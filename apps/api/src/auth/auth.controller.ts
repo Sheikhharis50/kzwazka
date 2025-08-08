@@ -71,7 +71,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  async googleCallback(@Req() req, @Res() res) {
+  googleCallback(@Req() req, @Res() res) {
     try {
       if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({

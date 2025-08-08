@@ -8,7 +8,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { userSchema, roleSchema } from '../db/schemas';
-import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -31,14 +30,13 @@ export class UserService {
     }
 
     // Create user
-    const userId = uuidv4();
     const newUser = await this.db.db
       .insert(userSchema)
       .values({
-        id: userId,
         email,
         password: hashedPassword,
         ...userData,
+        phone: userData.phone,
         is_active: userData.is_active ?? true,
         is_verified: userData.is_verified ?? false,
       })
@@ -65,7 +63,7 @@ export class UserService {
       .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id));
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const user = await this.db.db
       .select({
         id: userSchema.id,
@@ -101,7 +99,7 @@ export class UserService {
     return user.length > 0 ? user[0] : null;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
     const { password, ...updateData } = updateUserDto;
 
     // Hash password if provided
@@ -129,7 +127,7 @@ export class UserService {
     return updatedUser[0];
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     const deletedUser = await this.db.db
       .delete(userSchema)
       .where(eq(userSchema.id, id))
@@ -142,7 +140,7 @@ export class UserService {
     return { message: 'User deleted successfully' };
   }
 
-  async updateGoogleSocialId(id: string, googleSocialId: string) {
+  async updateGoogleSocialId(id: number, googleSocialId: string) {
     const updatedUser = await this.db.db
       .update(userSchema)
       .set({
@@ -160,7 +158,7 @@ export class UserService {
     return updatedUser[0];
   }
 
-  async verifyPassword(userId: string, password: string): Promise<boolean> {
+  async verifyPassword(userId: number, password: string): Promise<boolean> {
     const user = await this.db.db
       .select({ password: userSchema.password })
       .from(userSchema)

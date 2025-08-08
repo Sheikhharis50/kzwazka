@@ -33,7 +33,7 @@ export class AuthController {
   }
 
   @Post('verify-otp/:userId')
-  async verifyOtp(@Param('userId') userId: string, @Body() body: VerifyOtpDto) {
+  async verifyOtp(@Param('userId') userId: number, @Body() body: VerifyOtpDto) {
     return await this.authService.verifyOtp(userId, body);
   }
 
@@ -71,7 +71,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  async googleCallback(@Req() req, @Res() res) {
+  googleCallback(@Req() req, @Res() res) {
     try {
       if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({

@@ -1,18 +1,25 @@
-import { pgTable, text, varchar, timestamp, date } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  varchar,
+  timestamp,
+  date,
+  integer,
+  text,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { userSchema } from './userSchema';
 import { locationSchema } from './locationSchema';
 
 export const childrenSchema = pgTable('children', {
-  id: text('id').primaryKey().notNull(),
-  user_id: text('user_id')
+  id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
+  user_id: integer('user_id')
     .notNull()
     .references(() => userSchema.id),
   dob: date('dob').notNull(),
-  photo_url: varchar('photo_url', { length: 500 }),
+  photo_url: text('photo_url'),
   parent_first_name: varchar('parent_first_name', { length: 100 }),
   parent_last_name: varchar('parent_last_name', { length: 100 }),
-  location_id: text('location_id').references(() => locationSchema.id),
+  location_id: integer('location_id').references(() => locationSchema.id),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at'),
 });

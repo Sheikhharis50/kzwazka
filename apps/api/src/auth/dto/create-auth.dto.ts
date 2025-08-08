@@ -6,6 +6,8 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsBase64,
+  IsOptional,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -68,6 +70,14 @@ export class SignUpDto {
   })
   dob: string;
 
+  @IsString({ message: 'Phone must be a string' })
+  @IsOptional()
+  @Matches(/^\+?[\d\s\-\(\)]+$/, {
+    message: 'Please provide a valid phone number',
+  })
+  @Transform(({ value }) => value?.trim())
+  phone?: string;
+
   @IsString({ message: 'Parent first name must be a string' })
   @IsNotEmpty({ message: 'Parent first name is required' })
   @MinLength(2, {
@@ -76,6 +86,12 @@ export class SignUpDto {
   @MaxLength(50, { message: 'Parent first name cannot exceed 50 characters' })
   @Transform(({ value }) => value?.trim())
   parent_first_name: string;
+
+  @IsString({ message: 'Photo URL must be a string' })
+  @IsOptional()
+  @IsBase64()
+  @Transform(({ value }) => value?.trim())
+  photo_url?: string;
 
   @IsString({ message: 'Parent last name must be a string' })
   @IsNotEmpty({ message: 'Parent last name is required' })

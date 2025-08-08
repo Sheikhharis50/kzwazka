@@ -1,11 +1,10 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { userSchema, roleSchema, childrenSchema } from 'src/db/schemas';
+import { userSchema } from 'src/db/schemas';
 const db = drizzle(process.env.DATABASE_URL!);
 async function main() {
   const user: typeof userSchema.$inferInsert = {
-    id: '1',
     password: '123456',
     role_id: '1',
     first_name: 'John',

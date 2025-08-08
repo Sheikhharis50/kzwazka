@@ -7,9 +7,8 @@ import {
   MinLength,
   MaxLength,
   Matches,
-  IsUUID,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -50,7 +49,7 @@ export class CreateUserDto {
 
   @IsString({ message: 'Role ID must be a string' })
   @IsNotEmpty({ message: 'Role ID is required' })
-  @IsUUID(4, { message: 'Role ID must be a valid UUID' })
+  @Type(() => String)
   role_id: string;
 
   @IsBoolean({ message: 'Is active must be a boolean' })

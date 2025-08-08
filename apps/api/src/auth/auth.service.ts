@@ -5,8 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from 'src/db/drizzle.service';
+import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from './dto/create-auth.dto';
 import {
@@ -18,16 +17,27 @@ import {
 import { roleSchema, userSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
+import { EmailService } from '../services/email.service';
+import { APP_CONSTANTS } from '../utils/constants';
 
-import { AppService } from '../app.service';
 import {
   generateToken,
   generatePasswordResetToken,
   hashResetToken,
-  verifyResetToken,
   generateResetUrl,
   isResetTokenExpired,
-} from './auth.utils';
+  generateOTP,
+  isOTPExpired,
+} from '../utils/auth.utils';
+
+// Interface for OAuth user data
+interface OAuthUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture?: string;
+  id: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -35,7 +45,7 @@ export class AuthService {
     private readonly db: DatabaseService,
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
-    private readonly appService: AppService,
+    private readonly emailService: EmailService,
     private jwtService: JwtService
   ) {}
 
@@ -46,6 +56,8 @@ export class AuthService {
       first_name,
       last_name,
       dob,
+      phone,
+      photo_url,
       parent_first_name,
       parent_last_name,
     } = signUpDto;
@@ -68,6 +80,7 @@ export class AuthService {
       password,
       first_name,
       last_name,
+      phone,
       role_id: childRole.id,
       is_active: true,
       is_verified: false, // Will be verified after OTP confirmation
@@ -77,6 +90,7 @@ export class AuthService {
     const newChild = await this.childrenService.create({
       user_id: newUser.id,
       dob,
+      photo_url,
       parent_first_name,
       parent_last_name,
     });
@@ -86,8 +100,8 @@ export class AuthService {
 
     // Send OTP email
     try {
-      await this.appService.sendOtpEmail(email, otp, first_name);
-    } catch (error) {
+      await this.emailService.sendOtpEmail(email, otp, first_name);
+    } catch {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
     }
@@ -95,26 +109,27 @@ export class AuthService {
     return {
       message:
         'User created successfully. Please verify your email with the OTP sent to your email address.',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name,
-        role: childRole.name,
-        is_verified: false,
+      data: {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          first_name: newUser.first_name,
+          last_name: newUser.last_name,
+          role: childRole.name,
+          is_verified: newUser.is_verified,
+        },
+        child: newChild,
       },
-      child: newChild,
-      requiresVerification: true,
     };
   }
 
-  async verifyOtp(userId: string, verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(userId: number, verifyOtpDto: VerifyOtpDto) {
     const { otp } = verifyOtpDto;
 
     // Verify OTP
     const isValidOtp = await this.verifyOTP(userId, otp);
     if (!isValidOtp) {
-      throw new BadRequestException('Invalid OTP');
+      throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.INVALID_OTP);
     }
 
     // Mark user as verified
@@ -149,11 +164,11 @@ export class AuthService {
 
     // Send welcome email
     try {
-      await this.appService.sendWelcomeEmail(
+      await this.emailService.sendWelcomeEmail(
         userData.email,
         userData.first_name
       );
-    } catch (error) {
+    } catch {
       // Don't fail the verification process if email fails
     }
 
@@ -162,19 +177,21 @@ export class AuthService {
 
     return {
       message: 'Email verified successfully',
-      access_token,
-      user: {
-        id: userData.id,
-        email: userData.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        role: role[0]?.name || 'children',
-        is_verified: true,
+      data: {
+        access_token,
+        user: {
+          id: userData.id,
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: role[0]?.name || 'children',
+          is_verified: true,
+        },
       },
     };
   }
 
-  async resendOtp(userId: string) {
+  async resendOtp(userId: number) {
     // Check if user exists and is not verified
     const user = await this.userService.findOne(userId);
     if (!user) {
@@ -190,8 +207,8 @@ export class AuthService {
 
     // Send new OTP email
     try {
-      await this.appService.sendOtpEmail(user.email, otp, user.first_name);
-    } catch (error) {
+      await this.emailService.sendOtpEmail(user.email, otp, user.first_name);
+    } catch {
       throw new BadRequestException(
         'Failed to send OTP email. Please try again later.'
       );
@@ -231,13 +248,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if user is verified (for non-OAuth users)
-    if (!user.is_verified) {
-      throw new UnauthorizedException(
-        'Please verify your email before signing in'
-      );
-    }
-
     // Get role name
     const role = await this.db.db
       .select({ name: roleSchema.name })
@@ -245,23 +255,45 @@ export class AuthService {
       .where(eq(roleSchema.id, user.role_id))
       .limit(1);
 
-    // Generate JWT token (only contains user ID)
+    // Check if user is verified
+    if (!user.is_verified) {
+      // Return user data without token when unverified
+      return {
+        message: 'Please verify your email before signing in',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            role: role[0]?.name || 'children',
+            is_verified: user.is_verified,
+          },
+        },
+        requiresVerification: true,
+      };
+    }
+
+    // Generate JWT token (only contains user ID) for verified users
     const access_token = generateToken(this.jwtService, user.id);
 
     return {
-      access_token,
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: role[0]?.name || 'children',
-        is_verified: user.is_verified,
+      message: 'Login successful',
+      data: {
+        access_token,
+        user: {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          role: role[0]?.name || 'children',
+          is_verified: user.is_verified,
+        },
       },
     };
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: number) {
     // Get user with role information
     const user = await this.db.db
       .select({
@@ -293,23 +325,26 @@ export class AuthService {
 
     // Return consistent structure with user object and related data
     return {
-      user: {
-        id: userData.id,
-        email: userData.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        phone: userData.phone,
-        is_active: userData.is_active,
-        is_verified: userData.is_verified,
-        role: userData.role_name,
-        created_at: userData.created_at,
-        updated_at: userData.updated_at,
+      message: 'Profile fetched successfully',
+      data: {
+        user: {
+          id: userData.id,
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          phone: userData.phone,
+          is_active: userData.is_active,
+          is_verified: userData.is_verified,
+          role: userData.role_name,
+          created_at: userData.created_at,
+          updated_at: userData.updated_at,
+        },
+        children: children,
       },
-      children: children,
     };
   }
 
-  async validateChildOAuthLogin(userData: any, provider: string) {
+  async validateChildOAuthLogin(userData: OAuthUserData, provider: string) {
     const { email, firstName, lastName, picture, id: googleId } = userData;
 
     // Check if user already exists by email
@@ -337,7 +372,7 @@ export class AuthService {
       // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
       if (provider === 'google' && existingUser.google_social_id === googleId) {
         // Update user information if it has changed
-        const updates: any = {};
+        const updates: Record<string, string> = {};
         let hasUpdates = false;
 
         if (existingUser.first_name !== firstName) {
@@ -386,13 +421,16 @@ export class AuthService {
           .limit(1);
 
         return {
-          id: existingUser.id,
-          email: existingUser.email,
-          first_name: firstName,
-          last_name: lastName,
-          role: role[0]?.name || 'children',
-          provider,
-          is_verified: true, // OAuth users are automatically verified
+          message: 'Google OAuth login successful',
+          data: {
+            id: existingUser.id,
+            email: existingUser.email,
+            first_name: firstName,
+            last_name: lastName,
+            role: role[0]?.name || 'children',
+            provider,
+            is_verified: true, // OAuth users are automatically verified
+          },
         };
       }
     }
@@ -412,11 +450,11 @@ export class AuthService {
       role_id: childRole.id,
       is_active: true,
       is_verified: true, // OAuth users are automatically verified
-      google_social_id: provider === 'google' ? googleId : null,
+      google_social_id: provider === 'google' ? googleId : undefined,
     });
 
     // Create child record
-    const newChild = await this.childrenService.create({
+    await this.childrenService.create({
       user_id: newUser.id,
       dob: new Date().toISOString(), // Temporary date that will be updated later
       photo_url: picture,
@@ -425,37 +463,34 @@ export class AuthService {
     });
 
     return {
-      id: newUser.id,
-      email: newUser.email,
-      first_name: newUser.first_name,
-      last_name: newUser.last_name,
-      role: childRole.name,
-      provider,
-      is_verified: true, // OAuth users are automatically verified
+      message: 'Google OAuth login successful',
+      data: {
+        id: newUser.id,
+        email: newUser.email,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name,
+        role: childRole.name,
+        provider,
+        is_verified: true, // OAuth users are automatically verified
+      },
     };
   }
 
-  generateTokenForOAuthUser(user: any) {
+  generateTokenForOAuthUser(user: { id: number }) {
     return generateToken(this.jwtService, user.id);
   }
 
-  // OTP Methods (moved from OtpService)
+  // OTP Methods (updated with expiration)
 
   /**
-   * Generate a random 6-digit OTP
+   * Store OTP in user record with creation timestamp
    */
-  private generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  /**
-   * Store OTP in user record
-   */
-  async storeOTP(userId: string, otp: string): Promise<void> {
+  async storeOTP(userId: number, otp: string): Promise<void> {
     await this.db.db
       .update(userSchema)
       .set({
         otp,
+        otp_created_at: new Date(),
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
@@ -464,18 +499,21 @@ export class AuthService {
   /**
    * Generate and store OTP for user
    */
-  async generateAndStoreOTP(userId: string): Promise<string> {
-    const otp = this.generateOTP();
+  async generateAndStoreOTP(userId: number): Promise<string> {
+    const otp = generateOTP();
     await this.storeOTP(userId, otp);
     return otp;
   }
 
   /**
-   * Verify OTP for user
+   * Verify OTP for user with expiration check
    */
-  async verifyOTP(userId: string, otp: string): Promise<boolean> {
+  async verifyOTP(userId: number, otp: string): Promise<boolean> {
     const user = await this.db.db
-      .select({ otp: userSchema.otp })
+      .select({
+        otp: userSchema.otp,
+        otp_created_at: userSchema.otp_created_at,
+      })
       .from(userSchema)
       .where(eq(userSchema.id, userId))
       .limit(1);
@@ -484,18 +522,24 @@ export class AuthService {
       return false;
     }
 
+    // Check if OTP has expired
+    if (isOTPExpired(user[0].otp_created_at)) {
+      throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.OTP_EXPIRED);
+    }
+
     return user[0].otp === otp;
   }
 
   /**
    * Mark user as verified and clear OTP
    */
-  async markUserAsVerified(userId: string): Promise<void> {
+  async markUserAsVerified(userId: number): Promise<void> {
     await this.db.db
       .update(userSchema)
       .set({
         is_verified: true,
         otp: null,
+        otp_created_at: null,
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
@@ -504,11 +548,12 @@ export class AuthService {
   /**
    * Clear OTP for user (after successful verification or expiration)
    */
-  async clearOTP(userId: string): Promise<void> {
+  async clearOTP(userId: number): Promise<void> {
     await this.db.db
       .update(userSchema)
       .set({
         otp: null,
+        otp_created_at: null,
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
@@ -517,7 +562,7 @@ export class AuthService {
   /**
    * Check if user is verified
    */
-  async isUserVerified(userId: string): Promise<boolean> {
+  async isUserVerified(userId: number): Promise<boolean> {
     const user = await this.db.db
       .select({ is_verified: userSchema.is_verified })
       .from(userSchema)
@@ -571,7 +616,7 @@ export class AuthService {
 
     // Send password reset email
     try {
-      await this.appService.sendPasswordResetEmail(
+      await this.emailService.sendPasswordResetEmail(
         user.email,
         user.first_name,
         resetUrl
@@ -641,7 +686,7 @@ export class AuthService {
 
     // Send confirmation email
     try {
-      await this.appService.sendPasswordResetConfirmationEmail(
+      await this.emailService.sendPasswordResetConfirmationEmail(
         user.email,
         user.first_name
       );
@@ -659,7 +704,7 @@ export class AuthService {
   /**
    * Clear reset token for user
    */
-  private async clearResetToken(userId: string): Promise<void> {
+  private async clearResetToken(userId: number): Promise<void> {
     await this.db.db
       .update(userSchema)
       .set({

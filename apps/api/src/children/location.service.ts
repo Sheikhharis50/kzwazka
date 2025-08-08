@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { locationSchema } from '../db/schemas';
-import { v4 as uuidv4 } from 'uuid';
 import { CreateLocationDto } from './dto/create-location.dto';
 
 @Injectable()
@@ -10,13 +9,11 @@ export class LocationService {
   constructor(private readonly db: DatabaseService) {}
 
   async create(createLocationDto: CreateLocationDto) {
-    const locationId = uuidv4();
     const { opening_time, closing_time, ...locationData } = createLocationDto;
 
     const newLocation = await this.db.db
       .insert(locationSchema)
       .values({
-        id: locationId,
         ...locationData,
         opening_time: opening_time || null,
         closing_time: closing_time || null,
@@ -34,7 +31,7 @@ export class LocationService {
       .where(eq(locationSchema.is_active, true));
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const location = await this.db.db
       .select()
       .from(locationSchema)
@@ -48,7 +45,7 @@ export class LocationService {
     return location[0];
   }
 
-  async update(id: string, updateLocationDto: Partial<CreateLocationDto>) {
+  async update(id: number, updateLocationDto: Partial<CreateLocationDto>) {
     const { opening_time, closing_time, ...updateData } = updateLocationDto;
 
     const updateValues = {
@@ -71,7 +68,7 @@ export class LocationService {
     return updatedLocation[0];
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     const deletedLocation = await this.db.db
       .delete(locationSchema)
       .where(eq(locationSchema.id, id))
@@ -84,7 +81,7 @@ export class LocationService {
     return { message: 'Location deleted successfully' };
   }
 
-  async deactivate(id: string) {
+  async deactivate(id: number) {
     const updatedLocation = await this.db.db
       .update(locationSchema)
       .set({

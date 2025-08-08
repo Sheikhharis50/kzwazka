@@ -11,7 +11,7 @@ import { AuthController } from './auth.controller';
 import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
 import { ChildrenModule } from '../children/children.module';
-import { AppService } from '../app.service';
+import { EmailService } from '../services/email.service';
 
 @Module({
   imports: [
@@ -34,7 +34,7 @@ import { AppService } from '../app.service';
   controllers: [AuthController],
   providers: [
     AuthService,
-    AppService,
+    EmailService,
     GoogleStrategy,
     JwtStrategy,
     GoogleOAuthGuard,

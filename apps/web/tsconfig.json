@@ -13,6 +13,8 @@
       "@/images/*": ["public/images/*"],
       "@/providers/*": ["app/providers/*"],
       "@/hooks/*": ["app/hooks/*"],
+      "@/*": ["app/*"],
+      "@config": ["config"],
     },
   },
   "include": [

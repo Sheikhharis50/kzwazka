@@ -8,12 +8,9 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from './dto/create-auth.dto';
-import {
-  VerifyOtpDto,
-  LoginDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-} from './dto/verify-otp.dto';
+import { LoginDto } from './dto/login-auth.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import { VerifyOtpDto } from './dto/otp.dto';
 import { roleSchema, userSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
@@ -86,6 +83,8 @@ export class AuthService {
       is_verified: false, // Will be verified after OTP confirmation
     });
 
+    const access_token = generateToken(this.jwtService, newUser.id);
+
     // Create child record
     const newChild = await this.childrenService.create({
       user_id: newUser.id,
@@ -110,6 +109,7 @@ export class AuthService {
       message:
         'User created successfully. Please verify your email with the OTP sent to your email address.',
       data: {
+        access_token,
         user: {
           id: newUser.id,
           email: newUser.email,
@@ -173,12 +173,10 @@ export class AuthService {
     }
 
     // Generate JWT token (only contains user ID)
-    const access_token = generateToken(this.jwtService, userData.id);
 
     return {
       message: 'Email verified successfully',
       data: {
-        access_token,
         user: {
           id: userData.id,
           email: userData.email,
@@ -255,12 +253,14 @@ export class AuthService {
       .where(eq(roleSchema.id, user.role_id))
       .limit(1);
 
+    const access_token = generateToken(this.jwtService, user.id);
     // Check if user is verified
     if (!user.is_verified) {
       // Return user data without token when unverified
       return {
         message: 'Please verify your email before signing in',
         data: {
+          access_token,
           user: {
             id: user.id,
             email: user.email,
@@ -275,7 +275,6 @@ export class AuthService {
     }
 
     // Generate JWT token (only contains user ID) for verified users
-    const access_token = generateToken(this.jwtService, user.id);
 
     return {
       message: 'Login successful',

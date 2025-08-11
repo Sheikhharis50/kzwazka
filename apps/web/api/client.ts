@@ -1,11 +1,12 @@
 import { API_URL } from '@config';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 import { APIResponse } from './type';
 
 const apiClient = axios.create({ baseURL: API_URL });
 
 apiClient.interceptors.request.use(
   (config) => {
+    if (!config.headers) config.headers = new AxiosHeaders();
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       config.headers['Content-Type'] = 'application/json';
@@ -38,7 +39,7 @@ apiClient.interceptors.response.use(
     };
 
     if (
-      window &&
+      typeof window !== 'undefined' &&
       (error.status === 401 || error.response?.status === 401) &&
       !location.pathname.includes('login')
     ) {

@@ -15,13 +15,13 @@ export function handleApiError(error: unknown, fallback?: string): never {
         message: Array.isArray(data?.message)
           ? data.message.join(', ')
           : data?.message || 'Something went wrong',
-        statusCode: data?.statusCode || axiosError.response.status,
+        status: data?.statusCode || axiosError.response.status,
       } satisfies APIError;
     }
   }
 
   throw {
     message: fallback || 'Unexpected error occurred',
-    statusCode: 500,
+    status: 500,
   } satisfies APIError;
 }

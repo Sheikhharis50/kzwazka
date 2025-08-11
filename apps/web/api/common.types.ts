@@ -14,5 +14,5 @@ export interface APIResponse<T> {
 
 export interface APIError {
   message: string;
-  statusCode: number;
+  status: number;
 }

@@ -338,7 +338,7 @@ export class AuthService {
           created_at: userData.created_at,
           updated_at: userData.updated_at,
         },
-        children: children,
+        child: children[0],
       },
     };
   }

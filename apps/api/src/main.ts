@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe, BadRequestException, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
@@ -49,6 +50,55 @@ async function bootstrap() {
     })
   );
 
+  const config = new DocumentBuilder()
+    .setTitle('Kzwazka API')
+    .setDescription('Wrestling training management system API')
+    .setVersion('1.0')
+    .addTag('Children', 'Children management endpoints')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth' // This name here is important for references
+    )
+    .addOAuth2(
+      {
+        type: 'oauth2',
+        flows: {
+          authorizationCode: {
+            authorizationUrl: 'https://accounts.google.com/o/oauth2/auth',
+            tokenUrl: 'https://oauth2.googleapis.com/token',
+            scopes: {
+              email: 'Access to user email',
+              profile: 'Access to user profile',
+            },
+          },
+        },
+      },
+      'Google-OAuth2' // This name here is important for references
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  // Serve Swagger UI
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+    customSiteTitle: 'Kzwazka API Documentation',
+    customCss: '.swagger-ui .topbar { display: none }',
+  });
+
   // Get port from environment variable or use default
   const port = process.env.PORT || process.env.PORT || 8000;
 
@@ -56,7 +106,9 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0'); // Listen on all network interfaces for production
 
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`📝 API Documentation available at: http://localhost:${port}/api`);
+  logger.log(
+    `📝 API Documentation available at: http://localhost:${port}/api/docs`
+  );
   logger.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
   // Graceful shutdown handling

@@ -89,7 +89,7 @@ export const emailTemplates = {
         <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
         <p style="word-break: break-all; color: #007bff;">${resetUrl}</p>
         <p>This link will expire in 1 hour for security reasons.</p>
-        <p>If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+        <p>If you didn't request this password reset, please contact us!</p>
         <p>Best regards,<br>The Kzwazka Team</p>
       </div>
     `,
@@ -103,9 +103,9 @@ export const emailTemplates = {
       ${resetUrl}
       
       This link will expire in 1 hour for security reasons.
-      
-      If you didn't request this password reset, please ignore this email and your password will remain unchanged.
-      
+
+      If you didn't request this password reset, please contact us!
+
       Best regards,
       The Kzwazka Team
     `,

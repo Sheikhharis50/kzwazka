@@ -7,28 +7,23 @@ import {
   MinLength,
   MaxLength,
   Matches,
-  IsUUID,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
-  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 
   @IsString({ message: 'First name must be a string' })
   @IsNotEmpty({ message: 'First name is required' })
   @MinLength(2, { message: 'First name must be at least 2 characters long' })
   @MaxLength(50, { message: 'First name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   first_name: string;
 
   @IsString({ message: 'Last name must be a string' })
   @IsNotEmpty({ message: 'Last name is required' })
   @MinLength(2, { message: 'Last name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Last name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   last_name: string;
 
   @IsString({ message: 'Password must be a string' })
@@ -42,15 +37,13 @@ export class CreateUserDto {
 
   @IsString({ message: 'Phone must be a string' })
   @IsOptional()
-  @Matches(/^\+?[\d\s\-\(\)]+$/, {
+  @Matches(/^\+?[\d\s\-\\(\\)]+$/, {
     message: 'Please provide a valid phone number',
   })
-  @Transform(({ value }) => value?.trim())
   phone?: string;
 
   @IsString({ message: 'Role ID must be a string' })
   @IsNotEmpty({ message: 'Role ID is required' })
-  @IsUUID(4, { message: 'Role ID must be a valid UUID' })
   role_id: string;
 
   @IsBoolean({ message: 'Is active must be a boolean' })
@@ -63,6 +56,5 @@ export class CreateUserDto {
 
   @IsString({ message: 'Google social ID must be a string' })
   @IsOptional()
-  @Transform(({ value }) => value?.trim())
   google_social_id?: string;
 }

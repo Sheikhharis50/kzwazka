@@ -4,12 +4,13 @@ import {
   varchar,
   boolean,
   timestamp,
+  integer,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { Role, roleSchema } from './roleSchema';
 
 export const userSchema = pgTable('user', {
-  id: text('id').primaryKey().notNull(),
+  id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
   first_name: varchar('first_name', { length: 100 }).notNull(),
   last_name: varchar('last_name', { length: 100 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
@@ -23,6 +24,7 @@ export const userSchema = pgTable('user', {
   google_social_id: varchar('google_social_id', { length: 255 }),
   token: text('token'),
   otp: varchar('otp', { length: 10 }),
+  otp_created_at: timestamp('otp_created_at'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at'),
 });

@@ -4,22 +4,16 @@ import {
   Body,
   Get,
   UseGuards,
-  Request,
   HttpStatus,
   Req,
   Res,
   UnauthorizedException,
-  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
-import {
-  VerifyOtpDto,
-  ResendOtpDto,
-  LoginDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-} from './dto/verify-otp.dto';
+import { LoginDto } from './dto/login-auth.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
@@ -31,15 +25,15 @@ export class AuthController {
   async signUp(@Body() body: SignUpDto) {
     return await this.authService.signUp(body);
   }
-
-  @Post('verify-otp/:userId')
-  async verifyOtp(@Param('userId') userId: string, @Body() body: VerifyOtpDto) {
-    return await this.authService.verifyOtp(userId, body);
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-otp')
+  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: any) {
+    return await this.authService.verifyOtp(req.user.id, body);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Post('resend-otp')
-  async resendOtp(@Body() body: ResendOtpDto) {
-    return await this.authService.resendOtp(body.userId);
+  async resendOtp(@Req() req: any) {
+    return await this.authService.resendOtp(req.user.id);
   }
 
   @Post('login')
@@ -59,8 +53,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getProfile(@Request() req) {
-    return this.authService.getProfile(req.user.sub);
+  async getProfile(@Req() req: any) {
+    return this.authService.getProfile(req.user.id);
   }
 
   @Get('google/login')
@@ -71,7 +65,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  async googleCallback(@Req() req, @Res() res) {
+  googleCallback(@Req() req: any, @Res() res: any) {
     try {
       if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({

@@ -6,13 +6,12 @@ import {
   MinLength,
   MaxLength,
   Matches,
+  IsOptional,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
 
 export class SignUpDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
-  @Transform(({ value }) => value?.toLowerCase().trim())
   email: string;
 
   @IsString({ message: 'Password must be a string' })
@@ -28,14 +27,12 @@ export class SignUpDto {
   @IsNotEmpty({ message: 'First name is required' })
   @MinLength(2, { message: 'First name must be at least 2 characters long' })
   @MaxLength(50, { message: 'First name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   first_name: string;
 
   @IsString({ message: 'Last name must be a string' })
   @IsNotEmpty({ message: 'Last name is required' })
   @MinLength(2, { message: 'Last name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Last name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   last_name: string;
 
   @IsDateString(
@@ -43,30 +40,14 @@ export class SignUpDto {
     { message: 'Date of birth must be a valid date string (YYYY-MM-DD)' }
   )
   @IsNotEmpty({ message: 'Date of birth is required' })
-  @Transform(({ value }) => {
-    // Ensure we get a proper date string
-    if (typeof value === 'string') {
-      const datePart = value.split('T')[0]; // Take only the date part if it's a full ISO string
-
-      // Validate that the date is not in the future
-      const inputDate = new Date(datePart);
-      const today = new Date();
-      if (inputDate > today) {
-        return null;
-      }
-
-      // Validate that the person is not too old (e.g., over 120 years)
-      const minDate = new Date();
-      minDate.setFullYear(today.getFullYear() - 120);
-      if (inputDate < minDate) {
-        return null;
-      }
-
-      return datePart;
-    }
-    return value;
-  })
   dob: string;
+
+  @IsString({ message: 'Phone must be a string' })
+  @IsOptional()
+  @Matches(/^\+?[\d\s\-\\(\\)]+$/, {
+    message: 'Please provide a valid phone number',
+  })
+  phone?: string;
 
   @IsString({ message: 'Parent first name must be a string' })
   @IsNotEmpty({ message: 'Parent first name is required' })
@@ -74,8 +55,11 @@ export class SignUpDto {
     message: 'Parent first name must be at least 2 characters long',
   })
   @MaxLength(50, { message: 'Parent first name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   parent_first_name: string;
+
+  @IsString({ message: 'Photo URL must be a string' })
+  @IsOptional()
+  photo_url?: string;
 
   @IsString({ message: 'Parent last name must be a string' })
   @IsNotEmpty({ message: 'Parent last name is required' })
@@ -83,6 +67,5 @@ export class SignUpDto {
     message: 'Parent last name must be at least 2 characters long',
   })
   @MaxLength(50, { message: 'Parent last name cannot exceed 50 characters' })
-  @Transform(({ value }) => value?.trim())
   parent_last_name: string;
 }

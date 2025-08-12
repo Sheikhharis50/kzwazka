@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'crypto';
+import { APP_CONSTANTS } from './constants';
 
 /**
  * Generate a JWT token for a user
@@ -7,7 +8,7 @@ import { randomBytes, createHash } from 'crypto';
  */
 export const generateToken = (
   jwtService: JwtService,
-  userId: string
+  userId: number
 ): string => {
   const payload = {
     sub: userId,
@@ -60,4 +61,34 @@ export const isResetTokenExpired = (createdAt: Date): boolean => {
   const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
 
   return tokenAge > oneHour;
+};
+
+/**
+ * Generate a random 6-digit OTP
+ */
+export const generateOTP = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+/**
+ * Check if OTP has expired based on creation time
+ * Uses OTP_EXPIRY_MINUTES from constants
+ */
+export const isOTPExpired = (otpCreatedAt: Date | null): boolean => {
+  if (!otpCreatedAt) {
+    return true; // No creation time means OTP is expired
+  }
+
+  const now = new Date();
+  const otpAge = now.getTime() - otpCreatedAt.getTime();
+  const expiryTime = APP_CONSTANTS.OTP.EXPIRY_MINUTES * 60 * 1000; // Convert minutes to milliseconds
+
+  return otpAge > expiryTime;
+};
+
+/**
+ * Get OTP expiry time in minutes
+ */
+export const getOTPExpiryMinutes = (): number => {
+  return APP_CONSTANTS.OTP.EXPIRY_MINUTES;
 };

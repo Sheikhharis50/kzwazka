@@ -8,6 +8,20 @@
       "when": 1754048935707,
       "tag": "0000_giant_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1754559459597,
+      "tag": "0001_organic_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754646598471,
+      "tag": "0002_boring_the_initiative",
+      "breakpoints": true
     }
   ]
 }

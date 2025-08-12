@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AppContextsProvider } from '@/providers';
+import { ToastContainer } from 'react-toastify';
 
 export const metadata: Metadata = {
   title: 'Kzwazka',
@@ -13,7 +15,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppContextsProvider>
+          <ToastContainer
+            position="bottom-right"
+            autoClose={5000}
+            pauseOnFocusLoss
+            pauseOnHover
+          />
+          {children}
+        </AppContextsProvider>
+      </body>
     </html>
   );
 }

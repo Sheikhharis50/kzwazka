@@ -7,16 +7,18 @@ import EditIcon from '@/icons/edit.svg';
 import Image from 'next/image';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import * as api from 'api';
-import { useMutation } from '@tanstack/react-query';
-import { APIError } from 'api/type';
-import { toast } from 'react-toastify';
-import { redirect } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useUser';
 
 const VerifyEmailPage = () => {
   const [otp, setOtp] = React.useState<string[]>(Array(6).fill(''));
   const inputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
   const [error, setError] = React.useState<string | null>(null);
+  const { verifyOtp, isLoading, resendOtp } = useAuth();
+  const [canResendOtp, setCanResendOtp] = React.useState(true);
+  const [secondsLeft, setSecondsLeft] = React.useState(0);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { user } = useUser();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -53,33 +55,47 @@ const VerifyEmailPage = () => {
     e.preventDefault();
   };
 
-  const verifyEmailMutation = useMutation({
-    mutationFn: (credentials: { userId: string; otp: string }) =>
-      api.auth.verifyOtp(credentials),
-    onSuccess: (data) => {
-      localStorage.setItem('token', data.data?.access_token || '');
-      toast(data.message, { type: 'success' });
-      setTimeout(() => {
-        redirect('/dashboard');
-      }, 1000);
-    },
-    onError: (error: APIError) => {
-      console.error('Login failed:', error);
-      toast(error.message, { type: 'error' });
-    },
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
       setError(null);
-      const userId = localStorage.getItem('userId');
-      verifyEmailMutation.mutate({ userId: userId || '', otp: otpValue });
+      verifyOtp({ otp: otpValue });
     } else {
       setError('Please enter a valid 6-digit OTP.');
     }
   };
+
+  const startOtpCooldown = () => {
+    setCanResendOtp(false);
+    setSecondsLeft(30);
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setCanResendOtp(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -92,7 +108,7 @@ const VerifyEmailPage = () => {
         <Paragraph text="We’ve sent a 6-digit OTP to your email" mute />
       </div>
       <div className="flex gap-2 items-center justify-center">
-        <Paragraph text="“info@gmail.com”" mute />
+        <Paragraph text={`“${user?.email}”`} mute />
         <Image
           src={EditIcon}
           alt="edit"
@@ -130,12 +146,21 @@ const VerifyEmailPage = () => {
           )}
         </div>
         <Button
-          isLoading={verifyEmailMutation.isPending}
+          isLoading={isLoading}
           type="submit"
           text="Verify"
           className="w-1/2 mx-auto mb-2"
         />
-        <Paragraph text="Resend OTP" mute className="text-center" />
+        <Button
+          text={canResendOtp ? 'Resend OTP' : `Resend in (${secondsLeft}s)`}
+          className="hover:underline text-mute! bg-transparent! w-1/2 mx-auto"
+          onClick={() => {
+            if (!canResendOtp) return;
+            resendOtp();
+            startOtpCooldown();
+          }}
+          disabled={!canResendOtp}
+        />
       </form>
     </>
   );

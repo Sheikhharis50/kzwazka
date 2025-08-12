@@ -9,10 +9,12 @@ import { ProfileIcon, LogoutIcon } from '@/icons/sidebarIcons';
 import Ribbon from '@/images/sidebar-ribbon.png';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
 import Logo from '@/components/Logo';
+import { useAuth } from '@/hooks/useAuth';
 
 const Sidebar = () => {
   const { isSidebarVisible, hideSidebar } = useSettingsContext();
   const pathname = usePathname().split('/').pop();
+  const { logout } = useAuth();
 
   return (
     <>
@@ -52,6 +54,7 @@ const Sidebar = () => {
                 url: '',
               }}
               isActive={false}
+              onClick={logout}
             />
           </div>
           <div />

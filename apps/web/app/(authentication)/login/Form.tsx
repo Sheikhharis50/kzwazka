@@ -7,52 +7,21 @@ import Paragraph from '@/components/Paragraph';
 import { LoginFormData, loginSchema } from './schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import * as api from 'api';
-import { toast } from 'react-toastify';
-import { redirect } from 'next/navigation';
-import { APIError } from 'api/type';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoginForm = () => {
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: (credentials: LoginFormData) => api.auth.login(credentials),
-    onSuccess: (data) => {
-      const isVerified = data.data?.user.is_verified;
-      if (isVerified) {
-        localStorage.setItem('token', data.data?.access_token || '');
-        toast(data.message, { type: 'success' });
-        setTimeout(() => {
-          redirect('/dashboard');
-        }, 1000);
-      } else {
-        const userId = data.data?.user.id;
-        api.auth.resendOtp({ userId: userId! });
-        localStorage.setItem('userId', userId || '');
-        toast(data.message, { type: 'info' });
-        setTimeout(() => {
-          redirect(`/verify-email`);
-        }, 1000);
-      }
-
-      reset();
-    },
-    onError: (error: APIError) => {
-      console.error('Login failed:', error);
-      toast(error.message, { type: 'error' });
-    },
-  });
+  const { login, isLoading } = useAuth();
 
   const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+    login(data);
   };
 
   return (
@@ -76,7 +45,7 @@ const LoginForm = () => {
         error={errors.password?.message}
       />
       <Button
-        isLoading={loginMutation.isPending}
+        isLoading={isLoading}
         text="Sign In"
         className="w-4/5 mb-2 mx-auto"
         type="submit"
@@ -87,7 +56,6 @@ const LoginForm = () => {
           <Paragraph text="Register here" className="underline" />
         </Link>
       </div>
-      <p className="text-mute text-center"> </p>
     </form>
   );
 };

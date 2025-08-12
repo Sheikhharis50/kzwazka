@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppContextsProvider } from '@/providers';
 import { ToastContainer } from 'react-toastify';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export const metadata: Metadata = {
   title: 'Kzwazka',
@@ -23,7 +24,7 @@ export default function RootLayout({
             pauseOnFocusLoss
             pauseOnHover
           />
-          {children}
+          <ProtectedRoute>{children}</ProtectedRoute>
         </AppContextsProvider>
       </body>
     </html>

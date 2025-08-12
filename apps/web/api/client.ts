@@ -1,6 +1,7 @@
 import { API_URL } from '@config';
 import axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 import { APIResponse } from './type';
+import { publicRoutes } from '@/constants/public-routes';
 
 const apiClient = axios.create({ baseURL: API_URL });
 
@@ -41,7 +42,7 @@ apiClient.interceptors.response.use(
     if (
       typeof window !== 'undefined' &&
       (error.status === 401 || error.response?.status === 401) &&
-      !location.pathname.includes('login')
+      !publicRoutes.includes(location.pathname)
     ) {
       if (error.response) error.response = removeSession(error.response);
     }

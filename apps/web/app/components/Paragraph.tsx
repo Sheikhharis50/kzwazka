@@ -1,15 +1,21 @@
 import React from 'react';
 
-interface ParagraphProps {
+interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
   className?: string;
   mute?: boolean;
   text: string;
 }
 
-const Paragraph = ({ text, className = '', mute = false }: ParagraphProps) => {
+const Paragraph = ({
+  text,
+  className = '',
+  mute = false,
+  ...rest
+}: ParagraphProps) => {
   return (
     <p
       className={`text-xs md:text-sm xl:text-base ${mute ? 'text-mute' : ''} ${className}`}
+      {...rest}
     >
       {text}
     </p>

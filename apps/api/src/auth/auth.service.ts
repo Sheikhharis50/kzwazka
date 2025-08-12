@@ -16,6 +16,7 @@ import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
 import { APP_CONSTANTS } from '../utils/constants';
+import { Logger } from '@nestjs/common';
 
 import {
   generateToken,
@@ -38,6 +39,8 @@ interface OAuthUserData {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly userService: UserService,
@@ -256,6 +259,21 @@ export class AuthService {
     const access_token = generateToken(this.jwtService, user.id);
     // Check if user is verified
     if (!user.is_verified) {
+      const newOtp = await this.generateAndStoreOTP(user.id);
+
+      // Send new OTP email
+      try {
+        await this.emailService.sendOtpEmail(
+          user.email,
+          newOtp,
+          user.first_name
+        );
+      } catch (error) {
+        this.logger.error('Failed to send OTP email during sign in:', error);
+        throw new BadRequestException(
+          'Login successful but failed to send verification OTP. Please try resending OTP.'
+        );
+      }
       // Return user data without token when unverified
       return {
         message: 'Please verify your email before signing in',
@@ -338,7 +356,7 @@ export class AuthService {
           created_at: userData.created_at,
           updated_at: userData.updated_at,
         },
-        children: children,
+        child: children[0],
       },
     };
   }

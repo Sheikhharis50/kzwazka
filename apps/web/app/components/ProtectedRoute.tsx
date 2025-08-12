@@ -15,6 +15,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { hasToken } = useAuth();
   const { isLoading: isUserLoading, user } = useUser();
 
+  React.useEffect(() => {
+    if (pathname.includes('login') && hasToken && !!user && user.is_verified) {
+      router.push('/dashboard');
+    }
+  }, [pathname, hasToken, user, router]);
+
   if (publicRoutes.includes(pathname)) {
     return <>{children}</>;
   }

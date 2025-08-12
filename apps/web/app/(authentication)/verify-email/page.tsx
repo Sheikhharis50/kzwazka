@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useUser';
 
 const VerifyEmailPage = () => {
   const [otp, setOtp] = React.useState<string[]>(Array(6).fill(''));
@@ -16,6 +17,7 @@ const VerifyEmailPage = () => {
   const { verifyOtp, isLoading, resendOtp } = useAuth();
   const [canResendOtp, setCanResendOtp] = React.useState(true);
   const [secondsLeft, setSecondsLeft] = React.useState(0);
+  const { user } = useUser();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -90,7 +92,7 @@ const VerifyEmailPage = () => {
         <Paragraph text="We’ve sent a 6-digit OTP to your email" mute />
       </div>
       <div className="flex gap-2 items-center justify-center">
-        <Paragraph text="“info@gmail.com”" mute />
+        <Paragraph text={`“${user?.email}”`} mute />
         <Image
           src={EditIcon}
           alt="edit"

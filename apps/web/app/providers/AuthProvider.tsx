@@ -25,14 +25,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 );
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem('token')
-  );
+  const [token, setToken] = useState<string | null>(null);
   const registerMutation = useRegisterMutation();
   const verifyOtpMutation = useVerifyEmailMutation();
   const loginMutation = useLoginMutation();
   const resendOtpMutation = useResendOtpMutation();
-  console.log(token);
 
   const register = async (credentials: RegisterPayload) => {
     await registerMutation.mutateAsync(credentials);

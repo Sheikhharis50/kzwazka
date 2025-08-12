@@ -4,6 +4,7 @@ import { useLoginMutation } from '@/hooks/useLoginMutation';
 import { useRegisterMutation } from '@/hooks/useRegisterMutation';
 import { useResendOtpMutation } from '@/hooks/useResendOtpMutation';
 import { useVerifyEmailMutation } from '@/hooks/useVerifyEmailMutation';
+import { useQueryClient } from '@tanstack/react-query';
 import { RegisterPayload } from 'api/type';
 import { redirect } from 'next/navigation';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyOtpMutation = useVerifyEmailMutation();
   const loginMutation = useLoginMutation();
   const resendOtpMutation = useResendOtpMutation();
+  const queryClient = useQueryClient();
 
   const register = async (credentials: RegisterPayload) => {
     await registerMutation.mutateAsync(credentials);
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
+    queryClient.clear();
     localStorage.removeItem('token');
     redirect('/login');
   };

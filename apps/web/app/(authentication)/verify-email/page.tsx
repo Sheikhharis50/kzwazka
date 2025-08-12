@@ -17,6 +17,7 @@ const VerifyEmailPage = () => {
   const { verifyOtp, isLoading, resendOtp } = useAuth();
   const [canResendOtp, setCanResendOtp] = React.useState(true);
   const [secondsLeft, setSecondsLeft] = React.useState(0);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
   const { user } = useUser();
 
   const handleChange = (
@@ -67,12 +68,19 @@ const VerifyEmailPage = () => {
 
   const startOtpCooldown = () => {
     setCanResendOtp(false);
-    setSecondsLeft(30); // start at 30 seconds
+    setSecondsLeft(30);
 
-    const timer = setInterval(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
           setCanResendOtp(true);
           return 0;
         }
@@ -80,6 +88,14 @@ const VerifyEmailPage = () => {
       });
     }, 1000);
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -139,6 +155,7 @@ const VerifyEmailPage = () => {
           text={canResendOtp ? 'Resend OTP' : `Resend in (${secondsLeft}s)`}
           className="hover:underline text-mute! bg-transparent! w-1/2 mx-auto"
           onClick={() => {
+            if (!canResendOtp) return;
             resendOtp();
             startOtpCooldown();
           }}

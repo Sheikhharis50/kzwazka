@@ -1,11 +1,10 @@
 import { apiClient } from 'api/client';
 import {
   RegisterPayload,
-  IUser,
   IRegisterResponse,
   ILoginResponse,
+  IVerifyOtpResponse,
 } from './type';
-import { API_BASE_URL } from '@config';
 import { handleApiError } from 'utils/apiErrorHandler';
 import { APIResponse } from 'api/type';
 
@@ -14,8 +13,6 @@ export const auth = {
     payload: RegisterPayload
   ): Promise<APIResponse<IRegisterResponse>> => {
     try {
-      console.log(API_BASE_URL);
-
       const response = await apiClient.post(`/auth/signup`, payload);
       return response.data;
     } catch (error) {
@@ -36,14 +33,12 @@ export const auth = {
   },
 
   verifyOtp: async ({
-    userId,
     otp,
   }: {
-    userId: string;
     otp: string;
-  }): Promise<APIResponse<ILoginResponse>> => {
+  }): Promise<APIResponse<IVerifyOtpResponse>> => {
     try {
-      const response = await apiClient.post(`/auth/verify-otp/${userId}`, {
+      const response = await apiClient.post(`/auth/verify-otp`, {
         otp,
       });
       return response.data;
@@ -52,13 +47,9 @@ export const auth = {
     }
   },
 
-  resendOtp: async ({
-    userId,
-  }: {
-    userId: string;
-  }): Promise<APIResponse<ILoginResponse>> => {
+  resendOtp: async (): Promise<APIResponse<null>> => {
     try {
-      const response = await apiClient.post(`/auth/resend-otp`, { userId });
+      const response = await apiClient.post(`/auth/resend-otp`);
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to resend OTP, please try again later');

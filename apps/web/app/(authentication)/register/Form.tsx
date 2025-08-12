@@ -16,12 +16,8 @@ import {
 } from './schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import * as api from 'api';
-import { toast } from 'react-toastify';
-import { redirect } from 'next/navigation';
-import { APIError } from 'api/type';
 import { RegisterPayload } from 'api/auth/type';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RegisterFormProps {
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -49,29 +45,13 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
       last_name: '',
     },
   });
-  console.log({ errorsFirst, errorsSecond });
 
   const [formData, setFormData] = React.useState<FirstStepFormData>();
   const [preview, setPreview] = React.useState<string | null>(null);
   const [base64Data, setBase64Data] = React.useState<string>('');
+  const { register, isLoading } = useAuth();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const registerMutation = useMutation({
-    mutationFn: (credentials: RegisterPayload) =>
-      api.auth.register(credentials),
-    onSuccess: (data) => {
-      localStorage.setItem('userId', data.data?.user.id || '');
-      toast(data.message, { type: 'success' });
-      setTimeout(() => {
-        redirect('/verify-email');
-      }, 1000);
-    },
-    onError: (error: APIError) => {
-      console.error('Login failed:', error);
-      toast(error.message, { type: 'error' });
-    },
-  });
 
   const handleStep1 = (data: FirstStepFormData) => {
     setFormData(data);
@@ -84,7 +64,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
       ...data,
       photo_url: base64Data || '',
     };
-    registerMutation.mutate(fullData);
+    register(fullData);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,7 +202,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
               text="Continue"
               type="submit"
               className="w-4/5 mx-auto mb-1"
-              isLoading={registerMutation.isPending}
+              isLoading={isLoading}
             />
           </div>
         </form>

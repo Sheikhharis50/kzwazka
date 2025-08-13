@@ -6,11 +6,11 @@ import LoginImage from '@/images/login.png';
 import RegisterImage from '@/images/register.png';
 import Ribbon from '@/images/login-ribbon.png';
 import Logo from '@/components/Logo';
-import ArrowLeft from '@/icons/left-arrow.svg';
 import LogoMobile from '@/components/LogoMobile';
 import { usePreviousPath } from 'app/hooks/usePreviousPath';
 import Paragraph from '@/components/Paragraph';
 import Link from 'next/link';
+import Arrow from '@/svgs/ArrowLeft';
 
 const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
   const { goBack, currentPath } = usePreviousPath();
@@ -38,16 +38,10 @@ const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
           <Logo className="hidden lg:block" />
           <LogoMobile className="lg:hidden" />
           <button
-            className="hidden lg:flex gap-1 items-center xl:text-lg"
+            className="hidden lg:flex gap-1 items-center xl:text-lg text-black"
             onClick={goBack}
           >
-            <Image
-              src={ArrowLeft}
-              width={0}
-              height={0}
-              alt="left arrow"
-              className="w-3.5 h-auto"
-            />{' '}
+            <Arrow />
             Go back
           </button>
         </div>

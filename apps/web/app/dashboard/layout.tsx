@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import '../globals.css';
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/dashboard/sidebar';
 import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function RootLayout({
     <section className="lg:flex lg:p-1.5 h-dvh overflow-hidden bg-white relative">
       <Sidebar />
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-hidden">{children}</main>
     </section>
   );
 }

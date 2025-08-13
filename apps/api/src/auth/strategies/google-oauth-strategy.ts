@@ -60,10 +60,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         id: id,
       };
 
-      const authenticatedUser = await this.authService.validateChildOAuthLogin(
-        user,
-        'google'
-      );
+      const authenticatedUser =
+        await this.authService.validateChildrenOAuthLogin(user, 'google');
 
       done(null, authenticatedUser);
     } catch (error) {

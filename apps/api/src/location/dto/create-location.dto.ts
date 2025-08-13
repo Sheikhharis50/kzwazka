@@ -2,12 +2,11 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsBoolean,
   MinLength,
   MaxLength,
   Matches,
 } from 'class-validator';
-
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 export class CreateLocationDto {
   @ApiPropertyOptional({
     description: 'Location name',

@@ -12,19 +12,25 @@ import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from 'src/auth/guards/permission.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('api/location')
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
+
   @ApiOperation({ summary: 'Create a new location' })
   @ApiResponse({
     status: 201,
     description: 'The location has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission(['create_location'])
   @Post()
   create(@Body() createLocationDto: CreateLocationDto) {
     return this.locationService.create(createLocationDto);
@@ -36,8 +42,8 @@ export class LocationController {
     description: 'The locations have been successfully fetched.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission(['read_location'])
   @Get()
   findAll() {
     return this.locationService.findAll();
@@ -49,8 +55,8 @@ export class LocationController {
     description: 'The location has been successfully fetched.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission(['read_location'])
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.locationService.findOne(id);
@@ -62,8 +68,8 @@ export class LocationController {
     description: 'The location has been successfully updated.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission(['update_location'])
   @Patch(':id')
   update(
     @Param('id') id: number,
@@ -78,8 +84,8 @@ export class LocationController {
     description: 'The location has been successfully deleted.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission(['delete_location'])
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.locationService.remove(id);

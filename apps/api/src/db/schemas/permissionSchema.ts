@@ -5,7 +5,6 @@ import { rolePermissionSchema } from './rolePermissionSchema';
 export const permissionSchema = pgTable('permission', {
   id: text('id').primaryKey().notNull(),
   name: text('name').notNull(),
-  action: text('action').notNull(),
   module: text('module').notNull(),
   description: text('description'),
 });

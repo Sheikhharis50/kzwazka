@@ -21,15 +21,20 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from 'src/auth/guards/permission.guard';
 
 @ApiTags('Users')
 @Controller('api/user')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth('JWT-auth')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @RequirePermission(['create_user'])
   @ApiOperation({
     summary: 'Create a new user',
     description: 'Create a new user account in the system',
@@ -75,6 +80,7 @@ export class UserController {
   }
 
   @Get()
+  @RequirePermission(['read_user'])
   @ApiOperation({
     summary: 'Get all users',
     description: 'Retrieve a list of all users in the system',
@@ -115,6 +121,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @RequirePermission(['read_user'])
   @ApiOperation({
     summary: 'Get user by ID',
     description: 'Retrieve a specific user by their ID',
@@ -162,6 +169,7 @@ export class UserController {
   }
 
   @Patch(':id')
+  @RequirePermission(['update_user'])
   @ApiOperation({
     summary: 'Update user',
     description: "Update an existing user's information",
@@ -213,6 +221,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @RequirePermission(['delete_user'])
   @ApiOperation({
     summary: 'Delete user',
     description: 'Remove a user from the system',

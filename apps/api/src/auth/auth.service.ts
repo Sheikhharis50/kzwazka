@@ -68,10 +68,10 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    // Get the "child" role
-    const childRole = await this.userService.getRoleByName('children');
-    if (!childRole) {
-      throw new Error('Child role not found. Please seed the database.');
+    // Get the "children" role
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole) {
+      throw new Error('Children role not found. Please seed the database.');
     }
 
     // Create user (not verified initially)
@@ -81,7 +81,7 @@ export class AuthService {
       first_name,
       last_name,
       phone,
-      role_id: childRole.id,
+      role_id: childrenRole.id,
       is_active: true,
       is_verified: false, // Will be verified after OTP confirmation
     });
@@ -89,7 +89,7 @@ export class AuthService {
     const access_token = generateToken(this.jwtService, newUser.id);
 
     // Create child record
-    const newChild = await this.childrenService.create({
+    const newChildren = await this.childrenService.create({
       user_id: newUser.id,
       dob,
       photo_url,
@@ -118,10 +118,10 @@ export class AuthService {
           email: newUser.email,
           first_name: newUser.first_name,
           last_name: newUser.last_name,
-          role: childRole.name,
+          role: childrenRole.name,
           is_verified: newUser.is_verified,
         },
-        child: newChild,
+        children: newChildren,
       },
     };
   }
@@ -356,12 +356,12 @@ export class AuthService {
           created_at: userData.created_at,
           updated_at: userData.updated_at,
         },
-        child: children[0],
+        children: children[0],
       },
     };
   }
 
-  async validateChildOAuthLogin(userData: OAuthUserData, provider: string) {
+  async validateChildrenOAuthLogin(userData: OAuthUserData, provider: string) {
     const { email, firstName, lastName, picture, id: googleId } = userData;
 
     // Check if user already exists by email
@@ -453,9 +453,9 @@ export class AuthService {
     }
 
     // Scenario 5: User doesn't exist - create new user
-    const childRole = await this.userService.getRoleByName('children');
-    if (!childRole) {
-      throw new Error('Child role not found. Please seed the database.');
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole) {
+      throw new Error('Children role not found. Please seed the database.');
     }
 
     // Create new user (OAuth users are automatically verified)
@@ -464,13 +464,13 @@ export class AuthService {
       password: null, // OAuth users don't have passwords
       first_name: firstName,
       last_name: lastName,
-      role_id: childRole.id,
+      role_id: childrenRole.id,
       is_active: true,
       is_verified: true, // OAuth users are automatically verified
       google_social_id: provider === 'google' ? googleId : undefined,
     });
 
-    // Create child record
+    // Create children record
     await this.childrenService.create({
       user_id: newUser.id,
       dob: new Date().toISOString(), // Temporary date that will be updated later
@@ -486,7 +486,7 @@ export class AuthService {
         email: newUser.email,
         first_name: newUser.first_name,
         last_name: newUser.last_name,
-        role: childRole.name,
+        role: childrenRole.name,
         provider,
         is_verified: true, // OAuth users are automatically verified
       },

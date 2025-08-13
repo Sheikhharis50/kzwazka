@@ -1,0 +1,66 @@
+[
+    {
+        "role_id": "admin",
+        "permission_id": "create_user"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_user"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_user"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_user"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "create_children"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_children"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_children"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_children"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "create_location"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_location"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_location"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_location"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "read_children"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "read_location"
+    },
+    {
+        "role_id": "children",
+        "permission_id": "read_children"
+    },
+    {
+        "role_id": "children",
+        "permission_id": "read_location"
+    }
+]

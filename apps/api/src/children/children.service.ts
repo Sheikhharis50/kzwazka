@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateChildDto } from './dto/create-child.dto';
-import { UpdateChildDto } from './dto/update-child.dto';
+import { CreateChildrenDto } from './dto/create-children.dto';
+import { UpdateChildrenDto } from './dto/update-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
@@ -11,8 +11,8 @@ import { getPageOffset } from '../utils/pagination';
 export class ChildrenService {
   constructor(private readonly dbService: DatabaseService) {}
 
-  async create(body: CreateChildDto) {
-    const newChild = await this.dbService.db
+  async create(body: CreateChildrenDto) {
+    const newChildren = await this.dbService.db
       .insert(childrenSchema)
       .values({
         ...body,
@@ -20,7 +20,7 @@ export class ChildrenService {
       })
       .returning();
 
-    return newChild[0];
+    return newChildren[0];
   }
 
   async count() {
@@ -84,7 +84,7 @@ export class ChildrenService {
   }
 
   async findOne(id: number) {
-    const child = await this.dbService.db
+    const children = await this.dbService.db
       .select({
         id: childrenSchema.id,
         dob: childrenSchema.dob,
@@ -116,13 +116,13 @@ export class ChildrenService {
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
-    if (child.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (children.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child record',
-      data: child[0],
+      message: 'Children record',
+      data: children[0],
     };
   }
 
@@ -159,48 +159,48 @@ export class ChildrenService {
       .where(eq(childrenSchema.user_id, userId));
   }
 
-  async update(id: number, updateChildDto: UpdateChildDto) {
+  async update(id: number, updateChildrenDto: UpdateChildrenDto) {
     const updateValues = {
-      ...updateChildDto,
-      ...(updateChildDto.dob && {
-        dob: new Date(updateChildDto.dob).toISOString(),
+      ...updateChildrenDto,
+      ...(updateChildrenDto.dob && {
+        dob: new Date(updateChildrenDto.dob).toISOString(),
       }),
       updated_at: new Date(),
     };
 
-    const updatedChild = await this.dbService.db
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set(updateValues)
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child updated successfully',
-      data: updatedChild[0],
+      message: 'Children updated successfully',
+      data: updatedChildren[0],
     };
   }
 
   async remove(id: number) {
-    const deletedChild = await this.dbService.db
+    const deletedChildren = await this.dbService.db
       .delete(childrenSchema)
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (deletedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (deletedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child deleted successfully',
+      message: 'Children deleted successfully',
     };
   }
 
   async updatePhotoUrl(id: number, photoUrl: string) {
-    const updatedChild = await this.dbService.db
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set({
         photo_url: photoUrl,
@@ -209,33 +209,33 @@ export class ChildrenService {
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
       message: 'Photo URL updated successfully',
-      data: updatedChild[0],
+      data: updatedChildren[0],
     };
   }
 
-  async assignLocation(childId: number, locationId: number) {
-    const updatedChild = await this.dbService.db
+  async assignLocation(childrenId: number, locationId: number) {
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set({
         location_id: locationId,
         updated_at: new Date(),
       })
-      .where(eq(childrenSchema.id, childId))
+      .where(eq(childrenSchema.id, childrenId))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
       message: 'Location assigned successfully',
-      data: updatedChild[0],
+      data: updatedChildren[0],
     };
   }
 }

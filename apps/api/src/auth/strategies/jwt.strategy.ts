@@ -1,11 +1,19 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private userService: UserService
+  ) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
       throw new Error('JWT_SECRET is not defined in the environment variables');
@@ -18,9 +26,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: any, request: any) {
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token');
+    }
+    // Get user information including verification status
+    const user = await this.userService.findOne(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Check if user is active
+    if (!user.is_active) {
+      throw new UnauthorizedException('User account is deactivated');
+    }
+
+    // Get the current route path
+    const routePath = request?.route?.path || '';
+
+    // Define allowed routes for unverified users
+    const allowedRoutesForUnverified = ['/auth/resend-otp', '/auth/verify-otp'];
+
+    // If user is not verified, check if they're accessing an allowed route
+    if (!user.is_verified && !allowedRoutesForUnverified.includes(routePath)) {
+      throw new ForbiddenException(
+        'Email verification required. Please verify your email first.'
+      );
     }
     return {
       id: payload.sub,

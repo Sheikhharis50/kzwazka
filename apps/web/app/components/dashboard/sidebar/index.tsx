@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { sidebarLinks } from 'app/constants/sidebar-links';
 import { usePathname } from 'next/navigation';
 import Button from './Button';
-import { ProfileIcon, LogoutIcon } from '@/icons/sidebarIcons';
+import { Profile, Logout } from '@/svgs';
 import Ribbon from '@/images/sidebar-ribbon.png';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
 import Logo from '@/components/Logo';
@@ -41,7 +41,7 @@ const Sidebar = () => {
               link={{
                 id: 'profile',
                 name: 'User Profile',
-                icon: ProfileIcon,
+                icon: <Profile className="size-5 md:size-6" />,
                 url: '/dashboard/profile',
               }}
               isActive={pathname === 'profile'}
@@ -50,7 +50,7 @@ const Sidebar = () => {
               link={{
                 id: 'logout',
                 name: 'Sign out',
-                icon: LogoutIcon,
+                icon: <Logout className="size-5 md:size-6" />,
                 url: '',
               }}
               isActive={false}

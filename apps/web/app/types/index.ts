@@ -1,9 +1,7 @@
-import { StaticImageData } from 'next/image';
-
 type SidebarLink = {
   id: string;
   name: string;
-  icon: StaticImageData | string;
+  icon: React.ReactNode;
   url: string;
 };
 
@@ -12,4 +10,8 @@ type Option = {
   label: string;
 };
 
-export type { SidebarLink, Option };
+type SvgProp = {
+  className?: string;
+};
+
+export type { SidebarLink, Option, SvgProp };

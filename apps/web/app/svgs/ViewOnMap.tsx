@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ViewOnMap = () => {
+export const ViewOnMap = () => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -18,5 +18,3 @@ const ViewOnMap = () => {
     </svg>
   );
 };
-
-export default ViewOnMap;

@@ -1,10 +1,7 @@
 import React from 'react';
 import Image, { StaticImageData } from 'next/image';
-import Location from '@/svgs/Location';
+import { Location, ViewOnMap, Trash, Share } from '@/svgs';
 import Button from '../../Button';
-import ViewOnMap from '@/svgs/ViewOnMap';
-import Share from '@/svgs/Share';
-import Trash from '@/svgs/Trash';
 
 interface LocationCardProps {
   imageSrc: string | StaticImageData;

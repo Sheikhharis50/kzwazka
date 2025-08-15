@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Share = () => {
+export const Share = () => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -16,5 +16,3 @@ const Share = () => {
     </svg>
   );
 };
-
-export default Share;

@@ -10,7 +10,7 @@ import LogoMobile from '@/components/LogoMobile';
 import { usePreviousPath } from 'app/hooks/usePreviousPath';
 import Paragraph from '@/components/Paragraph';
 import Link from 'next/link';
-import Arrow from '@/svgs/ArrowLeft';
+import { Arrow } from '@/svgs';
 
 const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
   const { goBack, currentPath } = usePreviousPath();

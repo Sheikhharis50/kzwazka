@@ -1,6 +1,7 @@
+import { SvgProp } from '@/types';
 import React from 'react';
 
-const Trash = ({ className = '' }) => {
+export const Trash = ({ className = '' }: SvgProp) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -17,5 +18,3 @@ const Trash = ({ className = '' }) => {
     </svg>
   );
 };
-
-export default Trash;

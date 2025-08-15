@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import DashboardCard from './Card';
+import DashboardCard from './DashboardCard';
 import EventCard from './EventCard';
 import Event1Image from '@/images/event1.png';
 import Event2Image from '@/images/event2.png';
 import Event3Image from '@/images/event3.png';
 
-const UpcomingEvents = () => {
+const UpcomingEventsCard = () => {
   const handleNewEvent = () => {
     console.log('add a new event');
   };
@@ -84,4 +84,4 @@ const UpcomingEvents = () => {
   );
 };
 
-export default UpcomingEvents;
+export default UpcomingEventsCard;

@@ -4,7 +4,7 @@ import CalendarIcon from '@/icons/calendar.png';
 import ClockIcon from '@/icons/clock.png';
 import PinIcon from '@/icons/pin.png';
 import BullsEyeIcon from '@/icons/bullseye.png';
-import Arrow from '../../svgs/ArrowLeft';
+import Arrow from '@/svgs/ArrowLeft';
 import { redirect } from 'next/navigation';
 
 interface EventCardProps {

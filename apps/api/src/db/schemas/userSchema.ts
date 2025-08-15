@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { Role, roleSchema } from './roleSchema';
+import { eventSchema } from './eventSchema';
 
 export const userSchema = pgTable('user', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -29,11 +30,12 @@ export const userSchema = pgTable('user', {
   updated_at: timestamp('updated_at'),
 });
 
-export const userRelations = relations(userSchema, ({ one }) => ({
+export const userRelations = relations(userSchema, ({ one, many }) => ({
   role: one(roleSchema, {
     fields: [userSchema.role_id],
     references: [roleSchema.id],
   }),
+  events: many(eventSchema),
 }));
 
 export type User = typeof userSchema.$inferSelect;

@@ -4,3 +4,4 @@ export * from './permissionSchema';
 export * from './rolePermissionSchema';
 export * from './childrenSchema';
 export * from './locationSchema';
+export * from './eventSchema';

@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Paragraph from '@/components/Paragraph';
 import {
+  FirstStepCleanData,
   FirstStepFormData,
   firstStepSchema,
   SecondStepFormData,
@@ -29,8 +30,10 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
     register: registerFirst,
     handleSubmit: handleSubmitFirst,
     formState: { errors: errorsFirst },
+    watch: watchFirst,
   } = useForm<FirstStepFormData>({
     resolver: zodResolver(firstStepSchema),
+    mode: 'onChange',
   });
 
   const {
@@ -46,14 +49,22 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
     },
   });
 
-  const [formData, setFormData] = React.useState<FirstStepFormData>();
+  const [formData, setFormData] = React.useState<FirstStepCleanData>();
   const [preview, setPreview] = React.useState<string | null>(null);
   const [base64Data, setBase64Data] = React.useState<string>('');
   const { register, isLoading } = useAuth();
+  const passwordValue = watchFirst('password');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleStep1 = (data: FirstStepFormData) => {
+  const handleStep1 = (formData: FirstStepFormData) => {
+    const data: FirstStepCleanData = {
+      parent_first_name: formData.parent_first_name,
+      parent_last_name: formData.parent_last_name,
+      phone: formData.phone,
+      password: formData.password,
+      email: formData.email,
+    };
     setFormData(data);
     setStep(2);
   };
@@ -110,7 +121,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
           <Input
             label="Phone Number*"
             type="tel"
-            placeholder="31207544744"
+            placeholder="031207544744"
             id="phone-number"
             {...registerFirst('phone')}
             error={errorsFirst.phone?.message}
@@ -122,6 +133,17 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
             id="password"
             {...registerFirst('password')}
             error={errorsFirst.password?.message}
+          />
+          <Input
+            label="Confirm Password*"
+            type="password"
+            placeholder="Confirm your password"
+            id="confirm-password"
+            {...registerFirst('confirm_password', {
+              validate: (val) =>
+                val === passwordValue || "Passwords don't match",
+            })}
+            error={errorsFirst.confirm_password?.message}
           />
           <Input
             label="Parent's First Name"

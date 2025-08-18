@@ -1,13 +1,15 @@
+import { SvgProp } from '@/types';
 import React from 'react';
 
-export const ViewOnMap = () => {
+export const ViewOnMap = ({ className }: SvgProp) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="1em"
-      height="1em"
+      width="20"
+      height="19"
       viewBox="0 0 20 19"
       fill="none"
+      className={className}
     >
       <path
         fillRule="evenodd"

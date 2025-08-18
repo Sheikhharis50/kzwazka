@@ -4,6 +4,7 @@ import Heading from '@/components/Heading';
 import Paragraph from '@/components/Paragraph';
 import React from 'react';
 import RegisterForm from './Form';
+import { Arrow } from '@/svgs';
 
 const RegisterPage = () => {
   const [step, setStep] = React.useState(1);
@@ -17,10 +18,17 @@ const RegisterPage = () => {
           className={`rounded-full h-1 lg:h-[5px] ${isFirstStep ? 'bg-[#D9D9D9]' : 'bg-blue'} w-28 lg:w-36`}
         />
       </div>
-      <Heading
-        text="Create your Account"
-        className="text-center mb-1 2xl:mb-2"
-      />
+      <div className="flex items-center gap-3 justify-center">
+        {!isFirstStep && (
+          <button onClick={() => setStep(1)}>
+            <Arrow className="size-5 md:size-6" />
+          </button>
+        )}
+        <Heading
+          text="Create your Account"
+          className="text-center mb-1 2xl:mb-2"
+        />
+      </div>
       <Paragraph
         text={
           isFirstStep

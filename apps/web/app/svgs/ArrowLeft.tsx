@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Arrow = ({ className }: { className?: string }) => {
+export const Arrow = ({ className }: { className?: string }) => {
   return (
     <svg
       width="1em"
@@ -17,5 +17,3 @@ const Arrow = ({ className }: { className?: string }) => {
     </svg>
   );
 };
-
-export default Arrow;

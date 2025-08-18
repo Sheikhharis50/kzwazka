@@ -3,8 +3,6 @@
 import React from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import Select from '@/components/Select';
-import { kidAgeOptions } from 'app/constants/kid-age';
 import Image from 'next/image';
 import Link from 'next/link';
 import Paragraph from '@/components/Paragraph';
@@ -181,10 +179,10 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
           {...registerSecond('last_name')}
           error={errorsSecond.last_name?.message}
         />
-        <Select
+        <Input
           label="Kid Age*"
+          type="date"
           id="kid-age"
-          options={kidAgeOptions}
           placeholder="Select age"
           {...registerSecond('dob')}
           error={errorsSecond.dob?.message}

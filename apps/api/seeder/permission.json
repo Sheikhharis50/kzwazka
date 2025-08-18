@@ -70,5 +70,29 @@
         "name": "Delete Location",
         "module": "location",
         "description": "Can delete locations"
+    },
+    {
+        "id": "create_event",
+        "name": "Create Event",
+        "module": "event",
+        "description": "Can create new events"
+    },
+    {
+        "id": "read_event",
+        "name": "Read Event",
+        "module": "event",
+        "description": "Can read event information"
+    },
+    {
+        "id": "update_event",
+        "name": "Update Event",
+        "module": "event",
+        "description": "Can update event information"
+    },
+    {
+        "id": "delete_event",
+        "name": "Delete Event",
+        "module": "event",
+        "description": "Can delete events"
     }
 ]

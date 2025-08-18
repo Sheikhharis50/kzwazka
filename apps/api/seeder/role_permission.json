@@ -48,6 +48,22 @@
         "permission_id": "delete_location"
     },
     {
+        "role_id": "admin",
+        "permission_id": "create_event"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_event"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_event"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_event"
+    },
+    {
         "role_id": "coach",
         "permission_id": "read_children"
     },
@@ -56,11 +72,19 @@
         "permission_id": "read_location"
     },
     {
+        "role_id": "coach",
+        "permission_id": "read_event"
+    },
+    {
         "role_id": "children",
         "permission_id": "read_children"
     },
     {
         "role_id": "children",
         "permission_id": "read_location"
+    },
+    {
+        "role_id": "children",
+        "permission_id": "read_event"
     }
 ]

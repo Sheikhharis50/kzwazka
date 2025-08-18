@@ -15,10 +15,6 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
-  ApiOAuth2,
-  ApiParam,
-  ApiQuery,
-  ApiHeader,
   ApiSecurity,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';

@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterPayload } from 'api/auth/type';
 import { useAuth } from '@/hooks/useAuth';
+import { Trash } from '@/svgs';
 
 interface RegisterFormProps {
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -50,6 +51,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
   const [formData, setFormData] = React.useState<FirstStepCleanData>();
   const [preview, setPreview] = React.useState<string | null>(null);
   const [base64Data, setBase64Data] = React.useState<string>('');
+  const [photoError, setPhotoError] = React.useState<string>('');
   const { register, isLoading } = useAuth();
   const passwordValue = watchFirst('password');
 
@@ -78,6 +80,23 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoError('');
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setPhotoError('Only PNG, JPG, and JPEG files are allowed');
+      e.target.value = '';
+      return;
+    }
+
+    const maxSize = 500 * 1024;
+    if (file.size > maxSize) {
+      setPhotoError('File size must not exceed 500KB');
+      e.target.value = '';
+      return;
+    }
+
     if (file) {
       if (preview) {
         URL.revokeObjectURL(preview);
@@ -90,6 +109,14 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
       };
       reader.readAsDataURL(file);
     }
+
+    e.target.value = '';
+  };
+
+  const handlePhotoDelete = () => {
+    setPreview(null);
+    setBase64Data('');
+    setPhotoError('');
   };
 
   React.useEffect(() => {
@@ -190,29 +217,44 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
         <div>
           <Input
             label="Kid Photo"
-            accept="image/*"
+            accept=".png,.jpg,.jpeg"
             type="file"
             id="kid-image"
             hidden
-            classes={{ root: 'mb-1' }}
+            classes={{ root: 'mb-1 pointer-events-none' }}
             ref={fileInputRef}
             onChange={handleFileChange}
           />
-          <div
-            className={`w-36 h-20 flex items-center justify-center rounded-lg ${!preview ? 'border-dashed border border-border' : ''} overflow-hidden cursor-pointer mb-5 xl:mb-8 2xl:mb-10`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {preview ? (
-              <Image
-                src={preview}
-                alt="Preview"
-                width={144}
-                height={80}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            ) : (
-              <Paragraph text="+ Upload Image" />
-            )}
+          <div className="mb-5 xl:mb-8 2xl:mb-10">
+            <div
+              className={`relative w-36 h-20 flex items-center justify-center rounded-lg ${!preview ? 'border-dashed border border-border' : ''} overflow-hidden cursor-pointer`}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {preview ? (
+                <>
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    width={144}
+                    height={80}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={(e) => {
+                      handlePhotoDelete();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Trash className="absolute right-1.5 top-1.5 text-white font-bold" />
+                  </button>
+                </>
+              ) : (
+                <Paragraph text="+ Upload Image" />
+              )}
+            </div>
+            <span className={`text-[10px] md:text-xs xl:text-sm text-red`}>
+              {photoError}
+            </span>
           </div>
           <Button
             text="Continue"

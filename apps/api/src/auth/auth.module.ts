@@ -4,9 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 
-import { GoogleStrategy } from './strategies/google-oauth-strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { AuthController } from './auth.controller';
 import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
@@ -32,13 +30,7 @@ import { EmailService } from '../services/email.service';
     ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    EmailService,
-    GoogleStrategy,
-    JwtStrategy,
-    GoogleOAuthGuard,
-  ],
-  exports: [AuthService, GoogleOAuthGuard],
+  providers: [AuthService, EmailService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

@@ -11,12 +11,13 @@ import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
-import { roleSchema, userSchema } from 'src/db/schemas';
+import { roleSchema, userSchema, rolePermissionSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
 import { APP_CONSTANTS } from '../utils/constants';
 import { Logger } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 
 import {
   generateToken,
@@ -28,14 +29,14 @@ import {
   isOTPExpired,
 } from '../utils/auth.utils';
 
-// Interface for OAuth user data
-interface OAuthUserData {
-  email: string;
-  firstName: string;
-  lastName: string;
+type GooglePayload = {
+  sub: string;
+  email?: string;
+  email_verified?: boolean;
+  given_name?: string;
+  family_name?: string;
   picture?: string;
-  id: string;
-}
+};
 
 @Injectable()
 export class AuthService {
@@ -311,7 +312,7 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    // Get user with role information
+    // Get user with role information and permissions in a single query
     const user = await this.db.db
       .select({
         id: userSchema.id,
@@ -325,11 +326,15 @@ export class AuthService {
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
         role_name: roleSchema.name,
+        permission_ids: rolePermissionSchema.permission_id,
       })
       .from(userSchema)
       .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
-      .where(eq(userSchema.id, userId))
-      .limit(1);
+      .leftJoin(
+        rolePermissionSchema,
+        eq(roleSchema.id, rolePermissionSchema.role_id)
+      )
+      .where(eq(userSchema.id, userId));
 
     if (user.length === 0) {
       throw new UnauthorizedException('User not found');
@@ -337,10 +342,15 @@ export class AuthService {
 
     const userData = user[0];
 
+    // Extract unique permission IDs from the results
+    const permissionIds = [
+      ...new Set(user.map((row) => row.permission_ids).filter(Boolean)),
+    ];
+
     // Get children data for this user
     const children = await this.childrenService.findByUserId(userId);
 
-    // Return consistent structure with user object and related data
+    // Return consistent structure with user object, permissions, and related data
     return {
       message: 'Profile fetched successfully',
       data: {
@@ -355,140 +365,9 @@ export class AuthService {
           role: userData.role_name,
           created_at: userData.created_at,
           updated_at: userData.updated_at,
+          permissions: permissionIds,
         },
         child: children[0],
-      },
-    };
-  }
-
-  async validateChildOAuthLogin(userData: OAuthUserData, provider: string) {
-    const { email, firstName, lastName, picture, id: googleId } = userData;
-
-    // Check if user already exists by email
-    const existingUser = await this.userService.findByEmail(email);
-
-    if (existingUser) {
-      // Scenario 1: User exists with password-based authentication
-      if (existingUser.password !== null) {
-        throw new UnauthorizedException(
-          'An account with this email already exists. Please sign in with your password.'
-        );
-      }
-
-      // Scenario 2: User exists with Google OAuth but different Google ID
-      if (
-        provider === 'google' &&
-        existingUser.google_social_id &&
-        existingUser.google_social_id !== googleId
-      ) {
-        throw new UnauthorizedException(
-          'This email is already associated with a different Google account. Please use the correct Google account.'
-        );
-      }
-
-      // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
-      if (provider === 'google' && existingUser.google_social_id === googleId) {
-        // Update user information if it has changed
-        const updates: Record<string, string> = {};
-        let hasUpdates = false;
-
-        if (existingUser.first_name !== firstName) {
-          updates.first_name = firstName;
-          hasUpdates = true;
-        }
-
-        if (existingUser.last_name !== lastName) {
-          updates.last_name = lastName;
-          hasUpdates = true;
-        }
-
-        // Update user if there are changes
-        if (hasUpdates) {
-          await this.userService.update(existingUser.id, updates);
-        }
-
-        // Get the role name for the response
-        const role = await this.db.db
-          .select({ name: roleSchema.name })
-          .from(roleSchema)
-          .where(eq(roleSchema.id, existingUser.role_id))
-          .limit(1);
-
-        return {
-          id: existingUser.id,
-          email: existingUser.email,
-          first_name: firstName,
-          last_name: lastName,
-          role: role[0]?.name || 'children',
-          provider,
-          is_verified: existingUser.is_verified, // OAuth users are automatically verified
-        };
-      }
-
-      // Scenario 4: User exists but no Google ID set - link the account
-      if (provider === 'google' && !existingUser.google_social_id) {
-        // Update user with Google ID and verify the account
-        await this.userService.updateGoogleSocialId(existingUser.id, googleId);
-
-        // Get the role name for the response
-        const role = await this.db.db
-          .select({ name: roleSchema.name })
-          .from(roleSchema)
-          .where(eq(roleSchema.id, existingUser.role_id))
-          .limit(1);
-
-        return {
-          message: 'Google OAuth login successful',
-          data: {
-            id: existingUser.id,
-            email: existingUser.email,
-            first_name: firstName,
-            last_name: lastName,
-            role: role[0]?.name || 'children',
-            provider,
-            is_verified: true, // OAuth users are automatically verified
-          },
-        };
-      }
-    }
-
-    // Scenario 5: User doesn't exist - create new user
-    const childRole = await this.userService.getRoleByName('children');
-    if (!childRole) {
-      throw new Error('Child role not found. Please seed the database.');
-    }
-
-    // Create new user (OAuth users are automatically verified)
-    const newUser = await this.userService.create({
-      email,
-      password: null, // OAuth users don't have passwords
-      first_name: firstName,
-      last_name: lastName,
-      role_id: childRole.id,
-      is_active: true,
-      is_verified: true, // OAuth users are automatically verified
-      google_social_id: provider === 'google' ? googleId : undefined,
-    });
-
-    // Create child record
-    await this.childrenService.create({
-      user_id: newUser.id,
-      dob: new Date().toISOString(), // Temporary date that will be updated later
-      photo_url: picture,
-      parent_first_name: '', // Empty string instead of null
-      parent_last_name: '', // Empty string instead of null
-    });
-
-    return {
-      message: 'Google OAuth login successful',
-      data: {
-        id: newUser.id,
-        email: newUser.email,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name,
-        role: childRole.name,
-        provider,
-        is_verified: true, // OAuth users are automatically verified
       },
     };
   }
@@ -729,5 +608,72 @@ export class AuthService {
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
+  }
+  async authenticateWithGoogleIdToken(code: string) {
+    const clientId = process.env.GOOGLE_CLIENT_ID!;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
+    const oauth2 = new OAuth2Client(clientId, clientSecret, 'postmessage'); // << important for popup code exchange
+
+    // 1) exchange code for tokens
+    const { tokens } = await oauth2.getToken(code);
+    if (!tokens?.id_token)
+      throw new UnauthorizedException('No id_token from Google');
+
+    // 2) verify ID token
+    const ticket = await oauth2.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: clientId,
+    });
+    const payload = ticket.getPayload() as GooglePayload;
+    if (!payload?.sub) throw new UnauthorizedException('Invalid Google token');
+    if (!payload.email || payload.email_verified === false) {
+      throw new UnauthorizedException('Google email not verified');
+    }
+
+    const { sub, email, given_name, family_name, picture } = payload;
+
+    // 3) find/link/create user (store googleId=sub)
+    let user = await this.userService.findByEmail(email);
+
+    if (!user) {
+      const childRole = await this.userService.getRoleByName('children');
+      if (!childRole)
+        throw new Error('Child role not found. Please seed the database.');
+
+      user = await this.userService.create({
+        email,
+        password: null,
+        first_name: given_name || 'Unknown',
+        last_name: family_name || 'Unknown',
+        phone: '',
+        role_id: childRole.id,
+        is_active: true,
+        google_social_id: sub,
+        is_verified: true,
+      });
+
+      await this.childrenService.create({
+        user_id: user.id,
+        dob: new Date().toISOString(),
+        photo_url: picture ?? '',
+        parent_first_name: given_name || 'Unknown',
+        parent_last_name: family_name || 'Unknown',
+      });
+    }
+
+    // 4) issue your tokens
+    const access_token = this.generateTokenForOAuthUser(user);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role_id || 'children',
+        is_verified: user.is_verified,
+      },
+      access_token,
+    };
   }
 }

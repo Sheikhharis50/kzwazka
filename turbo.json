@@ -3,7 +3,7 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL"],
+      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL","NEXT_PUBLIC_GOOGLE_CLIENT_ID"],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
@@ -16,7 +16,7 @@
     },
     "dev": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL"],
+      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL","NEXT_PUBLIC_GOOGLE_CLIENT_ID"],
       "cache": false,
       "persistent": true
     },

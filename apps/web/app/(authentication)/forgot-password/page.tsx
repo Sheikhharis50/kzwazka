@@ -1,12 +1,14 @@
 import Button from '@/components/Button';
 import Heading from '@/components/Heading';
 import Input from '@/components/Input';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
 import Paragraph from '@/components/Paragraph';
 import React from 'react';
+import ForgotPasswordImage from '@/images/forgot-password.png';
 
 const ForgotPasswordPage = () => {
   return (
-    <>
+    <AuthenticationLayout imageSrc={ForgotPasswordImage}>
       <Heading
         text="Forgot Your Password?"
         className="text-center mb-1 2xl:mb-2"
@@ -27,7 +29,7 @@ const ForgotPasswordPage = () => {
           className="w-3/5 mx-auto"
         />
       </form>
-    </>
+    </AuthenticationLayout>
   );
 };
 

@@ -1,15 +1,14 @@
 import React from 'react';
-import GoogleIcon from '@/icons/google.svg';
-import XIcon from '@/icons/x.svg';
-import Image from 'next/image';
 import Heading from '@/components/Heading';
 import Paragraph from '@/components/Paragraph';
 import LoginForm from './Form';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import LoginImage from '@/images/login.png';
 import GoogleSignIn from '@/components/GoogleSignIn';
 
 const LoginPage = () => {
   return (
-    <>
+    <AuthenticationLayout imageSrc={LoginImage}>
       <Heading text="Welcome to Wrestling School" />
       <Paragraph
         text="Enter your username and password to continue."
@@ -33,7 +32,7 @@ const LoginPage = () => {
         <Paragraph text="or" mute />
       </div>
       <LoginForm />
-    </>
+    </AuthenticationLayout>
   );
 };
 

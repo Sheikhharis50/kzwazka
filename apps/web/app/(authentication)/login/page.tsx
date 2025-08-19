@@ -18,7 +18,7 @@ const LoginPage = () => {
       />
       <div className="px-3">
         <GoogleSignIn />
-        <button className="flex gap-3 w-full items-center justify-center text-black rounded-lg p-2 border-border border-[1px]">
+        {/* <button className="flex gap-3 w-full items-center justify-center text-black rounded-lg p-2 border-border border-[1px]">
           <Image
             src={XIcon}
             alt="X icon"
@@ -27,7 +27,7 @@ const LoginPage = () => {
             className="w-4 md:w-5 xl:w-6"
           />
           <Paragraph text="Sign in with X" />
-        </button>
+        </button> */}
       </div>
       <div className="divider-text py-5 2xl:py-7">
         <Paragraph text="or" mute />

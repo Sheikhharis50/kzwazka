@@ -269,19 +269,36 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number', example: 1 },
-        email: { type: 'string', example: 'john.doe@example.com' },
-        first_name: { type: 'string', example: 'John' },
-        last_name: { type: 'string', example: 'Doe' },
-        role: { type: 'string', example: 'user' },
-        is_verified: { type: 'boolean', example: true },
-        phone: { type: 'string', example: '+1-555-123-4567' },
-        photo_url: {
-          type: 'string',
-          example: 'https://example.com/photos/profile.jpg',
+        message: { type: 'string', example: 'Profile fetched successfully' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 1 },
+                email: { type: 'string', example: 'john.doe@example.com' },
+                first_name: { type: 'string', example: 'John' },
+                last_name: { type: 'string', example: 'Doe' },
+                role: { type: 'string', example: 'user' },
+                is_verified: { type: 'boolean', example: true },
+                phone: { type: 'string', example: '+1-555-123-4567' },
+                created_at: { type: 'string', format: 'date-time' },
+                updated_at: { type: 'string', format: 'date-time' },
+                permissions: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  example: ['permission1', 'permission2', 'permission3'],
+                  description: 'Array of permission IDs for the user role',
+                },
+              },
+            },
+            child: {
+              type: 'object',
+              description: 'Child information if user has child role',
+            },
+          },
         },
-        created_at: { type: 'string', format: 'date-time' },
-        updated_at: { type: 'string', format: 'date-time' },
       },
     },
   })

@@ -11,7 +11,7 @@ import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
-import { roleSchema, userSchema } from 'src/db/schemas';
+import { roleSchema, userSchema, rolePermissionSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
 import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
@@ -312,7 +312,7 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
-    // Get user with role information
+    // Get user with role information and permissions in a single query
     const user = await this.db.db
       .select({
         id: userSchema.id,
@@ -326,11 +326,15 @@ export class AuthService {
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
         role_name: roleSchema.name,
+        permission_ids: rolePermissionSchema.permission_id,
       })
       .from(userSchema)
       .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
-      .where(eq(userSchema.id, userId))
-      .limit(1);
+      .leftJoin(
+        rolePermissionSchema,
+        eq(roleSchema.id, rolePermissionSchema.role_id)
+      )
+      .where(eq(userSchema.id, userId));
 
     if (user.length === 0) {
       throw new UnauthorizedException('User not found');
@@ -338,10 +342,15 @@ export class AuthService {
 
     const userData = user[0];
 
+    // Extract unique permission IDs from the results
+    const permissionIds = [
+      ...new Set(user.map((row) => row.permission_ids).filter(Boolean)),
+    ];
+
     // Get children data for this user
     const children = await this.childrenService.findByUserId(userId);
 
-    // Return consistent structure with user object and related data
+    // Return consistent structure with user object, permissions, and related data
     return {
       message: 'Profile fetched successfully',
       data: {
@@ -356,6 +365,7 @@ export class AuthService {
           role: userData.role_name,
           created_at: userData.created_at,
           updated_at: userData.updated_at,
+          permissions: permissionIds,
         },
         child: children[0],
       },

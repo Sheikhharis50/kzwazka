@@ -15,10 +15,6 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
-  ApiOAuth2,
-  ApiParam,
-  ApiQuery,
-  ApiHeader,
   ApiSecurity,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -27,7 +23,6 @@ import { LoginDto } from './dto/login-auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -302,28 +297,20 @@ export class AuthController {
     return this.authService.getProfile(req.user.id);
   }
 
-  @Get('google/login')
-  @UseGuards(GoogleOAuthGuard)
+  @Post('google')
   @ApiOperation({
-    summary: 'Google OAuth login',
-    description: 'Initiate Google OAuth authentication flow',
+    summary: 'Google OAuth with ID token',
+    description: 'Authenticate user using Google ID token from frontend',
   })
-  @ApiSecurity('Google-OAuth2')
-  @ApiResponse({
-    status: 200,
-    description: 'Redirects to Google OAuth consent screen',
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idToken: { type: 'string', description: 'Google ID token (JWT)' },
+      },
+      required: ['idToken'],
+    },
   })
-  googleLogin() {
-    // Initiates Google OAuth flow
-  }
-
-  @Get('google/callback')
-  @UseGuards(GoogleOAuthGuard)
-  @ApiOperation({
-    summary: 'Google OAuth callback',
-    description: 'Handle Google OAuth callback and authenticate user',
-  })
-  @ApiSecurity('Google-OAuth2')
   @ApiResponse({
     status: 200,
     description: 'Google OAuth authentication successful',
@@ -331,7 +318,7 @@ export class AuthController {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'Login successful' },
-        access_token: {
+        token: {
           type: 'string',
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
         },
@@ -350,6 +337,10 @@ export class AuthController {
     },
   })
   @ApiResponse({
+    status: 400,
+    description: 'Invalid ID token or validation error',
+  })
+  @ApiResponse({
     status: 401,
     description: 'Google OAuth authentication failed',
   })
@@ -357,44 +348,21 @@ export class AuthController {
     status: 500,
     description: 'Internal server error',
   })
-  googleCallback(@Req() req: any, @Res() res: any) {
+  async googleAuthWithIdToken(@Body() body: { code: string }) {
     try {
-      if (!req.user) {
-        return res.status(HttpStatus.UNAUTHORIZED).json({
-          message: 'Authentication failed',
-          error: 'No user data received from Google OAuth',
-        });
-      }
-
-      // Generate JWT token for the authenticated user
-      const token = this.authService.generateTokenForOAuthUser(req.user);
-
-      // Return the token in the response body instead of setting a cookie
-      return res.status(HttpStatus.OK).json({
+      const result = await this.authService.authenticateWithGoogleIdToken(
+        body.code
+      );
+      return {
         message: 'Login successful',
-        access_token: token,
-        user: {
-          id: req.user.id,
-          email: req.user.email,
-          first_name: req.user.first_name,
-          last_name: req.user.last_name,
-          role: req.user.role,
-          is_verified: req.user.is_verified,
-        },
-      });
+        access_token: result.access_token,
+        user: result.user,
+      };
     } catch (error) {
-      // Handle specific error types
       if (error instanceof UnauthorizedException) {
-        return res.status(HttpStatus.UNAUTHORIZED).json({
-          message: 'Authentication failed',
-          error: error.message,
-        });
+        throw error;
       }
-
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Internal server error',
-        error: 'An unexpected error occurred during authentication',
-      });
+      throw new UnauthorizedException('Google authentication failed');
     }
   }
 }

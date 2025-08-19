@@ -5,13 +5,18 @@ import Paragraph from '@/components/Paragraph';
 import React from 'react';
 import RegisterForm from './Form';
 import { Arrow } from '@/svgs';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import RegisterImage1 from '@/images/register1.png';
+import RegisterImage2 from '@/images/register2.png';
 
 const RegisterPage = () => {
   const [step, setStep] = React.useState(1);
   const isFirstStep = step === 1;
 
   return (
-    <>
+    <AuthenticationLayout
+      imageSrc={isFirstStep ? RegisterImage1 : RegisterImage2}
+    >
       <div className="flex gap-3 items-center justify-center mb-5 xl:mb-8 2xl:mb-10 pt-5 2xl:pt-0">
         <div className="rounded-full h-1 lg:h-[5px] bg-blue w-28 lg:w-36" />
         <div
@@ -39,7 +44,7 @@ const RegisterPage = () => {
         className="text-center mb-5 2xl:mb-8"
       />
       <RegisterForm setStep={setStep} isFirstStep={isFirstStep} />
-    </>
+    </AuthenticationLayout>
   );
 };
 

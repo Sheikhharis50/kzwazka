@@ -6,10 +6,12 @@ import React from 'react';
 import CheckIcon from '@/icons/check.png';
 import { passwordRules } from 'app/constants/password-rules';
 import Button from '@/components/Button';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import ChangePasswordImage from '@/images/change-password.png';
 
 const ChangePasswordPage = () => {
   return (
-    <>
+    <AuthenticationLayout imageSrc={ChangePasswordImage}>
       <Heading text="Change Password " className="text-center mb-1 2xl:mb-2" />
       <Paragraph
         text="Update your password by filling in the fields below:"
@@ -44,7 +46,7 @@ const ChangePasswordPage = () => {
           className="w-3/5 mx-auto"
         />
       </form>
-    </>
+    </AuthenticationLayout>
   );
 };
 

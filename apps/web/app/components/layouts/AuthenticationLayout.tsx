@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import LoginImage from '@/images/login.png';
-import RegisterImage from '@/images/register.png';
+import Image, { StaticImageData } from 'next/image';
 import Ribbon from '@/images/login-ribbon.png';
 import Logo from '@/components/Logo';
 import LogoMobile from '@/components/LogoMobile';
@@ -12,9 +10,16 @@ import Paragraph from '@/components/Paragraph';
 import Link from 'next/link';
 import { Arrow } from '@/svgs';
 
-const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
-  const { goBack, currentPath } = usePreviousPath();
-  const isLoginPage = currentPath.includes('login');
+interface AuthenticationLayoutProps {
+  children: React.ReactNode;
+  imageSrc: string | StaticImageData;
+}
+
+const AuthenticationLayout = ({
+  children,
+  imageSrc,
+}: AuthenticationLayoutProps) => {
+  const { goBack } = usePreviousPath();
 
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-[1.5fr_2fr] w-full gap-5 md:gap-8 lg:gap-5 lg:h-dvh min-h-dvh lg:min-h-auto lg:overflow-hidden lg:p-1.5">
@@ -27,7 +32,7 @@ const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
           className="w-12 sm:w-16 md:w-20 lg:w-4/5 h-auto lg:h-3/5 absolute top-0 right-0"
         />
         <Image
-          src={isLoginPage ? LoginImage : RegisterImage}
+          src={imageSrc}
           height={2000}
           width={2000}
           alt="Kzwazka kids wrestling"
@@ -61,4 +66,4 @@ const AutenticationLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default AutenticationLayout;
+export default AuthenticationLayout;

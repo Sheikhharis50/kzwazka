@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Heading from '@/components/Heading';
 import Paragraph from '@/components/Paragraph';
 import LoginForm from './Form';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import LoginImage from '@/images/login.png';
 
 const LoginPage = () => {
   return (
-    <>
+    <AuthenticationLayout imageSrc={LoginImage}>
       <Heading text="Welcome to Wrestling School" />
       <Paragraph
         text="Enter your username and password to continue."
@@ -41,7 +43,7 @@ const LoginPage = () => {
         <Paragraph text="or" mute />
       </div>
       <LoginForm />
-    </>
+    </AuthenticationLayout>
   );
 };
 

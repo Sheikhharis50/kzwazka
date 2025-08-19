@@ -9,6 +9,8 @@ import Input from '@/components/Input';
 import Button from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser } from '@/hooks/useUser';
+import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import VerifyEmailImage from '@/images/verify-email.png';
 
 const VerifyEmailPage = () => {
   const [otp, setOtp] = React.useState<string[]>(Array(6).fill(''));
@@ -98,7 +100,7 @@ const VerifyEmailPage = () => {
   }, []);
 
   return (
-    <>
+    <AuthenticationLayout imageSrc={VerifyEmailImage}>
       <div className="text-center mb-5">
         <Heading text="Verify Your Email" className="mb-1 lg:mb-2" />{' '}
         <Paragraph
@@ -162,7 +164,7 @@ const VerifyEmailPage = () => {
           disabled={!canResendOtp}
         />
       </form>
-    </>
+    </AuthenticationLayout>
   );
 };
 

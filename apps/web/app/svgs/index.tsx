@@ -13,3 +13,5 @@ export * from './ViewOnMap';
 export * from './Edit';
 export * from './Group';
 export * from './Clock';
+export * from './Hamburger';
+export * from './ProfileRound';

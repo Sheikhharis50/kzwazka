@@ -4,12 +4,18 @@ interface HeadingProps {
   className?: string;
   text: string;
   small?: boolean;
+  xs?: boolean;
 }
 
-const Heading = ({ text, className = '', small = false }: HeadingProps) => {
+const Heading = ({
+  text,
+  className = '',
+  small = false,
+  xs = false,
+}: HeadingProps) => {
   return (
     <h2
-      className={`${small ? 'text-xl md:text-2xl xl:text-3xl' : 'text-2xl md:text-3xl xl:text-4xl'} ${className}`}
+      className={`${xs ? 'text-lg md:text-xl xl:text-2xl' : small ? 'text-xl md:text-2xl xl:text-3xl' : 'text-2xl md:text-3xl xl:text-4xl'} ${className}`}
     >
       {text}
     </h2>

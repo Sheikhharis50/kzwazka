@@ -6,6 +6,7 @@ import Link from 'next/link';
 import HomeButton from '@/components/home/Button';
 import { ProfileRound, Hamburger } from '@/svgs';
 import HomeSidebar from '@/components/home/Sidebar';
+import Container from '@/components/home/Container';
 
 const HomeNavbar = () => {
   const [sidebarVisible, setSidebarVisibility] = React.useState(false);
@@ -13,7 +14,7 @@ const HomeNavbar = () => {
   return (
     <>
       <nav className="bg-white py-2">
-        <div className="w-[95vw] lg:max-w-[90vw] 2xl:max-w-[1400px] mx-auto flex justify-between items-center">
+        <Container className="flex justify-between items-center">
           <Image
             src={Logo}
             alt="Kzwazka logo"
@@ -42,7 +43,7 @@ const HomeNavbar = () => {
           >
             <Hamburger />
           </button>
-        </div>
+        </Container>
       </nav>
       <HomeSidebar isOpen={sidebarVisible} setOpen={setSidebarVisibility} />
     </>

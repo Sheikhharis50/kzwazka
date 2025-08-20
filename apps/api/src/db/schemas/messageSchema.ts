@@ -7,8 +7,8 @@ export const messageSchema = pgTable('message', {
   content: text('content').notNull(),
   content_type: text('content_type').notNull(),
   group_id: integer('group_id').references(() => groupSchema.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const messageRelations = relations(messageSchema, ({ one }) => ({

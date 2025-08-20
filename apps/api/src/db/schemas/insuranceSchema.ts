@@ -12,8 +12,8 @@ export const insuranceSchema = pgTable('insurance', {
   status: text('status').notNull(),
   coverage_type: text('coverage_type'),
   content: text('content'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const insuranceRelations = relations(insuranceSchema, ({ one }) => ({

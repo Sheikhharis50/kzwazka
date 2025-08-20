@@ -18,8 +18,8 @@ export const coachSchema = pgTable('coach', {
   phone: text('phone').notNull(),
   status: boolean('status').notNull().default(true),
   location_id: integer('location_id').references(() => locationSchema.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const coachRelations = relations(coachSchema, ({ one, many }) => ({

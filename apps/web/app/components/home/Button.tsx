@@ -11,7 +11,7 @@ const HomeButton = ({
   return (
     <Button
       text={text}
-      className={`!rounded-lg font-medium ${className}`}
+      className={`!rounded-lg ${className}`}
       isLoading={isLoading || false}
       icon={icon || undefined}
       {...rest}

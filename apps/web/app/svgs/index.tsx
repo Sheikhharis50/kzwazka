@@ -15,3 +15,4 @@ export * from './Group';
 export * from './Clock';
 export * from './Hamburger';
 export * from './ProfileRound';
+export * from './Phone';

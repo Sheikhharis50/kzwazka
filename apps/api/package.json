@@ -23,7 +23,7 @@
     "db:migrate": "npx drizzle-kit migrate",
     "db:rollback": "npx drizzle-kit drop",
     "db:push": "npx drizzle-kit push",
-    "seed": "ts-node scripts/seed.ts"
+    "seed": "ts-node seeder/index.ts"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.0",

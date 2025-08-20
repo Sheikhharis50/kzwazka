@@ -1,0 +1,98 @@
+[
+    {
+        "id": "create_user",
+        "name": "Create User",
+        "module": "user",
+        "description": "Can create new users in the system"
+    },
+    {
+        "id": "read_user",
+        "name": "Read User",
+        "module": "user",
+        "description": "Can read user information"
+    },
+    {
+        "id": "update_user",
+        "name": "Update User",
+        "module": "user",
+        "description": "Can update user information"
+    },
+    {
+        "id": "delete_user",
+        "name": "Delete User",
+        "module": "user",
+        "description": "Can delete users from the system"
+    },
+    {
+        "id": "create_children",
+        "name": "Create Children",
+        "module": "children",
+        "description": "Can create new children records"
+    },
+    {
+        "id": "read_children",
+        "name": "Read Children",
+        "module": "children",
+        "description": "Can read children information"
+    },
+    {
+        "id": "update_children",
+        "name": "Update Children",
+        "module": "children",
+        "description": "Can update children information"
+    },
+    {
+        "id": "delete_children",
+        "name": "Delete Children",
+        "module": "children",
+        "description": "Can delete children records"
+    },
+    {
+        "id": "create_location",
+        "name": "Create Location",
+        "module": "location",
+        "description": "Can create new locations"
+    },
+    {
+        "id": "read_location",
+        "name": "Read Location",
+        "module": "location",
+        "description": "Can read location information"
+    },
+    {
+        "id": "update_location",
+        "name": "Update Location",
+        "module": "location",
+        "description": "Can update location information"
+    },
+    {
+        "id": "delete_location",
+        "name": "Delete Location",
+        "module": "location",
+        "description": "Can delete locations"
+    },
+    {
+        "id": "create_event",
+        "name": "Create Event",
+        "module": "event",
+        "description": "Can create new events"
+    },
+    {
+        "id": "read_event",
+        "name": "Read Event",
+        "module": "event",
+        "description": "Can read event information"
+    },
+    {
+        "id": "update_event",
+        "name": "Update Event",
+        "module": "event",
+        "description": "Can update event information"
+    },
+    {
+        "id": "delete_event",
+        "name": "Delete Event",
+        "module": "event",
+        "description": "Can delete events"
+    }
+]

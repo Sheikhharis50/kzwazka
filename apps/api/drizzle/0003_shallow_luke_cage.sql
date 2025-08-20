@@ -1,0 +1,1 @@
+ALTER TABLE "permission" DROP COLUMN "action";

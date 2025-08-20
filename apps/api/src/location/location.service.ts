@@ -3,7 +3,6 @@ import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { locationSchema } from '../db/schemas';
 import { CreateLocationDto } from './dto/create-location.dto';
-
 @Injectable()
 export class LocationService {
   constructor(private readonly db: DatabaseService) {}
@@ -17,18 +16,26 @@ export class LocationService {
         ...locationData,
         opening_time: opening_time || null,
         closing_time: closing_time || null,
-        is_active: createLocationDto.is_active ?? true,
+        is_active: true,
       })
       .returning();
 
-    return newLocation[0];
+    return {
+      message: 'Successfully created location',
+      data: newLocation[0],
+    };
   }
 
   async findAll() {
-    return await this.db.db
+    const locations = await this.db.db
       .select()
       .from(locationSchema)
       .where(eq(locationSchema.is_active, true));
+
+    return {
+      message: 'Successfully fetched locations',
+      data: locations,
+    };
   }
 
   async findOne(id: number) {
@@ -42,7 +49,10 @@ export class LocationService {
       throw new NotFoundException('Location not found');
     }
 
-    return location[0];
+    return {
+      message: 'Successfully fetched location',
+      data: location[0],
+    };
   }
 
   async update(id: number, updateLocationDto: Partial<CreateLocationDto>) {
@@ -65,7 +75,10 @@ export class LocationService {
       throw new NotFoundException('Location not found');
     }
 
-    return updatedLocation[0];
+    return {
+      message: 'Successfully updated location',
+      data: updatedLocation[0],
+    };
   }
 
   async remove(id: number) {
@@ -78,7 +91,10 @@ export class LocationService {
       throw new NotFoundException('Location not found');
     }
 
-    return { message: 'Location deleted successfully' };
+    return {
+      message: 'Successfully deleted location',
+      data: deletedLocation[0],
+    };
   }
 
   async deactivate(id: number) {
@@ -95,6 +111,9 @@ export class LocationService {
       throw new NotFoundException('Location not found');
     }
 
-    return updatedLocation[0];
+    return {
+      message: 'Successfully deactivated location',
+      data: updatedLocation[0],
+    };
   }
 }

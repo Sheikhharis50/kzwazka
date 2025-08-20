@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ChildrenModule } from './children/children.module';
+import { LocationModule } from './location/location.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { ChildrenModule } from './children/children.module';
     AuthModule,
     UserModule,
     ChildrenModule,
+    LocationModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService],

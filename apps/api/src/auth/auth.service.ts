@@ -69,10 +69,10 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    // Get the "child" role
-    const childRole = await this.userService.getRoleByName('children');
-    if (!childRole) {
-      throw new Error('Child role not found. Please seed the database.');
+    // Get the "children" role
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole) {
+      throw new Error('Children role not found. Please seed the database.');
     }
 
     // Create user (not verified initially)
@@ -82,7 +82,7 @@ export class AuthService {
       first_name,
       last_name,
       phone,
-      role_id: childRole.id,
+      role_id: childrenRole.id,
       is_active: true,
       is_verified: false, // Will be verified after OTP confirmation
     });
@@ -90,7 +90,7 @@ export class AuthService {
     const access_token = generateToken(this.jwtService, newUser.id);
 
     // Create child record
-    const newChild = await this.childrenService.create({
+    const newChildren = await this.childrenService.create({
       user_id: newUser.id,
       dob,
       photo_url,
@@ -119,10 +119,10 @@ export class AuthService {
           email: newUser.email,
           first_name: newUser.first_name,
           last_name: newUser.last_name,
-          role: childRole.name,
+          role: childrenRole.name,
           is_verified: newUser.is_verified,
         },
-        child: newChild,
+        children: newChildren,
       },
     };
   }
@@ -367,7 +367,139 @@ export class AuthService {
           updated_at: userData.updated_at,
           permissions: permissionIds,
         },
-        child: children[0],
+        children: children[0],
+      },
+    };
+  }
+
+  async validateChildrenOAuthLogin(userData: OAuthUserData, provider: string) {
+    const { email, firstName, lastName, picture, id: googleId } = userData;
+
+    // Check if user already exists by email
+    const existingUser = await this.userService.findByEmail(email);
+
+    if (existingUser) {
+      // Scenario 1: User exists with password-based authentication
+      if (existingUser.password !== null) {
+        throw new UnauthorizedException(
+          'An account with this email already exists. Please sign in with your password.'
+        );
+      }
+
+      // Scenario 2: User exists with Google OAuth but different Google ID
+      if (
+        provider === 'google' &&
+        existingUser.google_social_id &&
+        existingUser.google_social_id !== googleId
+      ) {
+        throw new UnauthorizedException(
+          'This email is already associated with a different Google account. Please use the correct Google account.'
+        );
+      }
+
+      // Scenario 3: User exists with Google OAuth and same Google ID - update info if needed
+      if (provider === 'google' && existingUser.google_social_id === googleId) {
+        // Update user information if it has changed
+        const updates: Record<string, string> = {};
+        let hasUpdates = false;
+
+        if (existingUser.first_name !== firstName) {
+          updates.first_name = firstName;
+          hasUpdates = true;
+        }
+
+        if (existingUser.last_name !== lastName) {
+          updates.last_name = lastName;
+          hasUpdates = true;
+        }
+
+        // Update user if there are changes
+        if (hasUpdates) {
+          await this.userService.update(existingUser.id, updates);
+        }
+
+        // Get the role name for the response
+        const role = await this.db.db
+          .select({ name: roleSchema.name })
+          .from(roleSchema)
+          .where(eq(roleSchema.id, existingUser.role_id))
+          .limit(1);
+
+        return {
+          id: existingUser.id,
+          email: existingUser.email,
+          first_name: firstName,
+          last_name: lastName,
+          role: role[0]?.name || 'children',
+          provider,
+          is_verified: existingUser.is_verified, // OAuth users are automatically verified
+        };
+      }
+
+      // Scenario 4: User exists but no Google ID set - link the account
+      if (provider === 'google' && !existingUser.google_social_id) {
+        // Update user with Google ID and verify the account
+        await this.userService.updateGoogleSocialId(existingUser.id, googleId);
+
+        // Get the role name for the response
+        const role = await this.db.db
+          .select({ name: roleSchema.name })
+          .from(roleSchema)
+          .where(eq(roleSchema.id, existingUser.role_id))
+          .limit(1);
+
+        return {
+          message: 'Google OAuth login successful',
+          data: {
+            id: existingUser.id,
+            email: existingUser.email,
+            first_name: firstName,
+            last_name: lastName,
+            role: role[0]?.name || 'children',
+            provider,
+            is_verified: true, // OAuth users are automatically verified
+          },
+        };
+      }
+    }
+
+    // Scenario 5: User doesn't exist - create new user
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole) {
+      throw new Error('Children role not found. Please seed the database.');
+    }
+
+    // Create new user (OAuth users are automatically verified)
+    const newUser = await this.userService.create({
+      email,
+      password: null, // OAuth users don't have passwords
+      first_name: firstName,
+      last_name: lastName,
+      role_id: childrenRole.id,
+      is_active: true,
+      is_verified: true, // OAuth users are automatically verified
+      google_social_id: provider === 'google' ? googleId : undefined,
+    });
+
+    // Create children record
+    await this.childrenService.create({
+      user_id: newUser.id,
+      dob: new Date().toISOString(), // Temporary date that will be updated later
+      photo_url: picture,
+      parent_first_name: '', // Empty string instead of null
+      parent_last_name: '', // Empty string instead of null
+    });
+
+    return {
+      message: 'Google OAuth login successful',
+      data: {
+        id: newUser.id,
+        email: newUser.email,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name,
+        role: childrenRole.name,
+        provider,
+        is_verified: true, // OAuth users are automatically verified
       },
     };
   }

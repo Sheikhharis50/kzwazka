@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { childrenSchema } from './childrenSchema';
+import { eventSchema } from './eventSchema';
 
 export const locationSchema = pgTable('locations', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -31,6 +32,7 @@ export const locationSchema = pgTable('locations', {
 
 export const locationRelations = relations(locationSchema, ({ many }) => ({
   children: many(childrenSchema),
+  events: many(eventSchema),
 }));
 
 export type Location = typeof locationSchema.$inferSelect;

@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateChildDto {
+export class CreateChildrenDto {
   @ApiProperty({
     description: 'User ID of the parent/guardian',
     example: 1,

@@ -1,0 +1,20 @@
+[
+    {
+      "id": "admin",
+      "name": "admin",
+      "description": "Administrator role with full access to all features",
+      "is_active": true
+    },
+    {
+      "id": "coach",
+      "name": "coach",
+      "description": "Coach role with access to manage children and locations",
+      "is_active": true
+    },
+    {
+      "id": "children",
+      "name": "children",
+      "description": "Children role with limited access to view their own data",
+      "is_active": true
+    }
+]

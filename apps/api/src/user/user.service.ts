@@ -14,6 +14,22 @@ import * as bcrypt from 'bcryptjs';
 export class UserService {
   constructor(private readonly db: DatabaseService) {}
 
+  async createAdmin(createUserDto: CreateUserDto) {
+    const adminRole = await this.getRoleByName('admin');
+    if (!adminRole) {
+      throw new Error('Admin role not found. Please seed the database.');
+    }
+
+    const admin = await this.create({
+      ...createUserDto,
+      role_id: adminRole.id,
+    });
+    return {
+      message: 'Admin user created successfully',
+      data: admin,
+    };
+  }
+
   async create(createUserDto: CreateUserDto) {
     const { email, password, ...userData } = createUserDto;
 

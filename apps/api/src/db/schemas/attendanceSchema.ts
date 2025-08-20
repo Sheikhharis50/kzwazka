@@ -1,10 +1,4 @@
-import {
-  pgTable,
-  timestamp,
-  integer,
-  boolean,
-  text,
-} from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, integer, text } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { childrenSchema } from './childrenSchema';
 import { groupSchema } from './groupSchema';
@@ -43,4 +37,3 @@ export type AttendanceWithChildrenAndGroup = Attendance & {
   children: typeof childrenSchema.$inferSelect;
   group: typeof groupSchema.$inferSelect;
 };
-

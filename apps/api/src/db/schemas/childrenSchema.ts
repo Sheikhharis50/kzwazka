@@ -9,6 +9,10 @@ import {
 import { relations } from 'drizzle-orm';
 import { userSchema } from './userSchema';
 import { locationSchema } from './locationSchema';
+import { childrenGroupSchema } from './childrenGroupSchema';
+import { childrenInvoiceSchema } from './childrenInvoiceSchema';
+import { insuranceSchema } from './insuranceSchema';
+import { attendanceSchema } from './attendanceSchema';
 
 export const childrenSchema = pgTable('children', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -24,7 +28,7 @@ export const childrenSchema = pgTable('children', {
   updated_at: timestamp('updated_at'),
 });
 
-export const childrenRelations = relations(childrenSchema, ({ one }) => ({
+export const childrenRelations = relations(childrenSchema, ({ one, many }) => ({
   user: one(userSchema, {
     fields: [childrenSchema.user_id],
     references: [userSchema.id],
@@ -33,6 +37,10 @@ export const childrenRelations = relations(childrenSchema, ({ one }) => ({
     fields: [childrenSchema.location_id],
     references: [locationSchema.id],
   }),
+  childrenGroups: many(childrenGroupSchema),
+  invoices: many(childrenInvoiceSchema),
+  insurance: many(insuranceSchema),
+  attendance: many(attendanceSchema),
 }));
 
 export type Children = typeof childrenSchema.$inferSelect;

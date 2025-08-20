@@ -7,6 +7,8 @@ import { UserModule } from './user/user.module';
 import { ChildrenModule } from './children/children.module';
 import { LocationModule } from './location/location.module';
 import { EventModule } from './event/event.module';
+import { GroupModule } from './group/group.module';
+import { CoachModule } from './coach/coach.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { EventModule } from './event/event.module';
     ChildrenModule,
     LocationModule,
     EventModule,
+    GroupModule,
+    CoachModule,
   ],
   controllers: [AppController],
   providers: [AppService],

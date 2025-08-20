@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { sidebarLinks } from 'app/constants/sidebar-links';
 import { usePathname } from 'next/navigation';
 import Button from './Button';
-import { ProfileIcon, LogoutIcon } from '@/icons/sidebarIcons';
+import { Profile, Logout } from '@/svgs';
 import Ribbon from '@/images/sidebar-ribbon.png';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
 import Logo from '@/components/Logo';
@@ -19,7 +19,7 @@ const Sidebar = () => {
   return (
     <>
       <div
-        className={`w-full lg:w-[20vw] max-w-[240px] sm:max-w-[273px] bg-yellow rounded-e-3xl lg:rounded-[42px] h-full flex flex-col items-center pt-5 gap-4 xl:gap-6 2xl:gap-8 py-2 pe-2 absolute top-0 lg:relative overflow-hidden transition-transform z-50 ${isSidebarVisible ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full'}`}
+        className={`min-w-[240px] sm:min-w-[273px] bg-yellow rounded-e-3xl lg:rounded-[42px] h-full flex flex-col items-center pt-5 gap-4 xl:gap-6 2xl:gap-8 py-2 pe-2 absolute top-0 lg:relative overflow-hidden transition-transform z-50 ${isSidebarVisible ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full'}`}
       >
         <Image
           src={Ribbon}
@@ -41,7 +41,7 @@ const Sidebar = () => {
               link={{
                 id: 'profile',
                 name: 'User Profile',
-                icon: ProfileIcon,
+                icon: <Profile className="size-5 md:size-6" />,
                 url: '/dashboard/profile',
               }}
               isActive={pathname === 'profile'}
@@ -50,7 +50,7 @@ const Sidebar = () => {
               link={{
                 id: 'logout',
                 name: 'Sign out',
-                icon: LogoutIcon,
+                icon: <Logout className="size-5 md:size-6" />,
                 url: '',
               }}
               isActive={false}

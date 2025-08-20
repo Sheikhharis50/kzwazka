@@ -1,0 +1,44 @@
+import { SvgProp } from '@/types';
+import React from 'react';
+
+export const Insurance = ({ className }: SvgProp) => {
+  return (
+    <svg
+      width="25"
+      height="25"
+      viewBox="0 0 25 25"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M22.0879 17.2407V5.17068C22.0879 3.97068 21.1079 3.08068 19.9179 3.18068H19.8579C17.7579 3.36068 14.5679 4.43068 12.7879 5.55068L12.6179 5.66068C12.3279 5.84068 11.8479 5.84068 11.5579 5.66068L11.3079 5.51068C9.52789 4.40068 6.34789 3.34068 4.24789 3.17068C3.05789 3.07068 2.08789 3.97068 2.08789 5.16068V17.2407C2.08789 18.2007 2.86789 19.1007 3.82789 19.2207L4.11789 19.2607C6.28789 19.5507 9.63789 20.6507 11.5579 21.7007L11.5979 21.7207C11.8679 21.8707 12.2979 21.8707 12.5579 21.7207C14.4779 20.6607 17.8379 19.5507 20.0179 19.2607L20.3479 19.2207C21.3079 19.1007 22.0879 18.2007 22.0879 17.2407Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.0879 5.99072V20.9907"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.83789 8.99072H5.58789"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.58789 11.9907H5.58789"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};

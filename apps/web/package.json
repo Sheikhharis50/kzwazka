@@ -11,6 +11,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.2",
     "@repo/ui": "*",
     "@tanstack/react-query-devtools": "^5.84.2",
     "next": "^15.4.2",

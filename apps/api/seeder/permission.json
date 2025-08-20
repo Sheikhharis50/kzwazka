@@ -94,5 +94,29 @@
         "name": "Delete Event",
         "module": "event",
         "description": "Can delete events"
+    },
+    {
+        "id": "create_coach",
+        "name": "Create Coach",
+        "module": "coach",
+        "description": "Can create new coach profiles"
+    },
+    {
+        "id": "read_coach",
+        "name": "Read Coach",
+        "module": "coach",
+        "description": "Can read coach information"
+    },
+    {
+        "id": "update_coach",
+        "name": "Update Coach",
+        "module": "coach",
+        "description": "Can update coach information"
+    },
+    {
+        "id": "delete_coach",
+        "name": "Delete Coach",
+        "module": "coach",
+        "description": "Can delete coach profiles"
     }
 ]

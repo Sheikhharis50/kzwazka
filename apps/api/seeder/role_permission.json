@@ -64,6 +64,22 @@
         "permission_id": "delete_event"
     },
     {
+        "role_id": "admin",
+        "permission_id": "create_coach"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_coach"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_coach"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_coach"
+    },
+    {
         "role_id": "coach",
         "permission_id": "read_children"
     },
@@ -74,6 +90,14 @@
     {
         "role_id": "coach",
         "permission_id": "read_event"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "update_coach"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "read_coach"
     },
     {
         "role_id": "children",

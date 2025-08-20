@@ -8,8 +8,8 @@ export const childrenGroupSchema = pgTable('children_group', {
   children_id: integer('children_id').references(() => childrenSchema.id),
   group_id: integer('group_id').references(() => groupSchema.id),
   status: boolean('status').notNull().default(true),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const childrenGroupRelations = relations(

@@ -1,7 +1,8 @@
 import React from 'react';
 import Loader from './Loader';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   text: string;
   isLoading?: boolean;
@@ -17,7 +18,7 @@ const Button = ({
 }: ButtonProps) => {
   return (
     <button
-      className={`bg-red rounded-full py-2 px-5 text-white block text-xs md:text-sm lg:text-base 2xl:text-lg ${className} ${icon ? 'flex items-center gap-2' : ''}`}
+      className={`bg-red rounded-full py-2 px-5 text-white block text-xs md:text-sm lg:text-base 2xl:text-lg ${className} ${icon ? 'flex items-center gap-2 justify-center' : ''}`}
       disabled={isLoading}
       {...rest}
     >

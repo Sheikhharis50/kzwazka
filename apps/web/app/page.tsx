@@ -5,6 +5,7 @@ import Navbar from '@/components/home/Navbar';
 import HeroSection from '@/components/home/HeroSection';
 import Contact from '@/components/home/Contact';
 import WrestlingSport from '@/components/home/WrestlingSport';
+import TrainingLocations from '@/components/home/training-locations';
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
       <HeroSection />
       <Contact />
       <WrestlingSport />
+      <TrainingLocations />
     </>
   );
 }

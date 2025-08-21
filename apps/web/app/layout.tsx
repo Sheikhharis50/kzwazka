@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'swiper/css';
+import 'swiper/css/pagination';
 import { AppContextsProvider } from '@/providers';
 import { ToastContainer } from 'react-toastify';
 import ProtectedRoute from './components/ProtectedRoute';

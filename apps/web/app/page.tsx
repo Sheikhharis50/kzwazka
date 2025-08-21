@@ -4,6 +4,9 @@ import React from 'react';
 import Navbar from '@/components/home/Navbar';
 import HeroSection from '@/components/home/HeroSection';
 import Contact from '@/components/home/Contact';
+import WrestlingSport from '@/components/home/WrestlingSport';
+import TrainingLocations from '@/components/home/training-locations';
+import AgeGroup from '@/components/home/AgeGroup';
 
 export default function Home() {
   return (
@@ -11,6 +14,9 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <Contact />
+      <WrestlingSport />
+      <TrainingLocations />
+      <AgeGroup />
     </>
   );
 }

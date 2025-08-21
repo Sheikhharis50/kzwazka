@@ -100,3 +100,7 @@ h6 {
   background: var(--color-white);
   z-index: 1;
 }
+
+.swiper-pagination-bullet-active {
+  background-color: var(--color-black) !important;
+}

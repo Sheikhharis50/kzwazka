@@ -142,5 +142,29 @@
         "name": "Delete Group",
         "module": "group",
         "description": "Can delete groups"
+    },
+    {
+        "id": "create_message",
+        "name": "Create Message",
+        "module": "message",
+        "description": "Can create new messages"
+    },
+    {
+        "id": "read_message",
+        "name": "Read Message",
+        "module": "message",
+        "description": "Can read message information"
+    },
+    {
+        "id": "update_message",
+        "name": "Update Message",
+        "module": "message",
+        "description": "Can update message information"
+    },
+    {
+        "id": "delete_message",
+        "name": "Delete Message",
+        "module": "message",
+        "description": "Can delete messages"
     }
 ]

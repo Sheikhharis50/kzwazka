@@ -118,5 +118,29 @@
         "name": "Delete Coach",
         "module": "coach",
         "description": "Can delete coach profiles"
+    },
+    {
+        "id": "create_group",
+        "name": "Create Group",
+        "module": "group",
+        "description": "Can create new groups"
+    },
+    {
+        "id": "read_group",
+        "name": "Read Group",
+        "module": "group",
+        "description": "Can read group information"
+    },
+    {
+        "id": "update_group",
+        "name": "Update Group",
+        "module": "group",
+        "description": "Can update group information"
+    },
+    {
+        "id": "delete_group",
+        "name": "Delete Group",
+        "module": "group",
+        "description": "Can delete groups"
     }
 ]

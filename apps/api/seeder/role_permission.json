@@ -80,6 +80,22 @@
         "permission_id": "delete_coach"
     },
     {
+        "role_id": "admin",
+        "permission_id": "create_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_group"
+    },
+    {
         "role_id": "coach",
         "permission_id": "read_children"
     },
@@ -98,6 +114,10 @@
     {
         "role_id": "coach",
         "permission_id": "read_coach"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "read_group"
     },
     {
         "role_id": "children",

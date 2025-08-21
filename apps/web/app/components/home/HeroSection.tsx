@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '@/components/home/Button';
 import { Phone } from '@/svgs';
+import Title from '@/components/ui/Title';
 
 const HeroSection = () => {
   return (
@@ -32,9 +33,9 @@ const HeroSection = () => {
         className="w-full sm:w-2/3 md:w-full mx-auto h-auto relative pt-10 md:pt-20 order-2 md:order-1"
       />
       <div className="relative xs:w-4/5 sm:w-2/3 md:w-full px-5 lg:px-8 min-[1200px]:px-10 2xl:px-14 my-auto text-white order-1 md:order-2 pt-10 md:pt-0">
-        <h1 className="text-3xl sm:text-4xl lg:text-[40px] min-[1200px]:text-5xl xl:text-[54px] 2xl:text-6xl leading-10 sm:leading-12 lg:leading-14 min-[1200px]:leading-16 xl:leading-[70px] 2xl:leading-20 mb-3">
+        <Title className="mb-3">
           ODKRYJ NOWĄ JAKOŚĆ <br /> TRENINGÓW <br /> ZAPAŚNICZYCH
-        </h1>
+        </Title>
         <Paragraph
           text="Dołącz do klubu, gdzie dzieci budują siłę, pewność siebie i sportowy charakter – na macie i w życiu."
           className="mb-5 md:mb-8 lg:mb-10 2xl:mb-14"

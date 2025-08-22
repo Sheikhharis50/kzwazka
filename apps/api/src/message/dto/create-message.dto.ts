@@ -1,6 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
-
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
+export enum MessageContentType {
+  TEXT = 'text',
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+  FILE = 'file',
+}
 export class CreateMessageDto {
   @ApiProperty({
     description: 'Message content',
@@ -8,17 +20,20 @@ export class CreateMessageDto {
     maxLength: 1000,
   })
   @IsString({ message: 'Content must be a string' })
-  @IsNotEmpty({ message: 'Content is required' })
+  @IsOptional({ message: 'Content is optional' })
   @MaxLength(1000, { message: 'Content cannot exceed 1000 characters' })
-  content: string;
+  content?: string;
 
   @ApiProperty({
     description: 'Type of message content',
-    example: 'text',
+    example: MessageContentType.TEXT,
+    enum: MessageContentType,
   })
-  @IsString({ message: 'Content type must be a string' })
+  @IsEnum(MessageContentType, {
+    message: 'Content type must be a valid enum value',
+  })
   @IsNotEmpty({ message: 'Content type is required' })
-  content_type: string;
+  content_type: MessageContentType;
 
   @ApiPropertyOptional({
     description:

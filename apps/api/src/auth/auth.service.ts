@@ -518,10 +518,10 @@ export class AuthService {
    * Reset password using reset token
    */
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { token, password, confirmPassword } = resetPasswordDto;
+    const { token, password, confirm_password } = resetPasswordDto;
 
     // Validate password confirmation
-    if (password !== confirmPassword) {
+    if (password !== confirm_password) {
       throw new BadRequestException('Passwords do not match');
     }
 

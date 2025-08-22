@@ -21,7 +21,7 @@ export class CreateChildrenDto {
 
   @ApiProperty({
     description: 'Child date of birth (YYYY-MM-DD format)',
-    example: '2015-06-15',socia
+    example: '2015-06-15',
     format: 'date',
   })
   @IsDateString({}, { message: 'Date of birth must be a valid date string' })

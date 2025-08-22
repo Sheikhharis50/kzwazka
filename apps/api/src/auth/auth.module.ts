@@ -10,6 +10,7 @@ import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
 import { ChildrenModule } from '../children/children.module';
 import { EmailService } from '../services/email.service';
+import { GoogleAuthService } from './google-auth.service';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { EmailService } from '../services/email.service';
     ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, JwtStrategy],
+  providers: [AuthService, EmailService, JwtStrategy, GoogleAuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

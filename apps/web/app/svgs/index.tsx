@@ -18,3 +18,6 @@ export * from './ProfileRound';
 export * from './Phone';
 export * from './Check';
 export * from './GoogleLocation';
+export * from './Youtube';
+export * from './Instagram';
+export * from './Facebook';

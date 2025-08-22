@@ -9,6 +9,7 @@ import TrainingLocations from '@/components/home/training-locations';
 import AgeGroup from '@/components/home/AgeGroup';
 import TrainWithUs from '@/components/home/TrainWithUs';
 import ReadAboutUs from '@/components/home/read-about-us';
+import Footer from '@/components/home/Footer';
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
       <AgeGroup />
       <TrainWithUs />
       <ReadAboutUs />
+      <Footer />
     </>
   );
 }

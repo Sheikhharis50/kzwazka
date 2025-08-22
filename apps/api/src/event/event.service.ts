@@ -9,15 +9,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { QueryEventDto } from './dto/query-event.dto';
 import { eventSchema } from '../db/schemas/eventSchema';
-import { eq, and, gte, lte, ilike, desc, asc, sql, SQL } from 'drizzle-orm';
-import {
-  Event,
-  EventWithLocation,
-  EventWithCreator,
-  EventWithLocationAndCreator,
-} from '../db/schemas/eventSchema';
-import { locationSchema } from 'src/db/schemas/locationSchema';
-import { userSchema } from 'src/db/schemas/userSchema';
+import { eq, and, gte, lte, ilike, desc, sql, SQL } from 'drizzle-orm';
+import { Event } from '../db/schemas/eventSchema';
 
 @Injectable()
 export class EventService {
@@ -64,7 +57,7 @@ export class EventService {
       this.logger.log(`Event created successfully with ID: ${event.id}`);
       return event;
     } catch (error) {
-      this.logger.error(`Failed to create event: ${error.message}`);
+      this.logger.error(`Failed to create event: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -145,7 +138,7 @@ export class EventService {
         totalPages,
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch events: ${error.message}`);
+      this.logger.error(`Failed to fetch events: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -163,148 +156,8 @@ export class EventService {
 
       return event;
     } catch (error) {
-      this.logger.error(`Failed to fetch event ${id}: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async findOneWithLocation(id: number): Promise<EventWithLocation> {
-    try {
-      const [event] = await this.dbService.db
-        .select({
-          id: eventSchema.id,
-          title: eventSchema.title,
-          location_id: eventSchema.location_id,
-          min_age: eventSchema.min_age,
-          max_age: eventSchema.max_age,
-          event_date: eventSchema.event_date,
-          opening_time: eventSchema.opening_time,
-          closing_time: eventSchema.closing_time,
-          status: eventSchema.status,
-          created_by: eventSchema.created_by,
-          amount: eventSchema.amount,
-          created_at: eventSchema.created_at,
-          updated_at: eventSchema.updated_at,
-          location: {
-            id: sql<number>`location.id`,
-            name: sql<string>`location.name`,
-            address1: sql<string>`location.address1`,
-            city: sql<string>`location.city`,
-            state: sql<string>`location.state`,
-            country: sql<string>`location.country`,
-          },
-        })
-        .from(eventSchema)
-        .leftJoin(
-          locationSchema,
-          eq(eventSchema.location_id, sql<number>`location.id`)
-        )
-        .where(eq(eventSchema.id, id));
-
-      if (!event) {
-        throw new NotFoundException(`Event with ID ${id} not found`);
-      }
-
-      return event as EventWithLocation;
-    } catch (error) {
       this.logger.error(
-        `Failed to fetch event ${id} with location: ${error.message}`
-      );
-      throw error;
-    }
-  }
-
-  async findOneWithCreator(id: number): Promise<EventWithCreator> {
-    try {
-      const [event] = await this.dbService.db
-        .select({
-          id: eventSchema.id,
-          title: eventSchema.title,
-          location_id: eventSchema.location_id,
-          min_age: eventSchema.min_age,
-          max_age: eventSchema.max_age,
-          event_date: eventSchema.event_date,
-          opening_time: eventSchema.opening_time,
-          closing_time: eventSchema.closing_time,
-          status: eventSchema.status,
-          created_by: eventSchema.created_by,
-          amount: eventSchema.amount,
-          created_at: eventSchema.created_at,
-          updated_at: eventSchema.updated_at,
-          creator: {
-            id: sql<number>`user.id`,
-            first_name: sql<string>`user.first_name`,
-            last_name: sql<string>`user.last_name`,
-            email: sql<string>`user.email`,
-          },
-        })
-        .from(eventSchema)
-        .leftJoin(userSchema, eq(eventSchema.created_by, sql<number>`user.id`))
-        .where(eq(eventSchema.id, id));
-
-      if (!event) {
-        throw new NotFoundException(`Event with ID ${id} not found`);
-      }
-
-      return event as EventWithCreator;
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to fetch event ${id} with creator: ${error.message}`
-      );
-      throw error;
-    }
-  }
-
-  async findOneWithLocationAndCreator(
-    id: number
-  ): Promise<EventWithLocationAndCreator> {
-    try {
-      const [event] = await this.dbService.db
-        .select({
-          id: eventSchema.id,
-          title: eventSchema.title,
-          location_id: eventSchema.location_id,
-          min_age: eventSchema.min_age,
-          max_age: eventSchema.max_age,
-          event_date: eventSchema.event_date,
-          opening_time: eventSchema.opening_time,
-          closing_time: eventSchema.closing_time,
-          status: eventSchema.status,
-          created_by: eventSchema.created_by,
-          amount: eventSchema.amount,
-          created_at: eventSchema.created_at,
-          updated_at: eventSchema.updated_at,
-          location: {
-            id: sql<number>`location.id`,
-            name: sql<string>`location.name`,
-            address1: sql<string>`location.address1`,
-            city: sql<string>`location.city`,
-            state: sql<string>`location.state`,
-            country: sql<string>`location.country`,
-          },
-          creator: {
-            id: sql<number>`user.id`,
-            first_name: sql<string>`user.first_name`,
-            last_name: sql<string>`user.last_name`,
-            email: sql<string>`user.email`,
-          },
-        })
-        .from(eventSchema)
-        .leftJoin(
-          locationSchema,
-          eq(eventSchema.location_id, sql<number>`location.id`)
-        )
-        .leftJoin(userSchema, eq(eventSchema.created_by, sql<number>`user.id`))
-        .where(eq(eventSchema.id, id));
-
-      if (!event) {
-        throw new NotFoundException(`Event with ID ${id} not found`);
-      }
-
-      return event as EventWithLocationAndCreator;
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to fetch event ${id} with location and creator: ${error.message}`
+        `Failed to fetch event ${id}: ${(error as Error).message}`
       );
       throw error;
     }
@@ -356,7 +209,12 @@ export class EventService {
       }
 
       // Convert string dates to Date objects if provided
-      const updateData: any = { ...updateEventDto, updated_at: new Date() };
+      const updateData = {
+        ...updateEventDto,
+        updated_at: new Date(),
+      } as {
+        [key: string]: string | number | Date | undefined;
+      };
 
       if (updateEventDto.event_date) {
         updateData.event_date = new Date(updateEventDto.event_date);
@@ -377,7 +235,9 @@ export class EventService {
       this.logger.log(`Event ${id} updated successfully`);
       return updatedEvent;
     } catch (error: any) {
-      this.logger.error(`Failed to update event ${id}: ${error.message}`);
+      this.logger.error(
+        `Failed to update event ${id}: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -401,172 +261,8 @@ export class EventService {
 
       this.logger.log(`Event ${id} deleted successfully`);
     } catch (error: any) {
-      this.logger.error(`Failed to delete event ${id}: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async findEventsByLocation(
-    locationId: number,
-    query: QueryEventDto
-  ): Promise<{
-    events: Event[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    try {
-      const { page = 1, limit = 10, ...filters } = query;
-      const offset = (page - 1) * limit;
-
-      // Build where conditions
-      const whereConditions = [eq(eventSchema.location_id, locationId)];
-
-      if (filters.search) {
-        whereConditions.push(ilike(eventSchema.title, `%${filters.search}%`));
-      }
-
-      if (filters.status) {
-        whereConditions.push(eq(eventSchema.status, filters.status));
-      }
-
-      if (filters.min_age !== undefined) {
-        whereConditions.push(gte(eventSchema.min_age, filters.min_age));
-      }
-
-      if (filters.max_age !== undefined) {
-        whereConditions.push(lte(eventSchema.max_age, filters.max_age));
-      }
-
-      if (filters.from_date) {
-        whereConditions.push(
-          gte(eventSchema.event_date, new Date(filters.from_date))
-        );
-      }
-
-      if (filters.to_date) {
-        whereConditions.push(
-          lte(eventSchema.event_date, new Date(filters.to_date))
-        );
-      }
-
-      const whereClause = and(...whereConditions);
-
-      // Get total count
-      const countResult = await this.dbService.db
-        .select({ count: sql<number>`count(*)` })
-        .from(eventSchema)
-        .where(whereClause);
-
-      const total = Number(countResult[0]?.count || 0);
-
-      // Get events with pagination
-      const events = await this.dbService.db
-        .select()
-        .from(eventSchema)
-        .where(whereClause)
-        .orderBy(asc(eventSchema.event_date))
-        .limit(limit)
-        .offset(offset);
-
-      const totalPages = Math.ceil(total / limit);
-
-      return {
-        events,
-        total,
-        page,
-        limit,
-        totalPages,
-      };
-    } catch (error: any) {
       this.logger.error(
-        `Failed to fetch events by location ${locationId}: ${error.message}`
-      );
-      throw error;
-    }
-  }
-
-  async findEventsByCreator(
-    creatorId: number,
-    query: QueryEventDto
-  ): Promise<{
-    events: Event[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    try {
-      const { page = 1, limit = 10, ...filters } = query;
-      const offset = (page - 1) * limit;
-
-      // Build where conditions
-      const whereConditions = [eq(eventSchema.created_by, creatorId)];
-
-      if (filters.search) {
-        whereConditions.push(ilike(eventSchema.title, `%${filters.search}%`));
-      }
-
-      if (filters.status) {
-        whereConditions.push(eq(eventSchema.status, filters.status));
-      }
-
-      if (filters.location_id) {
-        whereConditions.push(eq(eventSchema.location_id, filters.location_id));
-      }
-
-      if (filters.min_age !== undefined) {
-        whereConditions.push(gte(eventSchema.min_age, filters.min_age));
-      }
-
-      if (filters.max_age !== undefined) {
-        whereConditions.push(lte(eventSchema.max_age, filters.max_age));
-      }
-
-      if (filters.from_date) {
-        whereConditions.push(
-          gte(eventSchema.event_date, new Date(filters.from_date))
-        );
-      }
-
-      if (filters.to_date) {
-        whereConditions.push(
-          lte(eventSchema.event_date, new Date(filters.to_date))
-        );
-      }
-
-      const whereClause = and(...whereConditions);
-
-      // Get total count
-      const countResult = await this.dbService.db
-        .select({ count: sql<number>`count(*)` })
-        .from(eventSchema)
-        .where(whereClause);
-
-      const total = Number(countResult[0]?.count || 0);
-
-      // Get events with pagination
-      const events = await this.dbService.db
-        .select()
-        .from(eventSchema)
-        .where(whereClause)
-        .orderBy(desc(eventSchema.created_at))
-        .limit(limit)
-        .offset(offset);
-
-      const totalPages = Math.ceil(total / limit);
-
-      return {
-        events,
-        total,
-        page,
-        limit,
-        totalPages,
-      };
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to fetch events by creator ${creatorId}: ${error.message}`
+        `Failed to delete event ${id}: ${(error as Error).message}`
       );
       throw error;
     }

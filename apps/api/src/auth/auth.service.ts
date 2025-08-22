@@ -28,15 +28,7 @@ import {
   generateOTP,
   isOTPExpired,
 } from '../utils/auth.utils';
-
-type GooglePayload = {
-  sub: string;
-  email?: string;
-  email_verified?: boolean;
-  given_name?: string;
-  family_name?: string;
-  picture?: string;
-};
+import { GooglePayload } from './types/google';
 
 @Injectable()
 export class AuthService {

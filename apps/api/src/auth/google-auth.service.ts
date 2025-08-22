@@ -50,8 +50,6 @@ export class GoogleAuthService {
 
     const { sub, email, given_name, family_name, picture } = payload;
 
-    console.log('payload', payload);
-
     // 3) find/link/create user (store googleId=sub)
     let user = await this.userService.findByEmail(email);
 

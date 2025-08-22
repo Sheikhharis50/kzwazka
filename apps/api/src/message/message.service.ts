@@ -33,7 +33,6 @@ export class MessageService {
         createMessageDto,
         file
       );
-      console.log(content);
       // Broadcast when group_id is not provided
       if (!createMessageDto.group_id) {
         const groups = await this.dbService.db

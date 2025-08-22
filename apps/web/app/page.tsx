@@ -11,6 +11,7 @@ import TrainWithUs from '@/components/home/TrainWithUs';
 import ReadAboutUs from '@/components/home/read-about-us';
 import Footer from '@/components/home/Footer';
 import Coaches from '@/components/home/coaches';
+import WorldOfWrestling from '@/components/home/world-of-wrestling';
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
       <WrestlingSport />
       <TrainingLocations />
       <AgeGroup />
+      <WorldOfWrestling />
       <Coaches />
       <TrainWithUs />
       <ReadAboutUs />

@@ -8,6 +8,7 @@ import WrestlingSport from '@/components/home/WrestlingSport';
 import TrainingLocations from '@/components/home/training-locations';
 import AgeGroup from '@/components/home/AgeGroup';
 import TrainWithUs from '@/components/home/TrainWithUs';
+import ReadAboutUs from '@/components/home/read-about-us';
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
       <TrainingLocations />
       <AgeGroup />
       <TrainWithUs />
+      <ReadAboutUs />
     </>
   );
 }

@@ -84,4 +84,4 @@ export const APP_CONSTANTS = {
       INTERNAL_SERVER_ERROR: 'Internal server error',
     },
   },
-} as const; 
+} as const;

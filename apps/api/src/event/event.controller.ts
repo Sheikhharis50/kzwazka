@@ -24,6 +24,7 @@ import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { QueryEventDto } from './dto/query-event.dto';
+import { APIRequest } from '../interfaces/request';
 
 @ApiTags('Events')
 @Controller('api/event')
@@ -53,7 +54,7 @@ export class EventController {
     status: 401,
     description: 'Unauthorized - Invalid JWT token',
   })
-  create(@Body() createEventDto: CreateEventDto, @Req() req: any) {
+  create(@Body() createEventDto: CreateEventDto, @Req() req: APIRequest) {
     return this.eventService.create(createEventDto, req.user.id);
   }
 
@@ -276,7 +277,7 @@ export class EventController {
   update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @Req() req: any
+    @Req() req: APIRequest
   ) {
     return this.eventService.update(+id, updateEventDto, req.user.id);
   }
@@ -308,7 +309,7 @@ export class EventController {
     status: 404,
     description: 'Event not found',
   })
-  remove(@Param('id') id: string, @Req() req: any) {
+  remove(@Param('id') id: string, @Req() req: APIRequest) {
     return this.eventService.remove(+id, req.user.id);
   }
 

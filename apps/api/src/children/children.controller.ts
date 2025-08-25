@@ -19,44 +19,69 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ChildrenService } from './children.service';
-import { CreateChildDto } from './dto/create-child.dto';
-import { UpdateChildDto } from './dto/update-child.dto';
+import { CreateChildrenDto } from './dto/create-children.dto';
+import { UpdateChildrenDto } from './dto/update-children.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from 'src/auth/guards/permission.guard';
 
 @ApiTags('Children')
 @Controller('api/children')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth('JWT-auth')
 export class ChildrenController {
   constructor(private readonly childrenService: ChildrenService) {}
 
   @Post()
   @ApiOperation({
-    summary: 'Create a new child',
-    description: 'Add a new child to the system for a parent/guardian',
+    summary: 'Create a new children with user account',
+    description:
+      'Create both a user account and children record in a single transaction',
   })
   @ApiBody({
-    type: CreateChildDto,
-    description: 'Child information',
+    type: CreateChildrenDto,
+    description: 'User and children information',
   })
   @ApiResponse({
     status: 201,
-    description: 'Child created successfully',
+    description: 'User and children created successfully',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number', example: 1 },
-        user_id: { type: 'number', example: 1 },
-        dob: { type: 'string', format: 'date', example: '2015-06-15' },
-        photo_url: {
-          type: 'string',
-          example: 'https://example.com/photos/child.jpg',
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            email: { type: 'string', example: 'john.doe@example.com' },
+            first_name: { type: 'string', example: 'John' },
+            last_name: { type: 'string', example: 'Doe' },
+            phone: { type: 'string', example: '+1-555-123-4567' },
+            role_id: { type: 'string', example: 'children' },
+            is_active: { type: 'boolean', example: true },
+            is_verified: { type: 'boolean', example: false },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
         },
-        parent_first_name: { type: 'string', example: 'Jane' },
-        parent_last_name: { type: 'string', example: 'Doe' },
-        location_id: { type: 'number', example: 1 },
-        created_at: { type: 'string', format: 'date-time' },
-        updated_at: { type: 'string', format: 'date-time' },
+        children: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            user_id: { type: 'number', example: 1 },
+            dob: { type: 'string', format: 'date', example: '2015-06-15' },
+            photo_url: {
+              type: 'string',
+              example: 'https://example.com/photos/children.jpg',
+            },
+            parent_first_name: { type: 'string', example: 'Jane' },
+            parent_last_name: { type: 'string', example: 'Doe' },
+            location_id: { type: 'number', example: 1 },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
   })
@@ -69,10 +94,11 @@ export class ChildrenController {
     description: 'Unauthorized - Invalid JWT token',
   })
   @ApiResponse({
-    status: 404,
-    description: 'Parent user not found',
+    status: 409,
+    description: 'User with this email already exists',
   })
-  create(@Body() body: CreateChildDto) {
+  @RequirePermission(['create_children'])
+  create(@Body() body: CreateChildrenDto) {
     return this.childrenService.create(body);
   }
 
@@ -111,7 +137,7 @@ export class ChildrenController {
               dob: { type: 'string', format: 'date', example: '2015-06-15' },
               photo_url: {
                 type: 'string',
-                example: 'https://example.com/photos/child.jpg',
+                example: 'https://example.com/photos/children.jpg',
               },
               parent_first_name: { type: 'string', example: 'Jane' },
               parent_last_name: { type: 'string', example: 'Doe' },
@@ -137,6 +163,7 @@ export class ChildrenController {
     status: 401,
     description: 'Unauthorized - Invalid JWT token',
   })
+  @RequirePermission(['read_children'])
   findAll(
     @Param('params', ParseIntPipe) params: { page: string; limit: string }
   ) {
@@ -144,6 +171,7 @@ export class ChildrenController {
   }
 
   @Get('user/:userId')
+  @RequirePermission(['read_children'])
   @ApiOperation({
     summary: 'Get children by user ID',
     description:
@@ -168,7 +196,7 @@ export class ChildrenController {
           dob: { type: 'string', format: 'date', example: '2015-06-15' },
           photo_url: {
             type: 'string',
-            example: 'https://example.com/photos/child.jpg',
+            example: 'https://example.com/photos/children.jpg',
           },
           parent_first_name: { type: 'string', example: 'Jane' },
           parent_last_name: { type: 'string', example: 'Doe' },
@@ -196,19 +224,20 @@ export class ChildrenController {
   }
 
   @Get(':id')
+  @RequirePermission(['read_children'])
   @ApiOperation({
-    summary: 'Get child by ID',
-    description: 'Retrieve a specific child by their ID',
+    summary: 'Get children by ID',
+    description: 'Retrieve a specific children by their ID',
   })
   @ApiParam({
     name: 'id',
-    description: 'Child ID',
+    description: 'Children ID',
     type: 'number',
     example: 1,
   })
   @ApiResponse({
     status: 200,
-    description: 'Child retrieved successfully',
+    description: 'Children retrieved successfully',
     schema: {
       type: 'object',
       properties: {
@@ -217,7 +246,7 @@ export class ChildrenController {
         dob: { type: 'string', format: 'date', example: '2015-06-15' },
         photo_url: {
           type: 'string',
-          example: 'https://example.com/photos/child.jpg',
+          example: 'https://example.com/photos/children.jpg',
         },
         parent_first_name: { type: 'string', example: 'Jane' },
         parent_last_name: { type: 'string', example: 'Doe' },
@@ -229,7 +258,7 @@ export class ChildrenController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid child ID',
+    description: 'Invalid children ID',
   })
   @ApiResponse({
     status: 401,
@@ -237,30 +266,31 @@ export class ChildrenController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Child not found',
+    description: 'Children not found',
   })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.childrenService.findOne(id);
   }
 
   @Patch(':id')
+  @RequirePermission(['update_children'])
   @ApiOperation({
-    summary: 'Update child',
-    description: "Update an existing child's information",
+    summary: 'Update children',
+    description: "Update an existing children's information",
   })
   @ApiParam({
     name: 'id',
-    description: 'Child ID',
+    description: 'Children ID',
     type: 'number',
     example: 1,
   })
   @ApiBody({
-    type: UpdateChildDto,
-    description: 'Updated child information',
+    type: UpdateChildrenDto,
+    description: 'Updated children information',
   })
   @ApiResponse({
     status: 200,
-    description: 'Child updated successfully',
+    description: 'Children updated successfully',
     schema: {
       type: 'object',
       properties: {
@@ -269,7 +299,7 @@ export class ChildrenController {
         dob: { type: 'string', format: 'date', example: '2015-06-15' },
         photo_url: {
           type: 'string',
-          example: 'https://example.com/photos/child.jpg',
+          example: 'https://example.com/photos/children.jpg',
         },
         parent_first_name: { type: 'string', example: 'Jane' },
         parent_last_name: { type: 'string', example: 'Doe' },
@@ -281,7 +311,7 @@ export class ChildrenController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Validation error or invalid child ID',
+    description: 'Validation error or invalid children ID',
   })
   @ApiResponse({
     status: 401,
@@ -289,36 +319,40 @@ export class ChildrenController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Child not found',
+    description: 'Children not found',
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateChildDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateChildrenDto
+  ) {
     return this.childrenService.update(id, body);
   }
 
   @Delete(':id')
+  @RequirePermission(['delete_children'])
   @ApiOperation({
-    summary: 'Delete child',
-    description: 'Remove a child from the system',
+    summary: 'Delete children',
+    description: 'Remove a children from the system',
   })
   @ApiParam({
     name: 'id',
-    description: 'Child ID',
+    description: 'Children ID',
     type: 'number',
     example: 1,
   })
   @ApiResponse({
     status: 200,
-    description: 'Child deleted successfully',
+    description: 'Children deleted successfully',
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Child deleted successfully' },
+        message: { type: 'string', example: 'Children deleted successfully' },
       },
     },
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid child ID',
+    description: 'Invalid children ID',
   })
   @ApiResponse({
     status: 401,
@@ -326,7 +360,7 @@ export class ChildrenController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Child not found',
+    description: 'Children not found',
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.childrenService.remove(id);

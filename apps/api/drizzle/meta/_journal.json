@@ -22,6 +22,27 @@
       "when": 1754646598471,
       "tag": "0002_boring_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755067835924,
+      "tag": "0003_shallow_luke_cage",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1755244172321,
+      "tag": "0004_bent_proteus",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1755690428596,
+      "tag": "0005_vengeful_hiroim",
+      "breakpoints": true
     }
   ]
 }

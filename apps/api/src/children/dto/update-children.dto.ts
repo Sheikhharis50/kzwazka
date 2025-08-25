@@ -1,8 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { CreateChildDto } from './create-child.dto';
+import { CreateChildrenDto } from './create-children.dto';
 
-export class UpdateChildDto extends PartialType(CreateChildDto) {
+export class UpdateChildrenDto extends PartialType(CreateChildrenDto) {
   @ApiPropertyOptional({
     description: 'User ID of the parent/guardian',
     example: 1,
@@ -11,15 +11,15 @@ export class UpdateChildDto extends PartialType(CreateChildDto) {
   user_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Child date of birth (YYYY-MM-DD format)',
+    description: 'Children date of birth (YYYY-MM-DD format)',
     example: '2015-06-15',
     format: 'date',
   })
   dob?: string;
 
   @ApiPropertyOptional({
-    description: 'Child profile photo URL',
-    example: 'https://example.com/photos/child.jpg',
+    description: 'Children profile photo URL',
+    example: 'https://example.com/photos/children.jpg',
     maxLength: 500,
   })
   photo_url?: string;

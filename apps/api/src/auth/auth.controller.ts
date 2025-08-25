@@ -4,9 +4,7 @@ import {
   Body,
   Get,
   UseGuards,
-  HttpStatus,
   Req,
-  Res,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -15,7 +13,6 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
-  ApiSecurity,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
@@ -23,11 +20,16 @@ import { LoginDto } from './dto/login-auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { APIRequest } from '../interfaces/request';
+import { GoogleAuthService } from './google-auth.service';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private googleAuthService: GoogleAuthService
+  ) {}
 
   @Post('signup')
   @ApiOperation({
@@ -111,7 +113,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: any) {
+  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: APIRequest) {
     return await this.authService.verifyOtp(req.user.id, body);
   }
 
@@ -140,7 +142,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async resendOtp(@Req() req: any) {
+  async resendOtp(@Req() req: APIRequest) {
     return await this.authService.resendOtp(req.user.id);
   }
 
@@ -310,7 +312,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async getProfile(@Req() req: any) {
+  async getProfile(@Req() req: APIRequest) {
     return this.authService.getProfile(req.user.id);
   }
 
@@ -367,7 +369,7 @@ export class AuthController {
   })
   async googleAuthWithIdToken(@Body() body: { code: string }) {
     try {
-      const result = await this.authService.authenticateWithGoogleIdToken(
+      const result = await this.googleAuthService.authenticateWithGoogleIdToken(
         body.code
       );
       return {

@@ -2,14 +2,11 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsBoolean,
   MinLength,
   MaxLength,
   Matches,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 export class CreateLocationDto {
   @ApiPropertyOptional({
     description: 'Location name',
@@ -55,9 +52,6 @@ export class CreateLocationDto {
   @IsNotEmpty({ message: 'City is required' })
   @MinLength(2, { message: 'City must be at least 2 characters long' })
   @MaxLength(100, { message: 'City cannot exceed 100 characters' })
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value
-  )
   city: string;
 
   @ApiProperty({
@@ -139,13 +133,4 @@ export class CreateLocationDto {
   @IsOptional()
   @MaxLength(200, { message: 'External ID cannot exceed 200 characters' })
   external_id?: string;
-
-  @ApiPropertyOptional({
-    description: 'Whether the location is currently active',
-    example: true,
-    default: true,
-  })
-  @IsBoolean({ message: 'Is active must be a boolean' })
-  @IsOptional()
-  is_active?: boolean;
 }

@@ -17,7 +17,6 @@ import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
 import { APP_CONSTANTS } from '../utils/constants';
 import { Logger } from '@nestjs/common';
-import { OAuth2Client } from 'google-auth-library';
 
 import {
   generateToken,
@@ -28,15 +27,6 @@ import {
   generateOTP,
   isOTPExpired,
 } from '../utils/auth.utils';
-
-type GooglePayload = {
-  sub: string;
-  email?: string;
-  email_verified?: boolean;
-  given_name?: string;
-  family_name?: string;
-  picture?: string;
-};
 
 @Injectable()
 export class AuthService {
@@ -69,34 +59,30 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    // Get the "child" role
-    const childRole = await this.userService.getRoleByName('children');
-    if (!childRole) {
-      throw new Error('Child role not found. Please seed the database.');
+    // Get the "children" role
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole) {
+      throw new Error('Children role not found. Please seed the database.');
     }
 
-    // Create user (not verified initially)
-    const newUser = await this.userService.create({
-      email,
-      password,
-      first_name,
-      last_name,
-      phone,
-      role_id: childRole.id,
-      is_active: true,
-      is_verified: false, // Will be verified after OTP confirmation
-    });
+    // Create both user and children in a single transaction
+    const { user: newUser, children: newChildren } =
+      await this.childrenService.create({
+        email,
+        password,
+        first_name,
+        last_name,
+        phone,
+        role_id: childrenRole.id,
+        is_active: true,
+        is_verified: false, // Will be verified after OTP confirmation
+        dob,
+        photo_url,
+        parent_first_name,
+        parent_last_name,
+      });
 
     const access_token = generateToken(this.jwtService, newUser.id);
-
-    // Create child record
-    const newChild = await this.childrenService.create({
-      user_id: newUser.id,
-      dob,
-      photo_url,
-      parent_first_name,
-      parent_last_name,
-    });
 
     // Generate OTP for email verification
     const otp = await this.generateAndStoreOTP(newUser.id);
@@ -119,10 +105,10 @@ export class AuthService {
           email: newUser.email,
           first_name: newUser.first_name,
           last_name: newUser.last_name,
-          role: childRole.name,
+          role: childrenRole.name,
           is_verified: newUser.is_verified,
         },
-        child: newChild,
+        children: newChildren,
       },
     };
   }
@@ -367,13 +353,9 @@ export class AuthService {
           updated_at: userData.updated_at,
           permissions: permissionIds,
         },
-        child: children[0],
+        children: children[0],
       },
     };
-  }
-
-  generateTokenForOAuthUser(user: { id: number }) {
-    return generateToken(this.jwtService, user.id);
   }
 
   // OTP Methods (updated with expiration)
@@ -532,10 +514,10 @@ export class AuthService {
    * Reset password using reset token
    */
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { token, password, confirmPassword } = resetPasswordDto;
+    const { token, password, confirm_password } = resetPasswordDto;
 
     // Validate password confirmation
-    if (password !== confirmPassword) {
+    if (password !== confirm_password) {
       throw new BadRequestException('Passwords do not match');
     }
 
@@ -608,72 +590,5 @@ export class AuthService {
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
-  }
-  async authenticateWithGoogleIdToken(code: string) {
-    const clientId = process.env.GOOGLE_CLIENT_ID!;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-    const oauth2 = new OAuth2Client(clientId, clientSecret, 'postmessage'); // << important for popup code exchange
-
-    // 1) exchange code for tokens
-    const { tokens } = await oauth2.getToken(code);
-    if (!tokens?.id_token)
-      throw new UnauthorizedException('No id_token from Google');
-
-    // 2) verify ID token
-    const ticket = await oauth2.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: clientId,
-    });
-    const payload = ticket.getPayload() as GooglePayload;
-    if (!payload?.sub) throw new UnauthorizedException('Invalid Google token');
-    if (!payload.email || payload.email_verified === false) {
-      throw new UnauthorizedException('Google email not verified');
-    }
-
-    const { sub, email, given_name, family_name, picture } = payload;
-
-    // 3) find/link/create user (store googleId=sub)
-    let user = await this.userService.findByEmail(email);
-
-    if (!user) {
-      const childRole = await this.userService.getRoleByName('children');
-      if (!childRole)
-        throw new Error('Child role not found. Please seed the database.');
-
-      user = await this.userService.create({
-        email,
-        password: null,
-        first_name: given_name || 'Unknown',
-        last_name: family_name || 'Unknown',
-        phone: '',
-        role_id: childRole.id,
-        is_active: true,
-        google_social_id: sub,
-        is_verified: true,
-      });
-
-      await this.childrenService.create({
-        user_id: user.id,
-        dob: new Date().toISOString(),
-        photo_url: picture ?? '',
-        parent_first_name: given_name || 'Unknown',
-        parent_last_name: family_name || 'Unknown',
-      });
-    }
-
-    // 4) issue your tokens
-    const access_token = this.generateTokenForOAuthUser(user);
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role_id || 'children',
-        is_verified: user.is_verified,
-      },
-      access_token,
-    };
   }
 }

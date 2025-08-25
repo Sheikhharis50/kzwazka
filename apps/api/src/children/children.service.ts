@@ -1,26 +1,85 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateChildDto } from './dto/create-child.dto';
-import { UpdateChildDto } from './dto/update-child.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { CreateChildrenDto } from './dto/create-children.dto';
+import { UpdateChildrenDto } from './dto/update-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ChildrenService {
   constructor(private readonly dbService: DatabaseService) {}
 
-  async create(body: CreateChildDto) {
-    const newChild = await this.dbService.db
-      .insert(childrenSchema)
-      .values({
-        ...body,
-        dob: new Date(body.dob).toISOString(),
-      })
-      .returning();
+  async create(body: CreateChildrenDto) {
+    // Check if user already exists
+    const existingUser = await this.dbService.db
+      .select({ id: userSchema.id })
+      .from(userSchema)
+      .where(eq(userSchema.email, body.email))
+      .limit(1);
 
-    return newChild[0];
+    if (existingUser.length > 0) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Hash password if provided
+    let hashedPassword: string | null = null;
+    if (body.password) {
+      hashedPassword = await bcrypt.hash(body.password, 10);
+    }
+
+    // Use transaction to create both user and children
+    try {
+      return await this.dbService.db.transaction(async (tx) => {
+        // Create user first
+        const [newUser] = await tx
+          .insert(userSchema)
+          .values({
+            email: body.email,
+            first_name: body.first_name,
+            last_name: body.last_name,
+            phone: body.phone,
+            password: hashedPassword,
+            role_id: body.role_id,
+            is_active: body.is_active ?? true,
+            is_verified: body.is_verified ?? false,
+            google_social_id: body.google_social_id,
+          })
+          .returning();
+
+        // Create children record
+        const [newChildren] = await tx
+          .insert(childrenSchema)
+          .values({
+            user_id: newUser.id,
+            dob: new Date(body.dob).toISOString(),
+            photo_url: body.photo_url,
+            parent_first_name: body.parent_first_name,
+            parent_last_name: body.parent_last_name,
+            location_id: body.location_id,
+          })
+          .returning();
+
+        return {
+          user: newUser,
+          children: newChildren,
+        };
+      });
+    } catch (error) {
+      // If transaction fails, throw a more specific error
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to create user and children: ${(error as Error).message}`
+      );
+    }
   }
 
   async count() {
@@ -84,7 +143,7 @@ export class ChildrenService {
   }
 
   async findOne(id: number) {
-    const child = await this.dbService.db
+    const children = await this.dbService.db
       .select({
         id: childrenSchema.id,
         dob: childrenSchema.dob,
@@ -116,13 +175,13 @@ export class ChildrenService {
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
-    if (child.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (children.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child record',
-      data: child[0],
+      message: 'Children record',
+      data: children[0],
     };
   }
 
@@ -159,48 +218,48 @@ export class ChildrenService {
       .where(eq(childrenSchema.user_id, userId));
   }
 
-  async update(id: number, updateChildDto: UpdateChildDto) {
+  async update(id: number, updateChildrenDto: UpdateChildrenDto) {
     const updateValues = {
-      ...updateChildDto,
-      ...(updateChildDto.dob && {
-        dob: new Date(updateChildDto.dob).toISOString(),
+      ...updateChildrenDto,
+      ...(updateChildrenDto.dob && {
+        dob: new Date(updateChildrenDto.dob).toISOString(),
       }),
       updated_at: new Date(),
     };
 
-    const updatedChild = await this.dbService.db
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set(updateValues)
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child updated successfully',
-      data: updatedChild[0],
+      message: 'Children updated successfully',
+      data: updatedChildren[0],
     };
   }
 
   async remove(id: number) {
-    const deletedChild = await this.dbService.db
+    const deletedChildren = await this.dbService.db
       .delete(childrenSchema)
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (deletedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (deletedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
-      message: 'Child deleted successfully',
+      message: 'Children deleted successfully',
     };
   }
 
   async updatePhotoUrl(id: number, photoUrl: string) {
-    const updatedChild = await this.dbService.db
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set({
         photo_url: photoUrl,
@@ -209,33 +268,33 @@ export class ChildrenService {
       .where(eq(childrenSchema.id, id))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
       message: 'Photo URL updated successfully',
-      data: updatedChild[0],
+      data: updatedChildren[0],
     };
   }
 
-  async assignLocation(childId: number, locationId: number) {
-    const updatedChild = await this.dbService.db
+  async assignLocation(childrenId: number, locationId: number) {
+    const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set({
         location_id: locationId,
         updated_at: new Date(),
       })
-      .where(eq(childrenSchema.id, childId))
+      .where(eq(childrenSchema.id, childrenId))
       .returning();
 
-    if (updatedChild.length === 0) {
-      throw new NotFoundException('Child not found');
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
     }
 
     return {
       message: 'Location assigned successfully',
-      data: updatedChild[0],
+      data: updatedChildren[0],
     };
   }
 }

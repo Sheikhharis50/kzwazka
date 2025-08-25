@@ -1,0 +1,170 @@
+[
+    {
+        "id": "create_user",
+        "name": "Create User",
+        "module": "user",
+        "description": "Can create new users in the system"
+    },
+    {
+        "id": "read_user",
+        "name": "Read User",
+        "module": "user",
+        "description": "Can read user information"
+    },
+    {
+        "id": "update_user",
+        "name": "Update User",
+        "module": "user",
+        "description": "Can update user information"
+    },
+    {
+        "id": "delete_user",
+        "name": "Delete User",
+        "module": "user",
+        "description": "Can delete users from the system"
+    },
+    {
+        "id": "create_children",
+        "name": "Create Children",
+        "module": "children",
+        "description": "Can create new children records"
+    },
+    {
+        "id": "read_children",
+        "name": "Read Children",
+        "module": "children",
+        "description": "Can read children information"
+    },
+    {
+        "id": "update_children",
+        "name": "Update Children",
+        "module": "children",
+        "description": "Can update children information"
+    },
+    {
+        "id": "delete_children",
+        "name": "Delete Children",
+        "module": "children",
+        "description": "Can delete children records"
+    },
+    {
+        "id": "create_location",
+        "name": "Create Location",
+        "module": "location",
+        "description": "Can create new locations"
+    },
+    {
+        "id": "read_location",
+        "name": "Read Location",
+        "module": "location",
+        "description": "Can read location information"
+    },
+    {
+        "id": "update_location",
+        "name": "Update Location",
+        "module": "location",
+        "description": "Can update location information"
+    },
+    {
+        "id": "delete_location",
+        "name": "Delete Location",
+        "module": "location",
+        "description": "Can delete locations"
+    },
+    {
+        "id": "create_event",
+        "name": "Create Event",
+        "module": "event",
+        "description": "Can create new events"
+    },
+    {
+        "id": "read_event",
+        "name": "Read Event",
+        "module": "event",
+        "description": "Can read event information"
+    },
+    {
+        "id": "update_event",
+        "name": "Update Event",
+        "module": "event",
+        "description": "Can update event information"
+    },
+    {
+        "id": "delete_event",
+        "name": "Delete Event",
+        "module": "event",
+        "description": "Can delete events"
+    },
+    {
+        "id": "create_coach",
+        "name": "Create Coach",
+        "module": "coach",
+        "description": "Can create new coach profiles"
+    },
+    {
+        "id": "read_coach",
+        "name": "Read Coach",
+        "module": "coach",
+        "description": "Can read coach information"
+    },
+    {
+        "id": "update_coach",
+        "name": "Update Coach",
+        "module": "coach",
+        "description": "Can update coach information"
+    },
+    {
+        "id": "delete_coach",
+        "name": "Delete Coach",
+        "module": "coach",
+        "description": "Can delete coach profiles"
+    },
+    {
+        "id": "create_group",
+        "name": "Create Group",
+        "module": "group",
+        "description": "Can create new groups"
+    },
+    {
+        "id": "read_group",
+        "name": "Read Group",
+        "module": "group",
+        "description": "Can read group information"
+    },
+    {
+        "id": "update_group",
+        "name": "Update Group",
+        "module": "group",
+        "description": "Can update group information"
+    },
+    {
+        "id": "delete_group",
+        "name": "Delete Group",
+        "module": "group",
+        "description": "Can delete groups"
+    },
+    {
+        "id": "create_message",
+        "name": "Create Message",
+        "module": "message",
+        "description": "Can create new messages"
+    },
+    {
+        "id": "read_message",
+        "name": "Read Message",
+        "module": "message",
+        "description": "Can read message information"
+    },
+    {
+        "id": "update_message",
+        "name": "Update Message",
+        "module": "message",
+        "description": "Can update message information"
+    },
+    {
+        "id": "delete_message",
+        "name": "Delete Message",
+        "module": "message",
+        "description": "Can delete messages"
+    }
+]

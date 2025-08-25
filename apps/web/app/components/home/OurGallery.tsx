@@ -7,7 +7,7 @@ import BgImg from '@/images/gallery-bg.png';
 import Button from '../Button';
 
 const OurGallery = () => {
-  const galleryImage = (image: StaticImageData) => (
+  const GalleryImage = ({ image }: { image: StaticImageData }) => (
     <Image
       src={image}
       alt="gallery image"
@@ -30,12 +30,20 @@ const OurGallery = () => {
       <Container className="px-3 xs:px-12 sm:px-20 md:px-32 lg:px-40 xl:px-44 2xl:px-48 relative">
         <Title className="text-center">Nasza Galeria</Title>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-5 translate-y-5 md:translate-y-10 xl:translate-y-14">
-          <div>{galleryCol1.map((image) => galleryImage(image))}</div>
+          <div>
+            {galleryCol1.map((image, i) => (
+              <GalleryImage key={i} image={image} />
+            ))}
+          </div>
           <div className="pt-8 lg:pt-12 xl:pt-20">
-            {galleryCol2.map((image) => galleryImage(image))}
+            {galleryCol2.map((image, i) => (
+              <GalleryImage key={i} image={image} />
+            ))}
           </div>
           <div className="hidden md:block">
-            {galleryCol3.map((image) => galleryImage(image))}
+            {galleryCol3.map((image, i) => (
+              <GalleryImage key={i} image={image} />
+            ))}
           </div>
         </div>
       </Container>

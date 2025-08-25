@@ -65,28 +65,24 @@ export class AuthService {
       throw new Error('Children role not found. Please seed the database.');
     }
 
-    // Create user (not verified initially)
-    const newUser = await this.userService.create({
-      email,
-      password,
-      first_name,
-      last_name,
-      phone,
-      role_id: childrenRole.id,
-      is_active: true,
-      is_verified: false, // Will be verified after OTP confirmation
-    });
+    // Create both user and children in a single transaction
+    const { user: newUser, children: newChildren } =
+      await this.childrenService.create({
+        email,
+        password,
+        first_name,
+        last_name,
+        phone,
+        role_id: childrenRole.id,
+        is_active: true,
+        is_verified: false, // Will be verified after OTP confirmation
+        dob,
+        photo_url,
+        parent_first_name,
+        parent_last_name,
+      });
 
     const access_token = generateToken(this.jwtService, newUser.id);
-
-    // Create child record
-    const newChildren = await this.childrenService.create({
-      user_id: newUser.id,
-      dob,
-      photo_url,
-      parent_first_name,
-      parent_last_name,
-    });
 
     // Generate OTP for email verification
     const otp = await this.generateAndStoreOTP(newUser.id);

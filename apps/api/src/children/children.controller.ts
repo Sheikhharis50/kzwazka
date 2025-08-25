@@ -36,31 +36,52 @@ export class ChildrenController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create a new children',
-    description: 'Add a new children to the system for a parent/guardian',
+    summary: 'Create a new children with user account',
+    description:
+      'Create both a user account and children record in a single transaction',
   })
   @ApiBody({
     type: CreateChildrenDto,
-    description: 'Children information',
+    description: 'User and children information',
   })
   @ApiResponse({
     status: 201,
-    description: 'Children created successfully',
+    description: 'User and children created successfully',
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number', example: 1 },
-        user_id: { type: 'number', example: 1 },
-        dob: { type: 'string', format: 'date', example: '2015-06-15' },
-        photo_url: {
-          type: 'string',
-          example: 'https://example.com/photos/children.jpg',
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            email: { type: 'string', example: 'john.doe@example.com' },
+            first_name: { type: 'string', example: 'John' },
+            last_name: { type: 'string', example: 'Doe' },
+            phone: { type: 'string', example: '+1-555-123-4567' },
+            role_id: { type: 'string', example: 'children' },
+            is_active: { type: 'boolean', example: true },
+            is_verified: { type: 'boolean', example: false },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
         },
-        parent_first_name: { type: 'string', example: 'Jane' },
-        parent_last_name: { type: 'string', example: 'Doe' },
-        location_id: { type: 'number', example: 1 },
-        created_at: { type: 'string', format: 'date-time' },
-        updated_at: { type: 'string', format: 'date-time' },
+        children: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            user_id: { type: 'number', example: 1 },
+            dob: { type: 'string', format: 'date', example: '2015-06-15' },
+            photo_url: {
+              type: 'string',
+              example: 'https://example.com/photos/children.jpg',
+            },
+            parent_first_name: { type: 'string', example: 'Jane' },
+            parent_last_name: { type: 'string', example: 'Doe' },
+            location_id: { type: 'number', example: 1 },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
   })
@@ -73,8 +94,8 @@ export class ChildrenController {
     description: 'Unauthorized - Invalid JWT token',
   })
   @ApiResponse({
-    status: 404,
-    description: 'Parent user not found',
+    status: 409,
+    description: 'User with this email already exists',
   })
   @RequirePermission(['create_children'])
   create(@Body() body: CreateChildrenDto) {

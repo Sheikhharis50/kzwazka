@@ -58,7 +58,8 @@ export class GoogleAuthService {
       if (!childRole)
         throw new Error('Child role not found. Please seed the database.');
 
-      user = await this.userService.create({
+      // Create both user and children using the new combined approach
+      const result = await this.childrenService.create({
         email,
         password: null,
         first_name: given_name || 'Unknown',
@@ -66,17 +67,21 @@ export class GoogleAuthService {
         phone: '',
         role_id: childRole.id,
         is_active: true,
-        google_social_id: sub,
         is_verified: true,
-      });
-
-      await this.childrenService.create({
-        user_id: user.id,
+        google_social_id: sub,
         dob: new Date().toISOString(),
         photo_url: picture ?? '',
         parent_first_name: given_name || 'Unknown',
         parent_last_name: family_name || 'Unknown',
       });
+
+      user = result.user;
+    } else {
+      // User exists, update google_social_id if not set
+      if (!user.google_social_id) {
+        await this.userService.updateGoogleSocialId(user.id, sub);
+        user.google_social_id = sub;
+      }
     }
 
     // 4) issue your tokens

@@ -20,6 +20,7 @@ import { LoginDto } from './dto/login-auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { APIRequest } from '../interfaces/request';
 import { GoogleAuthService } from './google-auth.service';
 
 @ApiTags('Authentication')
@@ -112,7 +113,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: any) {
+  async verifyOtp(@Body() body: VerifyOtpDto, @Req() req: APIRequest) {
     return await this.authService.verifyOtp(req.user.id, body);
   }
 
@@ -141,7 +142,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async resendOtp(@Req() req: any) {
+  async resendOtp(@Req() req: APIRequest) {
     return await this.authService.resendOtp(req.user.id);
   }
 
@@ -311,7 +312,7 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async getProfile(@Req() req: any) {
+  async getProfile(@Req() req: APIRequest) {
     return this.authService.getProfile(req.user.id);
   }
 

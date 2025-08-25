@@ -14,7 +14,7 @@ const Paragraph = ({
 }: ParagraphProps) => {
   return (
     <p
-      className={`text-xs md:text-sm xl:text-base ${mute ? 'text-mute' : ''} ${className}`}
+      className={`text-xs md:text-sm xl:text-base 2xl:text-lg ${mute ? 'text-mute' : ''} ${className}`}
       {...rest}
     >
       {text}

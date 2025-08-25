@@ -36,12 +36,16 @@ const HomeSidebar = ({ isOpen, setOpen }: HomeSidebarProps) => {
           ))}
         </div>
         <div className="px-3 w-full">
-          <HomeButton
-            text="LOGOWANIE"
-            icon={<ProfileRound />}
-            className="!bg-transparent !text-black w-full mb-2"
-          />
-          <HomeButton text="ZAPISZ SIĘ" className="w-full" />
+          <Link href={'/login'}>
+            <HomeButton
+              text="LOGOWANIE"
+              icon={<ProfileRound />}
+              className="!bg-transparent !text-black w-full mb-2"
+            />
+          </Link>
+          <Link href={'/register'}>
+            <HomeButton text="ZAPISZ SIĘ" className="w-full" />
+          </Link>
         </div>
       </div>
       <div

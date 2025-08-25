@@ -30,12 +30,16 @@ const HomeNavbar = () => {
             ))}
           </div>
           <div className="hidden lg:flex">
-            <HomeButton
-              text="LOGOWANIE"
-              icon={<ProfileRound />}
-              className="!bg-transparent !text-black !ps-0"
-            />
-            <HomeButton text="ZAPISZ SIĘ" />
+            <Link href={'/login'}>
+              <HomeButton
+                text="LOGOWANIE"
+                icon={<ProfileRound />}
+                className="!bg-transparent !text-black !ps-0"
+              />
+            </Link>
+            <Link href={'/register'}>
+              <HomeButton text="ZAPISZ SIĘ" />
+            </Link>
           </div>
           <button
             className="lg:hidden"

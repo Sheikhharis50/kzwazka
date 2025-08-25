@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateChildrenDto } from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
@@ -6,21 +10,76 @@ import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ChildrenService {
   constructor(private readonly dbService: DatabaseService) {}
 
   async create(body: CreateChildrenDto) {
-    const newChildren = await this.dbService.db
-      .insert(childrenSchema)
-      .values({
-        ...body,
-        dob: new Date(body.dob).toISOString(),
-      })
-      .returning();
+    // Check if user already exists
+    const existingUser = await this.dbService.db
+      .select({ id: userSchema.id })
+      .from(userSchema)
+      .where(eq(userSchema.email, body.email))
+      .limit(1);
 
-    return newChildren[0];
+    if (existingUser.length > 0) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Hash password if provided
+    let hashedPassword: string | null = null;
+    if (body.password) {
+      hashedPassword = await bcrypt.hash(body.password, 10);
+    }
+
+    // Use transaction to create both user and children
+    try {
+      return await this.dbService.db.transaction(async (tx) => {
+        // Create user first
+        const [newUser] = await tx
+          .insert(userSchema)
+          .values({
+            email: body.email,
+            first_name: body.first_name,
+            last_name: body.last_name,
+            phone: body.phone,
+            password: hashedPassword,
+            role_id: body.role_id,
+            is_active: body.is_active ?? true,
+            is_verified: body.is_verified ?? false,
+            google_social_id: body.google_social_id,
+          })
+          .returning();
+
+        // Create children record
+        const [newChildren] = await tx
+          .insert(childrenSchema)
+          .values({
+            user_id: newUser.id,
+            dob: new Date(body.dob).toISOString(),
+            photo_url: body.photo_url,
+            parent_first_name: body.parent_first_name,
+            parent_last_name: body.parent_last_name,
+            location_id: body.location_id,
+          })
+          .returning();
+
+        return {
+          user: newUser,
+          children: newChildren,
+        };
+      });
+    } catch (error) {
+      // If transaction fails, throw a more specific error
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to create user and children: ${(error as Error).message}`
+      );
+    }
   }
 
   async count() {

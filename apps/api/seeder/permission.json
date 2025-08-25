@@ -94,5 +94,77 @@
         "name": "Delete Event",
         "module": "event",
         "description": "Can delete events"
+    },
+    {
+        "id": "create_coach",
+        "name": "Create Coach",
+        "module": "coach",
+        "description": "Can create new coach profiles"
+    },
+    {
+        "id": "read_coach",
+        "name": "Read Coach",
+        "module": "coach",
+        "description": "Can read coach information"
+    },
+    {
+        "id": "update_coach",
+        "name": "Update Coach",
+        "module": "coach",
+        "description": "Can update coach information"
+    },
+    {
+        "id": "delete_coach",
+        "name": "Delete Coach",
+        "module": "coach",
+        "description": "Can delete coach profiles"
+    },
+    {
+        "id": "create_group",
+        "name": "Create Group",
+        "module": "group",
+        "description": "Can create new groups"
+    },
+    {
+        "id": "read_group",
+        "name": "Read Group",
+        "module": "group",
+        "description": "Can read group information"
+    },
+    {
+        "id": "update_group",
+        "name": "Update Group",
+        "module": "group",
+        "description": "Can update group information"
+    },
+    {
+        "id": "delete_group",
+        "name": "Delete Group",
+        "module": "group",
+        "description": "Can delete groups"
+    },
+    {
+        "id": "create_message",
+        "name": "Create Message",
+        "module": "message",
+        "description": "Can create new messages"
+    },
+    {
+        "id": "read_message",
+        "name": "Read Message",
+        "module": "message",
+        "description": "Can read message information"
+    },
+    {
+        "id": "update_message",
+        "name": "Update Message",
+        "module": "message",
+        "description": "Can update message information"
+    },
+    {
+        "id": "delete_message",
+        "name": "Delete Message",
+        "module": "message",
+        "description": "Can delete messages"
     }
 ]

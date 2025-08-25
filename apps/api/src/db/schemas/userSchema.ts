@@ -8,6 +8,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { Role, roleSchema } from './roleSchema';
+import { coachSchema } from './coachSchema';
+import { childrenSchema } from './childrenSchema';
 import { eventSchema } from './eventSchema';
 
 export const userSchema = pgTable('user', {
@@ -35,6 +37,8 @@ export const userRelations = relations(userSchema, ({ one, many }) => ({
     fields: [userSchema.role_id],
     references: [roleSchema.id],
   }),
+  coach: many(coachSchema),
+  children: many(childrenSchema),
   events: many(eventSchema),
 }));
 

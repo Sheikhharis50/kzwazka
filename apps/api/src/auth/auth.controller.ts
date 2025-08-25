@@ -21,11 +21,15 @@ import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
+import { GoogleAuthService } from './google-auth.service';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private googleAuthService: GoogleAuthService
+  ) {}
 
   @Post('signup')
   @ApiOperation({
@@ -365,7 +369,7 @@ export class AuthController {
   })
   async googleAuthWithIdToken(@Body() body: { code: string }) {
     try {
-      const result = await this.authService.authenticateWithGoogleIdToken(
+      const result = await this.googleAuthService.authenticateWithGoogleIdToken(
         body.code
       );
       return {

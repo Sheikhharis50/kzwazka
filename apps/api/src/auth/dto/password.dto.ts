@@ -6,7 +6,6 @@ import {
   IsString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsPasswordMatch } from '../decorators/password-match.decorator';
 
 export class ForgotPasswordDto {
   @ApiProperty({
@@ -54,6 +53,5 @@ export class ResetPasswordDto {
   })
   @IsString({ message: 'Confirm password must be a string' })
   @IsNotEmpty({ message: 'Confirm password is required' })
-  @IsPasswordMatch('password', { message: 'Passwords do not match' })
-  confirmPassword: string;
+  confirm_password: string;
 }

@@ -4,19 +4,19 @@ import { locationSchema } from './locationSchema';
 import { userSchema } from './userSchema';
 
 export const eventSchema = pgTable('event', {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   title: varchar('title', { length: 255 }).notNull(),
-  location_id: integer().references(() => locationSchema.id),
-  min_age: integer().notNull(),
-  max_age: integer().notNull(),
-  event_date: timestamp().notNull(),
-  opening_time: timestamp().notNull(),
-  closing_time: timestamp().notNull(),
+  location_id: integer('location_id').references(() => locationSchema.id),
+  min_age: integer('min_age').notNull(),
+  max_age: integer('max_age').notNull(),
+  event_date: timestamp('event_date').notNull(),
+  opening_time: timestamp('opening_time').notNull(),
+  closing_time: timestamp('closing_time').notNull(),
   status: varchar('status', { length: 255 }).notNull(),
-  created_by: integer().references(() => userSchema.id),
-  amount: integer().notNull(),
-  created_at: timestamp().notNull().defaultNow(),
-  updated_at: timestamp().notNull().defaultNow(),
+  created_by: integer('created_by').references(() => userSchema.id),
+  amount: integer('amount').notNull(),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+  updated_at: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const eventRelations = relations(eventSchema, ({ one }) => ({

@@ -3,19 +3,34 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { CreateChildrenDto } from './dto/create-children.dto';
+import {
+  CreateChildrenDto,
+  CreateChildrenDtoByAdmin,
+} from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
-import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
+import {
+  childrenSchema,
+  userSchema,
+  locationSchema,
+  childrenGroupSchema,
+} from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import * as bcrypt from 'bcryptjs';
+import { EmailService } from '../services/email.service';
+import { generateToken } from '../utils/auth.utils';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class ChildrenService {
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly emailService: EmailService,
+    private readonly jwtService: JwtService
+  ) {}
 
   async create(body: CreateChildrenDto) {
     // Check if user already exists
@@ -51,6 +66,7 @@ export class ChildrenService {
             is_active: body.is_active ?? true,
             is_verified: body.is_verified ?? false,
             google_social_id: body.google_social_id,
+            photo_url: body.photo_url,
           })
           .returning();
 
@@ -60,7 +76,6 @@ export class ChildrenService {
           .values({
             user_id: newUser.id,
             dob: new Date(body.dob).toISOString(),
-            photo_url: body.photo_url,
             parent_first_name: body.parent_first_name,
             parent_last_name: body.parent_last_name,
             location_id: body.location_id,
@@ -83,6 +98,29 @@ export class ChildrenService {
     }
   }
 
+  async createdByAdmin(body: CreateChildrenDtoByAdmin) {
+    const { group_id, ...rest } = body;
+    const first_name = rest.name;
+    const parent_first_name = rest.parent_name;
+    const children = await this.create({
+      ...rest,
+      first_name,
+      parent_first_name,
+    });
+    if (group_id) {
+      await this.assignGroup(children.children.id, group_id);
+    }
+
+    const accessToken = generateToken(this.jwtService, children.user.id);
+
+    await this.emailService.sendCreatedChildrenEmailByAdmin(
+      children.user.email,
+      children.user.first_name,
+      `${process.env.NEXT_PUBLIC_APP_URL}/register/?token=${accessToken}`
+    );
+    return children;
+  }
+
   async count() {
     const [{ count }] = await this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
@@ -91,10 +129,26 @@ export class ChildrenService {
     return count;
   }
 
+  async assignGroup(childrenId: number, groupId: number) {
+    const updatedChildren = await this.dbService.db
+      .insert(childrenGroupSchema)
+      .values({
+        children_id: childrenId,
+        group_id: groupId,
+      })
+      .returning();
+
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
+    }
+
+    return updatedChildren[0];
+  }
+
   async findAll(params: QueryChildrenDto) {
     const {
-      page = 1,
-      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+      page = '1',
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
       search,
       location_id,
       sort_by = 'created_at',
@@ -108,7 +162,6 @@ export class ChildrenService {
       .select({
         id: childrenSchema.id,
         dob: childrenSchema.dob,
-        photo_url: childrenSchema.photo_url,
         parent_first_name: childrenSchema.parent_first_name,
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
@@ -118,6 +171,7 @@ export class ChildrenService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -173,7 +227,7 @@ export class ChildrenService {
     }
 
     // Apply pagination
-    baseQuery.offset(offset).limit(limit);
+    baseQuery.offset(offset).limit(Number(limit));
 
     // Execute both queries
     const [countResult, results] = await Promise.all([
@@ -197,7 +251,6 @@ export class ChildrenService {
       .select({
         id: childrenSchema.id,
         dob: childrenSchema.dob,
-        photo_url: childrenSchema.photo_url,
         parent_first_name: childrenSchema.parent_first_name,
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
@@ -207,6 +260,7 @@ export class ChildrenService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -240,7 +294,6 @@ export class ChildrenService {
       .select({
         id: childrenSchema.id,
         dob: childrenSchema.dob,
-        photo_url: childrenSchema.photo_url,
         parent_first_name: childrenSchema.parent_first_name,
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
@@ -250,6 +303,7 @@ export class ChildrenService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -308,11 +362,10 @@ export class ChildrenService {
     };
   }
 
-  async updatePhotoUrl(id: number, photoUrl: string) {
+  async updatePhotoUrl(id: number) {
     const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set({
-        photo_url: photoUrl,
         updated_at: new Date(),
       })
       .where(eq(childrenSchema.id, id))

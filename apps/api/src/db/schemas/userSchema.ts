@@ -15,13 +15,14 @@ import { eventSchema } from './eventSchema';
 export const userSchema = pgTable('user', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
   first_name: varchar('first_name', { length: 100 }).notNull(),
-  last_name: varchar('last_name', { length: 100 }).notNull(),
+  last_name: varchar('last_name', { length: 100 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
   phone: varchar('phone', { length: 20 }),
   password: varchar('password', { length: 255 }),
   role_id: text('role_id')
     .notNull()
     .references(() => roleSchema.id),
+  photo_url: text('photo_url'),
   is_active: boolean('is_active').default(true).notNull(),
   is_verified: boolean('is_verified').default(false).notNull(),
   google_social_id: varchar('google_social_id', { length: 255 }),

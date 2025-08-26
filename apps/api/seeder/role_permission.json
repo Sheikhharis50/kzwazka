@@ -141,6 +141,10 @@
     },
     {
         "role_id": "children",
+        "permission_id": "update_children"
+    },
+    {
+        "role_id": "children",
         "permission_id": "read_children"
     },
     {

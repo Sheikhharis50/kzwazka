@@ -118,3 +118,9 @@ export const paymentStatusOptions = [
   { label: 'Refund', value: 'refund' },
   { label: 'Delay', value: 'delay' },
 ];
+
+export const sortByOptions = [
+  { label: 'Age', value: 'age' },
+  { label: 'Group', value: 'group' },
+  { label: 'Joined', value: 'joined' },
+];

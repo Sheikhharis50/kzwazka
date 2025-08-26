@@ -190,5 +190,29 @@
         "name": "Delete Children Group",
         "module": "children_group",
         "description": "Can delete children-group relationships"
+    },
+    {
+        "id": "create_attendance",
+        "name": "Create Attendance",
+        "module": "attendance",
+        "description": "Can create new attendance records"
+    },
+    {
+        "id": "read_attendance",
+        "name": "Read Attendance",
+        "module": "attendance",
+        "description": "Can read attendance information"
+    },
+    {
+        "id": "update_attendance",
+        "name": "Update Attendance",
+        "module": "attendance",
+        "description": "Can update attendance information"
+    },
+    {
+        "id": "delete_attendance",
+        "name": "Delete Attendance",
+        "module": "attendance",
+        "description": "Can delete attendance records"
     }
 ]

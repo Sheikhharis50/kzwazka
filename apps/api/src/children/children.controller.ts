@@ -20,7 +20,10 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ChildrenService } from './children.service';
-import { CreateChildrenDto } from './dto/create-children.dto';
+import {
+  CreateChildrenDto,
+  CreateChildrenDtoByAdmin,
+} from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -61,6 +64,10 @@ export class ChildrenController {
             last_name: { type: 'string', example: 'Doe' },
             phone: { type: 'string', example: '+1-555-123-4567' },
             role_id: { type: 'string', example: 'children' },
+            photo_url: {
+              type: 'string',
+              example: 'https://example.com/photos/children.jpg',
+            },
             is_active: { type: 'boolean', example: true },
             is_verified: { type: 'boolean', example: false },
             created_at: { type: 'string', format: 'date-time' },
@@ -73,10 +80,6 @@ export class ChildrenController {
             id: { type: 'number', example: 1 },
             user_id: { type: 'number', example: 1 },
             dob: { type: 'string', format: 'date', example: '2015-06-15' },
-            photo_url: {
-              type: 'string',
-              example: 'https://example.com/photos/children.jpg',
-            },
             parent_first_name: { type: 'string', example: 'Jane' },
             parent_last_name: { type: 'string', example: 'Doe' },
             location_id: { type: 'number', example: 1 },
@@ -100,8 +103,8 @@ export class ChildrenController {
     description: 'User with this email already exists',
   })
   @RequirePermission(['create_children'])
-  create(@Body() body: CreateChildrenDto) {
-    return this.childrenService.create(body);
+  create(@Body() body: CreateChildrenDtoByAdmin) {
+    return this.childrenService.createdByAdmin(body);
   }
 
   @Get()
@@ -165,10 +168,6 @@ export class ChildrenController {
             properties: {
               id: { type: 'number', example: 1 },
               dob: { type: 'string', format: 'date', example: '2015-06-15' },
-              photo_url: {
-                type: 'string',
-                example: 'https://example.com/photos/children.jpg',
-              },
               parent_first_name: { type: 'string', example: 'Jane' },
               parent_last_name: { type: 'string', example: 'Doe' },
               created_at: { type: 'string', format: 'date-time' },
@@ -180,6 +179,10 @@ export class ChildrenController {
                   first_name: { type: 'string', example: 'John' },
                   last_name: { type: 'string', example: 'Doe' },
                   email: { type: 'string', example: 'john.doe@example.com' },
+                  photo_url: {
+                    type: 'string',
+                    example: 'https://example.com/photos/children.jpg',
+                  },
                 },
               },
               location: {

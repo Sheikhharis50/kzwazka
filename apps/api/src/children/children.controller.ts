@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +22,7 @@ import {
 import { ChildrenService } from './children.service';
 import { CreateChildrenDto } from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
+import { QueryChildrenDto } from './dto/query-children.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   PermissionGuard,
@@ -108,6 +110,34 @@ export class ChildrenController {
     description: 'Retrieve a paginated list of all children in the system',
   })
   @ApiQuery({
+    name: 'search',
+    description: 'Search children by name (parent first name or last name)',
+    required: false,
+    type: 'string',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'location_id',
+    description: 'Filter by location ID',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    description: 'Sort by field',
+    required: false,
+    enum: ['created_at', 'dob'],
+    example: 'created_at',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    description: 'Sort order',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
+  @ApiQuery({
     name: 'page',
     description: 'Page number for pagination',
     required: false,
@@ -127,13 +157,13 @@ export class ChildrenController {
     schema: {
       type: 'object',
       properties: {
+        message: { type: 'string', example: 'Children records' },
         data: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
               id: { type: 'number', example: 1 },
-              user_id: { type: 'number', example: 1 },
               dob: { type: 'string', format: 'date', example: '2015-06-15' },
               photo_url: {
                 type: 'string',
@@ -141,21 +171,33 @@ export class ChildrenController {
               },
               parent_first_name: { type: 'string', example: 'Jane' },
               parent_last_name: { type: 'string', example: 'Doe' },
-              location_id: { type: 'number', example: 1 },
               created_at: { type: 'string', format: 'date-time' },
               updated_at: { type: 'string', format: 'date-time' },
+              user: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  first_name: { type: 'string', example: 'John' },
+                  last_name: { type: 'string', example: 'Doe' },
+                  email: { type: 'string', example: 'john.doe@example.com' },
+                },
+              },
+              location: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number', example: 1 },
+                  name: { type: 'string', example: 'Main Gym' },
+                  address1: { type: 'string', example: '123 Main St' },
+                  city: { type: 'string', example: 'New York' },
+                  state: { type: 'string', example: 'NY' },
+                },
+              },
             },
           },
         },
-        pagination: {
-          type: 'object',
-          properties: {
-            page: { type: 'number', example: 1 },
-            limit: { type: 'number', example: 10 },
-            total: { type: 'number', example: 25 },
-            totalPages: { type: 'number', example: 3 },
-          },
-        },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 10 },
+        count: { type: 'number', example: 25 },
       },
     },
   })
@@ -164,10 +206,8 @@ export class ChildrenController {
     description: 'Unauthorized - Invalid JWT token',
   })
   @RequirePermission(['read_children'])
-  findAll(
-    @Param('params', ParseIntPipe) params: { page: string; limit: string }
-  ) {
-    return this.childrenService.findAll(params);
+  findAll(@Query() query: QueryChildrenDto) {
+    return this.childrenService.findAll(query);
   }
 
   @Get('user/:userId')

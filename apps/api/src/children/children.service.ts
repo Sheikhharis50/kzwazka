@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateChildrenDto } from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
+import { QueryChildrenDto } from './dto/query-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql } from 'drizzle-orm';
 import { childrenSchema, userSchema, locationSchema } from '../db/schemas';
@@ -90,48 +91,97 @@ export class ChildrenService {
     return count;
   }
 
-  async findAll(params: { page: string; limit: string }) {
+  async findAll(params: QueryChildrenDto) {
     const {
-      page = '1',
-      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+      page = 1,
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+      search,
+      location_id,
+      sort_by = 'created_at',
+      sort_order = 'desc',
     } = params;
 
-    const offset = getPageOffset(page, limit);
+    const offset = getPageOffset(page.toString(), limit.toString());
 
-    const [count, results] = await Promise.all([
-      this.count(),
-      this.dbService.db
-        .select({
-          id: childrenSchema.id,
-          dob: childrenSchema.dob,
-          photo_url: childrenSchema.photo_url,
-          parent_first_name: childrenSchema.parent_first_name,
-          parent_last_name: childrenSchema.parent_last_name,
-          created_at: childrenSchema.created_at,
-          updated_at: childrenSchema.updated_at,
-          user: {
-            id: userSchema.id,
-            first_name: userSchema.first_name,
-            last_name: userSchema.last_name,
-            email: userSchema.email,
-          },
-          location: {
-            id: locationSchema.id,
-            name: locationSchema.name,
-            address1: locationSchema.address1,
-            city: locationSchema.city,
-            state: locationSchema.state,
-          },
-        })
-        .from(childrenSchema)
-        .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-        .leftJoin(
-          locationSchema,
-          eq(childrenSchema.location_id, locationSchema.id)
-        )
-        .offset(offset)
-        .limit(Number(limit)),
+    // Build the base query
+    const baseQuery = this.dbService.db
+      .select({
+        id: childrenSchema.id,
+        dob: childrenSchema.dob,
+        photo_url: childrenSchema.photo_url,
+        parent_first_name: childrenSchema.parent_first_name,
+        parent_last_name: childrenSchema.parent_last_name,
+        created_at: childrenSchema.created_at,
+        updated_at: childrenSchema.updated_at,
+        user: {
+          id: userSchema.id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+        },
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          city: locationSchema.city,
+          state: locationSchema.state,
+        },
+      })
+      .from(childrenSchema)
+      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .leftJoin(
+        locationSchema,
+        eq(childrenSchema.location_id, locationSchema.id)
+      );
+
+    // Build count query
+    const countQuery = this.dbService.db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(childrenSchema)
+      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .leftJoin(
+        locationSchema,
+        eq(childrenSchema.location_id, locationSchema.id)
+      );
+
+    // Apply search filter
+    if (search) {
+      const searchCondition = sql`(${userSchema.first_name} ILIKE ${`%${search}%`} OR ${userSchema.last_name} ILIKE ${`%${search}%`} OR ${childrenSchema.parent_first_name} ILIKE ${`%${search}%`} OR ${childrenSchema.parent_last_name} ILIKE ${`%${search}%`})`;
+      baseQuery.where(searchCondition);
+      countQuery.where(searchCondition);
+    }
+
+    // Apply location filter
+    if (location_id) {
+      baseQuery.where(eq(childrenSchema.location_id, location_id));
+      countQuery.where(eq(childrenSchema.location_id, location_id));
+    }
+
+    // Apply sorting
+    if (sort_by === 'created_at') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? childrenSchema.created_at
+          : sql`${childrenSchema.created_at} DESC`
+      );
+    } else if (sort_by === 'dob') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? childrenSchema.dob
+          : sql`${childrenSchema.dob} DESC`
+      );
+    }
+
+    // Apply pagination
+    baseQuery.offset(offset).limit(limit);
+
+    // Execute both queries
+    const [countResult, results] = await Promise.all([
+      countQuery.limit(1),
+      baseQuery,
     ]);
+
+    const count = countResult[0]?.count || 0;
 
     return {
       message: 'Children records',

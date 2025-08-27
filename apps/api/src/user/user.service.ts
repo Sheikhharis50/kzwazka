@@ -12,7 +12,7 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly dbService: DatabaseService) {}
 
   async createAdmin(createUserDto: CreateUserDto) {
     const adminRole = await this.getRoleByName('admin');
@@ -46,7 +46,7 @@ export class UserService {
     }
 
     // Create user
-    const newUser = await this.db.db
+    const newUser = await this.dbService.db
       .insert(userSchema)
       .values({
         email,
@@ -62,7 +62,7 @@ export class UserService {
   }
 
   async findAll() {
-    return await this.db.db
+    return await this.dbService.db
       .select({
         id: userSchema.id,
         email: userSchema.email,
@@ -80,7 +80,7 @@ export class UserService {
   }
 
   async findOne(id: number) {
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({
         id: userSchema.id,
         email: userSchema.email,
@@ -106,7 +106,7 @@ export class UserService {
   }
 
   async findByEmail(email: string) {
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select()
       .from(userSchema)
       .where(eq(userSchema.email, email))
@@ -130,7 +130,7 @@ export class UserService {
       updated_at: new Date(),
     };
 
-    const updatedUser = await this.db.db
+    const updatedUser = await this.dbService.db
       .update(userSchema)
       .set(updateValues)
       .where(eq(userSchema.id, id))
@@ -144,7 +144,7 @@ export class UserService {
   }
 
   async remove(id: number) {
-    const deletedUser = await this.db.db
+    const deletedUser = await this.dbService.db
       .delete(userSchema)
       .where(eq(userSchema.id, id))
       .returning();
@@ -157,7 +157,7 @@ export class UserService {
   }
 
   async updateGoogleSocialId(id: number, googleSocialId: string) {
-    const updatedUser = await this.db.db
+    const updatedUser = await this.dbService.db
       .update(userSchema)
       .set({
         google_social_id: googleSocialId,
@@ -175,7 +175,7 @@ export class UserService {
   }
 
   async verifyPassword(userId: number, password: string): Promise<boolean> {
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({ password: userSchema.password })
       .from(userSchema)
       .where(eq(userSchema.id, userId))
@@ -189,7 +189,7 @@ export class UserService {
   }
 
   async getRoleByName(roleName: string) {
-    const role = await this.db.db
+    const role = await this.dbService.db
       .select()
       .from(roleSchema)
       .where(eq(roleSchema.name, roleName))

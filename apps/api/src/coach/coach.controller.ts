@@ -27,6 +27,7 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
+import { QueryCoachDto } from './dto/query-coach.dto';
 
 @ApiTags('Coaches')
 @Controller('api/coach')
@@ -36,7 +37,7 @@ export class CoachController {
   constructor(private readonly coachService: CoachService) {}
 
   @Post()
-  @RequirePermission(['coach_create'])
+  @RequirePermission(['create_coach'])
   @ApiOperation({
     summary: 'Create a new coach',
     description: 'Create a new coach account with associated user record',
@@ -100,7 +101,7 @@ export class CoachController {
   }
 
   @Get()
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get all coaches',
     description:
@@ -119,6 +120,13 @@ export class CoachController {
     required: false,
     type: 'number',
     example: 10,
+  })
+  @ApiQuery({
+    name: 'q',
+    description: 'Search query',
+    required: false,
+    type: 'string',
+    example: 'John',
   })
   @ApiResponse({
     status: 200,
@@ -173,15 +181,12 @@ export class CoachController {
     status: 401,
     description: 'Unauthorized - Invalid JWT token',
   })
-  findAll(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
-  ) {
-    return this.coachService.findAll({ page, limit });
+  findAll(@Query() query: QueryCoachDto) {
+    return this.coachService.findAll(query);
   }
 
   @Get(':id')
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get coach by ID',
     description:
@@ -249,7 +254,7 @@ export class CoachController {
   }
 
   @Patch(':id')
-  @RequirePermission(['coach_update'])
+  @RequirePermission(['update_coach'])
   @ApiOperation({
     summary: 'Update coach',
     description: 'Update coach information and optionally associated user data',
@@ -292,7 +297,7 @@ export class CoachController {
   }
 
   @Patch(':id/status')
-  @RequirePermission(['coach_update'])
+  @RequirePermission(['update_coach'])
   @ApiOperation({
     summary: 'Update coach status',
     description: 'Update the active/inactive status of a coach',
@@ -336,7 +341,7 @@ export class CoachController {
   }
 
   @Delete(':id')
-  @RequirePermission(['coach_delete'])
+  @RequirePermission(['delete_coach'])
   @ApiOperation({
     summary: 'Delete coach',
     description: 'Remove a coach from the system (user record is preserved)',

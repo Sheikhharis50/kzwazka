@@ -5,15 +5,21 @@ import { attendanceSchema, childrenSchema, groupSchema } from '../db/schemas';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { QueryAttendanceDto } from './dto/query-attendance.dto';
+import {
+  APP_CONSTANTS,
+  getPageOffset,
+  start_of_day_date,
+  end_of_day_date,
+} from 'src/utils';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly dbService: DatabaseService) {}
 
   async create(createAttendanceDto: CreateAttendanceDto) {
     const { date, ...attendanceData } = createAttendanceDto;
 
-    const newAttendance = await this.db.db
+    const newAttendance = await this.dbService.db
       .insert(attendanceSchema)
       .values({
         ...attendanceData,
@@ -34,23 +40,37 @@ export class AttendanceService {
       status,
       from_date,
       to_date,
-      page = 1,
-      limit = 10,
+      page = '1',
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
     } = queryDto;
 
-    const offset = (page - 1) * limit;
-    const conditions: any[] = [
-      eq(attendanceSchema.group_id, (group_id as number) || 0),
-      eq(attendanceSchema.children_id, (children_id as number) || 0),
-      eq(attendanceSchema.status, (status as string) || ''),
-      gte(attendanceSchema.date, new Date((from_date as string) || '')),
-      lte(attendanceSchema.date, new Date((to_date as string) || '')),
-    ];
+    const offset = getPageOffset(page, limit);
+    const conditions: any[] = [];
+
+    if (group_id) {
+      conditions.push(eq(attendanceSchema.group_id, group_id));
+    }
+
+    if (children_id) {
+      conditions.push(eq(attendanceSchema.children_id, children_id));
+    }
+
+    if (status) {
+      conditions.push(eq(attendanceSchema.status, status));
+    }
+
+    if (from_date) {
+      conditions.push(gte(attendanceSchema.date, start_of_day_date(from_date)));
+    }
+
+    if (to_date) {
+      conditions.push(lte(attendanceSchema.date, end_of_day_date(to_date)));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [attendance, totalCount] = await Promise.all([
-      this.db.db
+      this.dbService.db
         .select({
           id: attendanceSchema.id,
           children_id: attendanceSchema.children_id,
@@ -79,9 +99,9 @@ export class AttendanceService {
         .leftJoin(groupSchema, eq(attendanceSchema.group_id, groupSchema.id))
         .where(whereClause)
         .orderBy(desc(attendanceSchema.date), desc(attendanceSchema.created_at))
-        .limit(limit)
+        .limit(Number(limit))
         .offset(offset),
-      this.db.db
+      this.dbService.db
         .select({ count: sql<number>`count(*)` })
         .from(attendanceSchema)
         .where(whereClause)
@@ -95,13 +115,13 @@ export class AttendanceService {
         page,
         limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / Number(limit)),
       },
     };
   }
 
   async findOne(id: number) {
-    const attendance = await this.db.db
+    const attendance = await this.dbService.db
       .select({
         id: attendanceSchema.id,
         children_id: attendanceSchema.children_id,
@@ -150,7 +170,7 @@ export class AttendanceService {
       updated_at: new Date(),
     };
 
-    const updatedAttendance = await this.db.db
+    const updatedAttendance = await this.dbService.db
       .update(attendanceSchema)
       .set(updateValues)
       .where(eq(attendanceSchema.id, id))
@@ -167,7 +187,7 @@ export class AttendanceService {
   }
 
   async remove(id: number) {
-    const deletedAttendance = await this.db.db
+    const deletedAttendance = await this.dbService.db
       .delete(attendanceSchema)
       .where(eq(attendanceSchema.id, id))
       .returning();
@@ -186,16 +206,25 @@ export class AttendanceService {
     childrenId: number,
     queryDto: QueryAttendanceDto = {}
   ) {
-    const { from_date, to_date, page = 1, limit = 10 } = queryDto;
-    const offset = (page - 1) * limit;
-    const conditions: any[] = [
-      eq(attendanceSchema.children_id, childrenId),
-      gte(attendanceSchema.date, new Date((from_date as string) || '')),
-      lte(attendanceSchema.date, new Date((to_date as string) || '')),
-    ];
+    const {
+      from_date,
+      to_date,
+      page = '1',
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+    } = queryDto;
+    const offset = getPageOffset(page, limit);
+    const conditions: any[] = [eq(attendanceSchema.children_id, childrenId)];
+
+    if (from_date) {
+      conditions.push(gte(attendanceSchema.date, start_of_day_date(from_date)));
+    }
+
+    if (to_date) {
+      conditions.push(lte(attendanceSchema.date, end_of_day_date(to_date)));
+    }
 
     const [attendance, totalCount] = await Promise.all([
-      this.db.db
+      this.dbService.db
         .select({
           id: attendanceSchema.id,
           group_id: attendanceSchema.group_id,
@@ -213,9 +242,9 @@ export class AttendanceService {
         .leftJoin(groupSchema, eq(attendanceSchema.group_id, groupSchema.id))
         .where(and(...conditions))
         .orderBy(desc(attendanceSchema.date))
-        .limit(limit)
+        .limit(Number(limit))
         .offset(offset),
-      this.db.db
+      this.dbService.db
         .select({ count: sql<number>`count(*)` })
         .from(attendanceSchema)
         .where(and(...conditions))
@@ -229,7 +258,7 @@ export class AttendanceService {
         page,
         limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / Number(limit)),
       },
     };
   }
@@ -238,16 +267,25 @@ export class AttendanceService {
     groupId: number,
     queryDto: QueryAttendanceDto = {}
   ) {
-    const { from_date, to_date, page = 1, limit = 10 } = queryDto;
-    const offset = (page - 1) * limit;
-    const conditions: any[] = [
-      eq(attendanceSchema.group_id, groupId),
-      gte(attendanceSchema.date, new Date((from_date as string) || '')),
-      lte(attendanceSchema.date, new Date((to_date as string) || '')),
-    ];
+    const {
+      from_date,
+      to_date,
+      page = '1',
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+    } = queryDto;
+    const offset = getPageOffset(page, limit);
+    const conditions: any[] = [eq(attendanceSchema.group_id, groupId)];
+
+    if (from_date) {
+      conditions.push(gte(attendanceSchema.date, start_of_day_date(from_date)));
+    }
+
+    if (to_date) {
+      conditions.push(lte(attendanceSchema.date, end_of_day_date(to_date)));
+    }
 
     const [attendance, totalCount] = await Promise.all([
-      this.db.db
+      this.dbService.db
         .select({
           id: attendanceSchema.id,
           children_id: attendanceSchema.children_id,
@@ -271,9 +309,9 @@ export class AttendanceService {
           asc(childrenSchema.parent_first_name),
           desc(attendanceSchema.date)
         )
-        .limit(limit)
+        .limit(Number(limit))
         .offset(offset),
-      this.db.db
+      this.dbService.db
         .select({ count: sql<number>`count(*)` })
         .from(attendanceSchema)
         .where(and(...conditions))
@@ -287,7 +325,7 @@ export class AttendanceService {
         page,
         limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / Number(limit)),
       },
     };
   }

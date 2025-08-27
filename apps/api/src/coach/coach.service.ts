@@ -12,6 +12,7 @@ import { eq, sql } from 'drizzle-orm';
 import { coachSchema, userSchema, locationSchema, Coach } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import { QueryCoachDto } from './dto/query-coach.dto';
 
 @Injectable()
 export class CoachService {
@@ -82,7 +83,7 @@ export class CoachService {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to create coach: ${error.message}`);
+      this.logger.error(`Failed to create coach: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -95,50 +96,69 @@ export class CoachService {
     return count;
   }
 
-  async findAll(params: { page: string; limit: string }) {
+  async findAll(params: QueryCoachDto) {
     const {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+      q,
     } = params;
 
     const offset = getPageOffset(page, limit);
 
-    const [count, results] = await Promise.all([
-      this.count(),
-      this.dbService.db
-        .select({
-          id: coachSchema.id,
-          name: coachSchema.name,
-          email: coachSchema.email,
-          phone: coachSchema.phone,
-          status: coachSchema.status,
-          created_at: coachSchema.created_at,
-          updated_at: coachSchema.updated_at,
-          user: {
-            id: userSchema.id,
-            first_name: userSchema.first_name,
-            last_name: userSchema.last_name,
-            email: userSchema.email,
-            is_active: userSchema.is_active,
-            is_verified: userSchema.is_verified,
-          },
-          location: {
-            id: locationSchema.id,
-            name: locationSchema.name,
-            address1: locationSchema.address1,
-            city: locationSchema.city,
-            state: locationSchema.state,
-          },
-        })
-        .from(coachSchema)
-        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .leftJoin(
-          locationSchema,
-          eq(coachSchema.location_id, locationSchema.id)
-        )
-        .offset(offset)
-        .limit(Number(limit)),
+    // Build the base query
+    const baseQuery = this.dbService.db
+      .select({
+        id: coachSchema.id,
+        name: coachSchema.name,
+        email: coachSchema.email,
+        phone: coachSchema.phone,
+        status: coachSchema.status,
+        created_at: coachSchema.created_at,
+        updated_at: coachSchema.updated_at,
+        user: {
+          id: userSchema.id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+          is_active: userSchema.is_active,
+          is_verified: userSchema.is_verified,
+        },
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          city: locationSchema.city,
+          state: locationSchema.state,
+        },
+      })
+      .from(coachSchema)
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
+
+    // Build count query
+    const countQuery = this.dbService.db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(coachSchema)
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
+
+    // Apply search filter if q parameter is provided
+    if (q) {
+      const searchCondition = sql`(${coachSchema.name} ILIKE ${`%${q}%`} OR ${userSchema.first_name} ILIKE ${`%${q}%`} OR ${userSchema.last_name} ILIKE ${`%${q}%`})`;
+      baseQuery.where(searchCondition);
+      countQuery.where(searchCondition);
+    }
+
+    // Apply pagination
+    baseQuery.offset(offset).limit(Number(limit));
+
+    // Execute both queries
+    const [countResult, results] = await Promise.all([
+      countQuery.limit(1),
+      baseQuery,
     ]);
+
+    const count = countResult[0]?.count || 0;
 
     return {
       message: 'Coaches retrieved successfully',
@@ -249,16 +269,16 @@ export class CoachService {
         data: updatedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to update coach: ${error.message}`);
+      this.logger.error(`Failed to update coach: ${(error as Error).message}`);
       throw error;
     }
   }
 
   async remove(id: number) {
     try {
-      // Check if coach exists
+      // Check if coach exists and get the user_id
       const existingCoach = await this.dbService.db
-        .select()
+        .select({ user_id: coachSchema.user_id })
         .from(coachSchema)
         .where(eq(coachSchema.id, id))
         .limit(1);
@@ -267,23 +287,28 @@ export class CoachService {
         throw new NotFoundException('Coach not found');
       }
 
-      // Delete coach record
-      const deletedCoach = await this.dbService.db
-        .delete(coachSchema)
-        .where(eq(coachSchema.id, id))
-        .returning();
+      const userId = existingCoach[0].user_id;
 
-      // Note: User record is not automatically deleted to preserve data integrity
-      // You may want to implement a soft delete or handle user deletion separately
+      if (!userId) {
+        throw new Error('Coach record has no associated user');
+      }
 
-      this.logger.log(`Coach deleted successfully with ID: ${id}`);
+      // Use transaction to delete both coach and user records
+      await this.dbService.db.transaction(async (tx) => {
+        // Delete coach record first
+        await tx.delete(coachSchema).where(eq(coachSchema.id, id));
+
+        // Delete the associated user record
+        await tx.delete(userSchema).where(eq(userSchema.id, userId));
+      });
 
       return {
         message: 'Coach deleted successfully',
-        data: deletedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to delete coach: ${error.message}`);
+      this.logger.error(
+        `Failed to delete coach and user: ${(error as Error).message}`
+      );
       throw error;
     }
   }
@@ -310,7 +335,9 @@ export class CoachService {
         data: updatedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to update coach status: ${error.message}`);
+      this.logger.error(
+        `Failed to update coach status: ${(error as Error).message}`
+      );
       throw error;
     }
   }

@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsInt, Min, IsDateString, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  Min,
+  IsDateString,
+  IsIn,
+  IsString,
+} from 'class-validator';
 
 export class QueryAttendanceDto {
   @ApiPropertyOptional({
@@ -50,21 +57,16 @@ export class QueryAttendanceDto {
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,
-    default: 1,
   })
   @IsOptional()
-  @IsInt({ message: 'Page must be an integer' })
-  @Min(1, { message: 'Page must be at least 1' })
-  page?: number = 1;
+  @IsString({ message: 'Page must be string' })
+  page?: string;
 
   @ApiPropertyOptional({
     description: 'Number of items per page',
     example: 10,
-    default: 10,
   })
   @IsOptional()
-  @IsInt({ message: 'Limit must be an integer' })
-  @Min(1, { message: 'Limit must be at least 1' })
-  @Min(100, { message: 'Limit cannot exceed 100' })
-  limit?: number = 10;
+  @IsString({ message: 'Limit must be a string' })
+  limit?: string;
 }

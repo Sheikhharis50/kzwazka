@@ -33,6 +33,7 @@ import {
 
 @ApiTags('Attendance')
 @Controller('api/attendance')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}

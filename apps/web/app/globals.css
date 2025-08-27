@@ -104,3 +104,12 @@ h6 {
 .swiper-pagination-bullet-active {
   background-color: var(--color-black) !important;
 }
+
+select option {
+  background-color: var(--color-white) !important;
+  color: var(--color-black) !important;
+}
+
+select {
+  border-radius: 10px !important;
+}

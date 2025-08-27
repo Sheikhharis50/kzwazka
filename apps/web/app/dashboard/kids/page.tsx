@@ -8,9 +8,27 @@ import { Search } from '@/svgs/Search';
 import Button from '@/components/Button';
 import KidsTable from './Table';
 import AddKidModal from './modal';
+import { useQuery } from '@tanstack/react-query';
+import * as api from 'api';
+import { useDebounce } from 'use-debounce';
 
 const Kids = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState('');
+  const [search, setSearch] = React.useState('');
+  const [debouncedSearch] = useDebounce(search, 1000);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['kidsTableData', debouncedSearch, sortBy],
+    queryFn: async () => {
+      const res = await api.children.getAll({
+        search: debouncedSearch,
+        sort_by: sortBy,
+      });
+      return res.data;
+    },
+  });
+
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between mb-5 mt-2 px-3 md:px-5">
@@ -31,6 +49,8 @@ const Kids = () => {
             }}
             placeholder="Search"
             icon={<Search className="size-4" />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <Select
             options={sortByOptions}
@@ -38,6 +58,8 @@ const Kids = () => {
               input: '!bg-smoke !rounded-full',
               root: 'min-w-[100px] xs:min-w-auto',
             }}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
             placeholder="Sort by"
           />
           <Button
@@ -47,7 +69,7 @@ const Kids = () => {
           />
         </div>
       </div>
-      <KidsTable />
+      <KidsTable data={data} isLoading={isLoading} />
       <AddKidModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );

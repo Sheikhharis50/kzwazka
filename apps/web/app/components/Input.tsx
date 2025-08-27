@@ -15,10 +15,23 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     error?: string;
     root?: string;
   };
+  icon?: React.ReactNode;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, labelProps, error, classes = {}, id, type, ...rest }, ref) => {
+  (
+    {
+      label,
+      labelProps,
+      error,
+      classes = {},
+      id,
+      type,
+      icon = undefined,
+      ...rest
+    },
+    ref
+  ) => {
     const [showPassword, setShowPassword] = React.useState(false);
     const generatedId = useId();
     const inputId = id || generatedId;
@@ -43,9 +56,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={isPasswordType ? (showPassword ? 'text' : 'password') : type}
             id={inputId}
-            className={`py-1.5 md:py-2 ${isPasswordType ? 'ps-3 pe-8' : 'px-3'} rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
+            className={`py-1.5 md:py-2 ${isPasswordType ? 'ps-3 pe-8' : icon ? 'pl-8 pr-3' : 'px-3'} rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm !outline-none ${classes.input}`}
             {...rest}
           />
+          {icon && (
+            <div className="absolute top-1/2 -translate-y-1/2 left-3">
+              {icon}
+            </div>
+          )}
           {isPasswordType && (
             <Image
               src={showPassword ? EyeSlashIcon : EyeIcon}

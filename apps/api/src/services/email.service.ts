@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { getEmailConfig } from '../config/email.config';
-import { emailTemplates } from '../templates/email.templates';
+import { EmailTemplate, emailTemplates } from '../templates/email.templates';
 import { APP_CONSTANTS } from '../utils/constants';
 
 @Injectable()
@@ -159,6 +159,18 @@ export class EmailService {
     userName: string
   ): Promise<void> {
     const template = emailTemplates.passwordResetConfirmation(userName);
+    await this.sendEmail(email, template.subject, template.html, template.text);
+  }
+
+  async sendCreatedChildrenEmailByAdmin(
+    email: string,
+    userName: string,
+    configUrl: string
+  ): Promise<void> {
+    const template = emailTemplates.createdChildrenByAdmin(
+      userName,
+      configUrl
+    ) as EmailTemplate;
     await this.sendEmail(email, template.subject, template.html, template.text);
   }
 }

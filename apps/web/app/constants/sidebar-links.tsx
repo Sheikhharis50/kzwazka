@@ -5,6 +5,7 @@ import {
   Bell,
   Insurance,
   Billing,
+  Users,
 } from '@/svgs';
 
 export const sidebarLinks = [
@@ -31,6 +32,12 @@ export const sidebarLinks = [
     name: 'Broadcast Alerts',
     icon: <Bell className="size-5 md:size-6" />,
     url: '/dashboard/broadcast',
+  },
+  {
+    id: 'kids',
+    name: 'Kids',
+    icon: <Users className="size-5 md:size-6" />,
+    url: '/dashboard/kids',
   },
   {
     id: 'insurance',

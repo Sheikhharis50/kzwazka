@@ -7,13 +7,16 @@ import Loader from '@/components/Loader';
 import calculateAge from 'utils/calculateAge';
 import formatDate from 'utils/formatDate';
 import { IChild } from 'api/type';
+import Paragraph from '@/components/Paragraph';
 
 interface KidsTableProps {
   data: IChild[] | undefined;
   isLoading: boolean;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
-const KidsTable = ({ data, isLoading }: KidsTableProps) => {
+const KidsTable = ({ data, isLoading, onDelete, onEdit }: KidsTableProps) => {
   const paymentStatus = 'clear';
 
   return (
@@ -72,14 +75,22 @@ const KidsTable = ({ data, isLoading }: KidsTableProps) => {
                     defaultValue={paymentStatus}
                   />
                 </td>
-                <td className="px-6 text-right">
-                  <Edit className="inline-block mr-5 text-black w-5 h-auto" />
-                  <Trash className="inline-block text-black w-4 h-auto" />
+                <td className="px-6 text-right text-black">
+                  <button onClick={() => onEdit(data.id)}>
+                    <Edit className="inline-block mr-5 w-5 h-auto" />
+                  </button>
+                  <button onClick={() => onDelete(data.id)}>
+                    <Trash className="inline-block w-4 h-auto" />
+                  </button>
                 </td>
               </tr>
             ))
           ) : (
-            'No data found'
+            <tr>
+              <td colSpan={7} className="h-[50dvh]">
+                <Paragraph text="No record found" className="text-center" />
+              </td>
+            </tr>
           )}
         </tbody>
       </table>

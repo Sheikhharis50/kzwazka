@@ -19,7 +19,16 @@ export const children = {
       const response = await apiClient.get(`/children`, { params: params });
       return response.data;
     } catch (error) {
-      handleApiError(error, 'Failed to fetch user, please try again later');
+      handleApiError(error, 'Failed to fetch kids, please try again later');
+    }
+  },
+
+  delete: async (id: number): Promise<APIResponse<null>> => {
+    try {
+      const response = await apiClient.delete(`/children/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to delete kid, please try again later');
     }
   },
 };

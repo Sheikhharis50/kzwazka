@@ -112,6 +112,38 @@
         "permission_id": "delete_message"
     },
     {
+        "role_id": "admin",
+        "permission_id": "create_children_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_children_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_children_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_children_group"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "create_attendance"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "read_attendance"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "update_attendance"
+    },
+    {
+        "role_id": "admin",
+        "permission_id": "delete_attendance"
+    },
+    {
         "role_id": "coach",
         "permission_id": "read_children"
     },
@@ -140,6 +172,26 @@
         "permission_id": "read_message"
     },
     {
+        "role_id": "coach",
+        "permission_id": "read_children_group"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "create_attendance"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "read_attendance"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "update_attendance"
+    },
+    {
+        "role_id": "coach",
+        "permission_id": "delete_attendance"
+    },
+    {
         "role_id": "children",
         "permission_id": "update_children"
     },
@@ -158,5 +210,13 @@
     {
         "role_id": "children",
         "permission_id": "read_message"
+    },
+    {
+        "role_id": "children",
+        "permission_id": "read_children_group"
+    },
+    {
+        "role_id": "children",
+        "permission_id": "read_attendance"
     }
 ]

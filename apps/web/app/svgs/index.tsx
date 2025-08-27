@@ -23,3 +23,5 @@ export * from './Instagram';
 export * from './Facebook';
 export * from './Quotation';
 export * from './Users';
+export * from './Camera';
+export * from './Cross';

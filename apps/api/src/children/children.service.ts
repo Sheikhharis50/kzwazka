@@ -348,18 +348,37 @@ export class ChildrenService {
   }
 
   async remove(id: number) {
-    const deletedChildren = await this.dbService.db
-      .delete(childrenSchema)
+    // First get the children record to get the user_id
+    const childrenRecord = await this.dbService.db
+      .select({ user_id: childrenSchema.user_id })
+      .from(childrenSchema)
       .where(eq(childrenSchema.id, id))
-      .returning();
+      .limit(1);
 
-    if (deletedChildren.length === 0) {
+    if (childrenRecord.length === 0) {
       throw new NotFoundException('Children not found');
     }
 
-    return {
-      message: 'Children deleted successfully',
-    };
+    const userId = childrenRecord[0].user_id;
+
+    // Use transaction to delete both children and user records
+    try {
+      await this.dbService.db.transaction(async (tx) => {
+        // Delete children record first
+        await tx.delete(childrenSchema).where(eq(childrenSchema.id, id));
+
+        // Delete the associated user record
+        await tx.delete(userSchema).where(eq(userSchema.id, userId));
+      });
+
+      return {
+        message: 'Children deleted successfully',
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to delete children and user: ${(error as Error).message}`
+      );
+    }
   }
 
   async updatePhotoUrl(id: number) {

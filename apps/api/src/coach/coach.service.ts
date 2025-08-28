@@ -12,6 +12,7 @@ import { eq, sql } from 'drizzle-orm';
 import { coachSchema, userSchema, locationSchema, Coach } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import { QueryCoachDto } from './dto/query-coach.dto';
 
 @Injectable()
 export class CoachService {
@@ -78,7 +79,7 @@ export class CoachService {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to create coach: ${error.message}`);
+      this.logger.error(`Failed to create coach: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -91,7 +92,7 @@ export class CoachService {
     return count;
   }
 
-  async findAll(params: { page: string; limit: string }) {
+  async findAll(params: QueryCoachDto) {
     const {
       page = 1,
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
@@ -172,6 +173,8 @@ export class CoachService {
       countQuery.limit(1),
       baseQuery,
     ]);
+
+    const count = countResult[0]?.count || 0;
 
     return {
       message: 'Coaches retrieved successfully',
@@ -271,16 +274,16 @@ export class CoachService {
         data: updatedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to update coach: ${error.message}`);
+      this.logger.error(`Failed to update coach: ${(error as Error).message}`);
       throw error;
     }
   }
 
   async remove(id: number) {
     try {
-      // Check if coach exists
+      // Check if coach exists and get the user_id
       const existingCoach = await this.dbService.db
-        .select()
+        .select({ user_id: coachSchema.user_id })
         .from(coachSchema)
         .where(eq(coachSchema.id, id))
         .limit(1);
@@ -289,23 +292,28 @@ export class CoachService {
         throw new NotFoundException('Coach not found');
       }
 
-      // Delete coach record
-      const deletedCoach = await this.dbService.db
-        .delete(coachSchema)
-        .where(eq(coachSchema.id, id))
-        .returning();
+      const userId = existingCoach[0].user_id;
 
-      // Note: User record is not automatically deleted to preserve data integrity
-      // You may want to implement a soft delete or handle user deletion separately
+      if (!userId) {
+        throw new Error('Coach record has no associated user');
+      }
 
-      this.logger.log(`Coach deleted successfully with ID: ${id}`);
+      // Use transaction to delete both coach and user records
+      await this.dbService.db.transaction(async (tx) => {
+        // Delete coach record first
+        await tx.delete(coachSchema).where(eq(coachSchema.id, id));
+
+        // Delete the associated user record
+        await tx.delete(userSchema).where(eq(userSchema.id, userId));
+      });
 
       return {
         message: 'Coach deleted successfully',
-        data: deletedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to delete coach: ${error.message}`);
+      this.logger.error(
+        `Failed to delete coach and user: ${(error as Error).message}`
+      );
       throw error;
     }
   }

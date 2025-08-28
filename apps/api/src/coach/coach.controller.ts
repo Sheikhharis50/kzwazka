@@ -27,6 +27,7 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
+import { QueryCoachDto } from './dto/query-coach.dto';
 
 @ApiTags('Coaches')
 @Controller('api/coach')
@@ -36,7 +37,7 @@ export class CoachController {
   constructor(private readonly coachService: CoachService) {}
 
   @Post()
-  @RequirePermission(['coach_create'])
+  @RequirePermission(['create_coach'])
   @ApiOperation({
     summary: 'Create a new coach',
     description: 'Create a new coach account with associated user record',
@@ -100,11 +101,53 @@ export class CoachController {
   }
 
   @Get()
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get all coaches',
     description:
       'Retrieve a paginated list of all coaches with user and location information',
+  })
+  @ApiQuery({
+    name: 'page',
+    description: 'Page number for pagination',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Number of items per page',
+    required: false,
+    type: 'number',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'search',
+    description: 'Search query',
+    required: false,
+    type: 'string',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'location_id',
+    description: 'Location ID',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    description: 'Sort by field',
+    required: false,
+    type: 'string',
+    example: 'created_at',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    description: 'Sort order',
+    required: false,
+    type: 'string',
+    example: 'desc',
   })
   @ApiQuery({
     name: 'page',
@@ -215,15 +258,12 @@ export class CoachController {
     status: 401,
     description: 'Unauthorized - Invalid JWT token',
   })
-  findAll(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
-  ) {
-    return this.coachService.findAll({ page, limit });
+  findAll(@Query() query: QueryCoachDto) {
+    return this.coachService.findAll(query);
   }
 
   @Get(':id')
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get coach by ID',
     description:
@@ -291,7 +331,7 @@ export class CoachController {
   }
 
   @Patch(':id')
-  @RequirePermission(['coach_update'])
+  @RequirePermission(['update_coach'])
   @ApiOperation({
     summary: 'Update coach',
     description: 'Update coach information and optionally associated user data',
@@ -333,8 +373,52 @@ export class CoachController {
     return this.coachService.update(id, updateCoachDto);
   }
 
+  @Patch(':id/status')
+  @RequirePermission(['update_coach'])
+  @ApiOperation({
+    summary: 'Update coach status',
+    description: 'Update the active/inactive status of a coach',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Coach ID',
+    type: 'number',
+    example: 1,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'boolean',
+          description: 'Coach status (true for active, false for inactive)',
+          example: true,
+        },
+      },
+      required: ['status'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Coach status updated successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Coach not found',
+  })
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: boolean
+  ) {
+    return this.coachService.updateStatus(id, status);
+  }
+
   @Delete(':id')
-  @RequirePermission(['coach_delete'])
+  @RequirePermission(['delete_coach'])
   @ApiOperation({
     summary: 'Delete coach',
     description: 'Remove a coach from the system (user record is preserved)',

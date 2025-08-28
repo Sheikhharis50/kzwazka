@@ -15,6 +15,7 @@ export type IUser = {
   email: string;
   first_name: string;
   last_name: string;
+  phone: string;
   role: string;
   is_active: boolean;
   is_verified: boolean;
@@ -33,7 +34,6 @@ export type IChild = {
   id: number;
   user: IChildUser;
   dob: string;
-  photo_url: string;
   parent_first_name: string;
   parent_last_name: string;
   location: number | null;

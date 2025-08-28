@@ -6,6 +6,7 @@ import {
   Insurance,
   Billing,
   Users,
+  Group,
 } from '@/svgs';
 
 export const sidebarLinks = [
@@ -38,6 +39,12 @@ export const sidebarLinks = [
     name: 'Kids',
     icon: <Users className="size-5 md:size-6" />,
     url: '/dashboard/kids',
+  },
+  {
+    id: 'coaches',
+    name: 'Coaches',
+    icon: <Group className="size-5 md:size-6" />,
+    url: '/dashboard/coaches',
   },
   {
     id: 'insurance',

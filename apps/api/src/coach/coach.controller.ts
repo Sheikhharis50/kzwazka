@@ -373,50 +373,6 @@ export class CoachController {
     return this.coachService.update(id, updateCoachDto);
   }
 
-  @Patch(':id/status')
-  @RequirePermission(['update_coach'])
-  @ApiOperation({
-    summary: 'Update coach status',
-    description: 'Update the active/inactive status of a coach',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Coach ID',
-    type: 'number',
-    example: 1,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'boolean',
-          description: 'Coach status (true for active, false for inactive)',
-          example: true,
-        },
-      },
-      required: ['status'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Coach status updated successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid JWT token',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Coach not found',
-  })
-  updateStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: boolean
-  ) {
-    return this.coachService.updateStatus(id, status);
-  }
-
   @Delete(':id')
   @RequirePermission(['delete_coach'])
   @ApiOperation({

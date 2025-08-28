@@ -1,16 +1,14 @@
 'use client';
 import Button from '@/components/Button';
-import Heading from '@/components/Heading';
 import Input from '@/components/Input';
 import Select from '@/components/Select';
 
 import { useFileUpload } from '@/hooks/useFileUpload';
-import { Camera, Trash } from '@/svgs';
-import Image from 'next/image';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { AddKidFormData, addKidSchema } from './schema';
 import { zodResolver } from '@hookform/resolvers/zod';
+import ModalLayout from '../ModalLayout';
 
 const AddKidForm = () => {
   const {
@@ -29,47 +27,12 @@ const AddKidForm = () => {
   };
 
   return (
-    <div className="flex flex-col gap-5 lg:gap-10 items-center justify-center relative">
-      <Heading text="Add Kid" small />
-      <div>
-        <div className="rounded-full bg-smoke size-24 flex flex-col justify-center gap-1 items-center relative mx-auto">
-          {preview ? (
-            <div className="rounded-full overflow-hidden">
-              <Image
-                src={preview}
-                alt="kid image"
-                height={300}
-                width={300}
-                className="w-full h-auto object-cover"
-              />
-              <button
-                className="bg-red text-white p-1 rounded-full absolute top-3 right-0"
-                onClick={removeFile}
-              >
-                <Trash className="w-3 h-auto" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <Camera />
-              <p className="text-[10px]">Add Picture</p>
-              <input
-                type="file"
-                accept=".png,.jpg,.jpeg"
-                className="absolute size-full opacity-0 cursor-pointer"
-                onChange={handleFileChange}
-              />
-            </>
-          )}
-        </div>
-        {error && (
-          <span
-            className={`text-[10px] md:text-xs xl:text-sm text-red text-center`}
-          >
-            {error}
-          </span>
-        )}
-      </div>
+    <ModalLayout
+      error={error}
+      handleFileChange={handleFileChange}
+      preview={preview}
+      removeFile={removeFile}
+    >
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-3 md:space-y-5 w-full"
@@ -122,7 +85,7 @@ const AddKidForm = () => {
           className="w-2/3 mx-auto mt-5 lg:mt-10"
         />
       </form>
-    </div>
+    </ModalLayout>
   );
 };
 

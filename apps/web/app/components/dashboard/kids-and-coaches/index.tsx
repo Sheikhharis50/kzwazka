@@ -15,6 +15,7 @@ import { useDebounce } from 'use-debounce';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'react-toastify';
 import { APIError } from 'api/type';
+import AddCoachForm from './add-coach';
 
 const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -131,7 +132,11 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
         onCancel={() => setIsModalOpen(false)}
         isLoading={deleteMutation.isPending}
       >
-        {currentModal === 'add' ? <AddKidForm /> : null}
+        {currentModal === 'add' && coach ? (
+          <AddCoachForm setIsModalOpen={setIsModalOpen} />
+        ) : currentModal === 'add' && !coach ? (
+          <AddKidForm />
+        ) : null}
       </Modal>
     </>
   );

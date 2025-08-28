@@ -1,7 +1,12 @@
 'use client';
 
 import { apiClient } from 'api/client';
-import { APIListResponse, APIResponse, ICoach } from 'api/type';
+import {
+  AddCoachPayload,
+  APIListResponse,
+  APIResponse,
+  ICoach,
+} from 'api/type';
 import { handleApiError } from 'utils/apiErrorHandler';
 
 export const coach = {
@@ -31,6 +36,15 @@ export const coach = {
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to delete coach, please try again later');
+    }
+  },
+
+  create: async (data: AddCoachPayload): Promise<APIResponse<ICoach>> => {
+    try {
+      const response = await apiClient.post(`/coach`, data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to create coach, please try again later');
     }
   },
 };

@@ -9,3 +9,12 @@ export type ICoach = {
   };
   location: null;
 };
+
+export type AddCoachPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  phone: string;
+  photo_url: string;
+};

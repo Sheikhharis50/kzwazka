@@ -1,3 +1,5 @@
+'use client';
+
 import { apiClient } from 'api/client';
 import { APIListResponse, APIResponse, ICoach } from 'api/type';
 import { handleApiError } from 'utils/apiErrorHandler';

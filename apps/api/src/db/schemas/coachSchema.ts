@@ -1,10 +1,4 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  integer,
-  boolean,
-} from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { locationSchema } from './locationSchema';
 import { userSchema } from './userSchema';
@@ -13,10 +7,6 @@ import { groupSchema } from './groupSchema';
 export const coachSchema = pgTable('coach', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   user_id: integer('user_id').references(() => userSchema.id),
-  name: text('name').notNull(),
-  email: text('email').notNull(),
-  phone: text('phone').notNull(),
-  status: boolean('status').notNull().default(true),
   location_id: integer('location_id').references(() => locationSchema.id),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),

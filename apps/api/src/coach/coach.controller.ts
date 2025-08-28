@@ -120,6 +120,48 @@ export class CoachController {
     type: 'number',
     example: 10,
   })
+  @ApiQuery({
+    name: 'search',
+    description: 'Search query',
+    required: false,
+    type: 'string',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'location_id',
+    description: 'Location ID',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    description: 'Sort by field',
+    required: false,
+    type: 'string',
+    example: 'created_at',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    description: 'Sort order',
+    required: false,
+    type: 'string',
+    example: 'desc',
+  })
+  @ApiQuery({
+    name: 'page',
+    description: 'Page number for pagination',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Number of items per page',
+    required: false,
+    type: 'number',
+    example: 10,
+  })
   @ApiResponse({
     status: 200,
     description: 'Coaches retrieved successfully',
@@ -289,50 +331,6 @@ export class CoachController {
     @Body() updateCoachDto: UpdateCoachDto
   ) {
     return this.coachService.update(id, updateCoachDto);
-  }
-
-  @Patch(':id/status')
-  @RequirePermission(['coach_update'])
-  @ApiOperation({
-    summary: 'Update coach status',
-    description: 'Update the active/inactive status of a coach',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Coach ID',
-    type: 'number',
-    example: 1,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'boolean',
-          description: 'Coach status (true for active, false for inactive)',
-          example: true,
-        },
-      },
-      required: ['status'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Coach status updated successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid JWT token',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Coach not found',
-  })
-  updateStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: boolean
-  ) {
-    return this.coachService.updateStatus(id, status);
   }
 
   @Delete(':id')

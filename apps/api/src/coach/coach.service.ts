@@ -28,12 +28,12 @@ export class CoachService {
       // Check if coach with this email already exists
       const existingCoach = await this.dbService.db
         .select()
-        .from(coachSchema)
-        .where(eq(coachSchema.email, createCoachDto.email))
+        .from(userSchema)
+        .where(eq(userSchema.email, createCoachDto.email))
         .limit(1);
 
       if (existingCoach.length > 0) {
-        throw new ConflictException('Coach with this email already exists');
+        throw new ConflictException('User with this email already exists');
       }
 
       // Get the coach role
@@ -59,10 +59,6 @@ export class CoachService {
         .insert(coachSchema)
         .values({
           user_id: newUser.id,
-          name: `${createCoachDto.first_name} ${createCoachDto.last_name}`,
-          email: createCoachDto.email,
-          phone: createCoachDto.phone,
-          status: true,
           location_id: createCoachDto.location_id,
         })
         .returning();
@@ -98,21 +94,20 @@ export class CoachService {
 
   async findAll(params: QueryCoachDto) {
     const {
-      page = '1',
-      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
-      q,
+      page = 1,
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+      search,
+      location_id,
+      sort_by = 'created_at',
+      sort_order = 'desc',
     } = params;
 
-    const offset = getPageOffset(page, limit);
+    const offset = getPageOffset(page.toString(), limit.toString());
 
     // Build the base query
     const baseQuery = this.dbService.db
       .select({
         id: coachSchema.id,
-        name: coachSchema.name,
-        email: coachSchema.email,
-        phone: coachSchema.phone,
-        status: coachSchema.status,
         created_at: coachSchema.created_at,
         updated_at: coachSchema.updated_at,
         user: {
@@ -142,15 +137,36 @@ export class CoachService {
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
 
-    // Apply search filter if q parameter is provided
-    if (q) {
-      const searchCondition = sql`(${coachSchema.name} ILIKE ${`%${q}%`} OR ${userSchema.first_name} ILIKE ${`%${q}%`} OR ${userSchema.last_name} ILIKE ${`%${q}%`})`;
+    // Apply search filter if search parameter is provided
+    if (search) {
+      const searchCondition = sql`(${userSchema.first_name} ILIKE ${`%${search}%`} OR ${userSchema.last_name} ILIKE ${`%${search}%`})`;
       baseQuery.where(searchCondition);
       countQuery.where(searchCondition);
     }
 
+    // Apply location filter
+    if (location_id) {
+      baseQuery.where(eq(coachSchema.location_id, location_id));
+      countQuery.where(eq(coachSchema.location_id, location_id));
+    }
+
+    // Apply sorting
+    if (sort_by === 'created_at') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? coachSchema.created_at
+          : sql`${coachSchema.created_at} DESC`
+      );
+    } else if (sort_by === 'name') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? userSchema.first_name
+          : sql`${userSchema.first_name} DESC`
+      );
+    }
+
     // Apply pagination
-    baseQuery.offset(offset).limit(Number(limit));
+    baseQuery.offset(offset).limit(limit);
 
     // Execute both queries
     const [countResult, results] = await Promise.all([
@@ -173,10 +189,6 @@ export class CoachService {
     const coach = await this.dbService.db
       .select({
         id: coachSchema.id,
-        name: coachSchema.name,
-        email: coachSchema.email,
-        phone: coachSchema.phone,
-        status: coachSchema.status,
         created_at: coachSchema.created_at,
         updated_at: coachSchema.updated_at,
         user: {
@@ -216,8 +228,8 @@ export class CoachService {
       // Check if coach exists
       const existingCoach = await this.dbService.db
         .select()
-        .from(coachSchema)
-        .where(eq(coachSchema.id, id))
+        .from(userSchema)
+        .where(eq(userSchema.id, id))
         .limit(1);
 
       if (existingCoach.length === 0) {
@@ -231,26 +243,19 @@ export class CoachService {
       ) {
         const emailConflict = await this.dbService.db
           .select()
-          .from(coachSchema)
-          .where(eq(coachSchema.email, updateCoachDto.email))
+          .from(userSchema)
+          .where(eq(userSchema.email, updateCoachDto.email))
           .limit(1);
 
         if (emailConflict.length > 0) {
-          throw new ConflictException('Coach with this email already exists');
+          throw new ConflictException('User with this email already exists');
         }
       }
 
       // Prepare update data with proper type conversion
       const updateData: Partial<Coach> = {};
-      if (updateCoachDto.first_name)
-        updateData.name = `${updateCoachDto.first_name} ${updateCoachDto.last_name}`;
-      if (updateCoachDto.last_name)
-        updateData.name = `${updateCoachDto.first_name} ${updateCoachDto.last_name}`;
-      if (updateCoachDto.email) updateData.email = updateCoachDto.email;
-      if (updateCoachDto.phone) updateData.phone = updateCoachDto.phone;
       if (updateCoachDto.location_id)
         updateData.location_id = updateCoachDto.location_id;
-      updateData.status = true;
 
       // Update coach record
       const updatedCoach = await this.dbService.db
@@ -308,35 +313,6 @@ export class CoachService {
     } catch (error) {
       this.logger.error(
         `Failed to delete coach and user: ${(error as Error).message}`
-      );
-      throw error;
-    }
-  }
-
-  async updateStatus(id: number, status: boolean) {
-    try {
-      const updatedCoach = await this.dbService.db
-        .update(coachSchema)
-        .set({
-          status,
-          updated_at: new Date(),
-        })
-        .where(eq(coachSchema.id, id))
-        .returning();
-
-      if (updatedCoach.length === 0) {
-        throw new NotFoundException('Coach not found');
-      }
-
-      this.logger.log(`Coach status updated successfully with ID: ${id}`);
-
-      return {
-        message: 'Coach status updated successfully',
-        data: updatedCoach[0],
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to update coach status: ${(error as Error).message}`
       );
       throw error;
     }

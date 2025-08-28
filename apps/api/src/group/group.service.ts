@@ -8,7 +8,12 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql, and, ne } from 'drizzle-orm';
-import { groupSchema, locationSchema, coachSchema } from '../db/schemas';
+import {
+  groupSchema,
+  locationSchema,
+  coachSchema,
+  userSchema,
+} from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 
@@ -104,9 +109,10 @@ export class GroupService {
           },
           coach: {
             id: coachSchema.id,
-            name: coachSchema.name,
-            email: coachSchema.email,
-            phone: coachSchema.phone,
+            user_id: coachSchema.user_id,
+            first_name: userSchema.first_name,
+            last_name: userSchema.last_name,
+            email: userSchema.email,
           },
         })
         .from(groupSchema)
@@ -115,6 +121,8 @@ export class GroupService {
           eq(groupSchema.location_id, locationSchema.id)
         )
         .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
+        // IMPORTANT: join userSchema before selecting its columns
+        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
         .offset(offset)
         .limit(Number(limit)),
     ]);
@@ -149,14 +157,17 @@ export class GroupService {
         },
         coach: {
           id: coachSchema.id,
-          name: coachSchema.name,
-          email: coachSchema.email,
-          phone: coachSchema.phone,
+          user_id: coachSchema.user_id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
         },
       })
       .from(groupSchema)
       .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
       .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
+      // IMPORTANT: join userSchema before selecting its columns
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .where(eq(groupSchema.id, id))
       .limit(1);
 

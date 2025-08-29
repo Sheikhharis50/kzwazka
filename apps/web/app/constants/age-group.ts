@@ -1,25 +1,25 @@
 export const ageGroupsData = [
   {
-    age: 'Ages 4–6',
+    age: '4-6 lat',
     facilities: [
       '1 trening tygodniowo',
-      'Focus: Basics, fun drills, coordination',
+      'Nacisk na: akrobotyka, koordynacha ruchowa, rozwój mózgu',
     ],
     price: '100zł/mies',
   },
   {
-    age: 'Ages 7–10',
+    age: '7-10 lat',
     facilities: [
       '2 treningi tygodniowo',
-      'Focus: Skills, discipline, friendly competition',
+      'Nacisk na: elementy techniczne, podstawowe chwyty, akrobatyka',
     ],
     price: '200zł/mies',
   },
   {
-    age: 'Ages 11–15',
+    age: '11-15 lat',
     facilities: [
       'dwa treningi tygodniowo',
-      ' Focus: Advanced skills, conditioning, tournaments',
+      'Nacisk na: technika zapaśnicza, ćwieczenia specialistyczne, sprawność fizyczna',
     ],
     price: '200zł/mies',
   },

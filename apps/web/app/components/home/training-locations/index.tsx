@@ -7,6 +7,7 @@ import { trainingLocationsHome } from '@/constants/training-locations';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import Ribbon from '@/images/red-ribbon.png';
+import Logo from '@/icons/training-loc-logo.png';
 import Image from 'next/image';
 
 const TrainingLocations = () => {
@@ -61,6 +62,13 @@ const TrainingLocations = () => {
             </SwiperSlide>
           ))}
         </Swiper>
+        <Image
+          src={Logo}
+          alt="logo"
+          width={300}
+          height={300}
+          className="size-[200px] right-[-15%] xl:right-[-12%] 2xl:right-[-5%] top-[5%] absolute hidden lg:block invert-100"
+        />
       </div>
     </section>
   );

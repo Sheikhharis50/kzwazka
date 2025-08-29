@@ -42,11 +42,11 @@ const HeroSection = () => {
         />
         <div className="flex gap-3 md:gap-5">
           <HomeButton
-            text="Call Now"
+            text="Zadzwoń"
             icon={<Phone className="size-5 md:size-6" />}
             className="min-w-[35%]"
           />
-          <HomeButton text="See Locations" className="min-w-[35%]" />
+          <HomeButton text="Zobacz lokalizacje" className="min-w-[35%]" />
         </div>
       </div>
     </div>

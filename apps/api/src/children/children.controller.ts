@@ -73,7 +73,6 @@ export class ChildrenController {
         name: { type: 'string' },
         password: { type: 'string' },
         phone: { type: 'string' },
-        role_id: { type: 'string' },
         is_active: { type: 'boolean' },
         google_social_id: { type: 'string' },
         dob: { type: 'string', format: 'date' },

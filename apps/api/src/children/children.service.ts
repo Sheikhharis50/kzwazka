@@ -64,7 +64,7 @@ export class ChildrenService {
           .values({
             email: body.email,
             first_name: body.first_name,
-            last_name: body.last_name,
+            last_name: body.last_name || '',
             phone: body.phone,
             password: hashedPassword,
             role_id: body.role_id,
@@ -81,8 +81,8 @@ export class ChildrenService {
           .values({
             user_id: newUser.id,
             dob: new Date(body.dob).toISOString(),
-            parent_first_name: body.parent_first_name,
-            parent_last_name: body.parent_last_name,
+            parent_first_name: body.parent_first_name || '',
+            parent_last_name: body.parent_last_name || '',
             location_id: body.location_id || null,
           })
           .returning();

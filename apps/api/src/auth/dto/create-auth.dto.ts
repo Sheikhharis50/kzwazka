@@ -114,13 +114,4 @@ export class SignUpDto {
   })
   @MaxLength(50, { message: 'Parent last name cannot exceed 50 characters' })
   parent_last_name: string;
-
-  @ApiPropertyOptional({
-    description: 'Profile photo URL',
-    example: 'https://example.com/photos/profile.jpg',
-    maxLength: 500,
-  })
-  @IsString({ message: 'Photo URL must be a string' })
-  @IsOptional()
-  photo_url?: string;
 }

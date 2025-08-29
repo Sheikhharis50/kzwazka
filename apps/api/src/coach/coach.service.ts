@@ -9,7 +9,13 @@ import { UpdateCoachDto } from './dto/update-coach.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { UserService } from '../user/user.service';
 import { eq, sql } from 'drizzle-orm';
-import { coachSchema, userSchema, locationSchema, Coach } from '../db/schemas';
+import {
+  coachSchema,
+  userSchema,
+  locationSchema,
+  groupSchema,
+  Coach,
+} from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { QueryCoachDto } from './dto/query-coach.dto';
@@ -117,6 +123,7 @@ export class CoachService {
           email: userSchema.email,
           is_active: userSchema.is_active,
           is_verified: userSchema.is_verified,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -125,14 +132,43 @@ export class CoachService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
+        group: sql<
+          Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            min_age: number;
+            max_age: number;
+            skill_level: string;
+            max_group_size: number;
+            created_at: Date;
+            updated_at: Date;
+          }>
+        >`COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${groupSchema.id},
+              'name', ${groupSchema.name},
+              'description', ${groupSchema.description},
+              'min_age', ${groupSchema.min_age},
+              'max_age', ${groupSchema.max_age},
+              'skill_level', ${groupSchema.skill_level},
+              'max_group_size', ${groupSchema.max_group_size},
+              'created_at', ${groupSchema.created_at},
+              'updated_at', ${groupSchema.updated_at}
+            )
+          ) FILTER (WHERE ${groupSchema.id} IS NOT NULL),
+          '[]'::json
+        )`,
       })
       .from(coachSchema)
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
+      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id))
+      .leftJoin(groupSchema, eq(coachSchema.id, groupSchema.coach_id));
 
     // Build count query
     const countQuery = this.dbService.db
-      .select({ count: sql<number>`COUNT(*)` })
+      .select({ count: sql<number>`COUNT(DISTINCT ${coachSchema.id})` })
       .from(coachSchema)
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
@@ -168,6 +204,9 @@ export class CoachService {
     // Apply pagination
     baseQuery.offset(offset).limit(limit);
 
+    // Add GROUP BY clause for the JSON_AGG to work properly
+    baseQuery.groupBy(coachSchema.id, userSchema.id, locationSchema.id);
+
     // Execute both queries
     const [countResult, results] = await Promise.all([
       countQuery.limit(1),
@@ -198,6 +237,7 @@ export class CoachService {
           email: userSchema.email,
           is_active: userSchema.is_active,
           is_verified: userSchema.is_verified,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -206,11 +246,41 @@ export class CoachService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
+        group: sql<
+          Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            min_age: number;
+            max_age: number;
+            skill_level: string;
+            max_group_size: number;
+            created_at: Date;
+            updated_at: Date;
+          }>
+        >`COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${groupSchema.id},
+              'name', ${groupSchema.name},
+              'description', ${groupSchema.description},
+              'min_age', ${groupSchema.min_age},
+              'max_age', ${groupSchema.max_age},
+              'skill_level', ${groupSchema.skill_level},
+              'max_group_size', ${groupSchema.max_group_size},
+              'created_at', ${groupSchema.created_at},
+              'updated_at', ${groupSchema.updated_at}
+            )
+          ) FILTER (WHERE ${groupSchema.id} IS NOT NULL),
+          '[]'::json
+        )`,
       })
       .from(coachSchema)
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id))
+      .leftJoin(groupSchema, eq(coachSchema.id, groupSchema.coach_id))
       .where(eq(coachSchema.id, id))
+      .groupBy(coachSchema.id, userSchema.id, locationSchema.id)
       .limit(1);
 
     if (coach.length === 0) {

@@ -9,6 +9,8 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,12 +20,12 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ChildrenService } from './children.service';
-import {
-  CreateChildrenDto,
-  CreateChildrenDtoByAdmin,
-} from './dto/create-children.dto';
+import { CreateChildrenDtoByAdmin } from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -45,9 +47,42 @@ export class ChildrenController {
     description:
       'Create both a user account and children record in a single transaction',
   })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('photo_url', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 1,
+      },
+      fileFilter: (req, file, cb) => {
+        // Accept only image files
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed'), false);
+        }
+      },
+    })
+  )
   @ApiBody({
-    type: CreateChildrenDto,
-    description: 'User and children information',
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', format: 'email' },
+        name: { type: 'string' },
+        password: { type: 'string' },
+        phone: { type: 'string' },
+        role_id: { type: 'string' },
+        is_active: { type: 'boolean' },
+        google_social_id: { type: 'string' },
+        dob: { type: 'string', format: 'date' },
+        parent_name: { type: 'string' },
+        location_id: { type: 'number' },
+        group_id: { type: 'number' },
+        photo_url: { type: 'string', format: 'binary' },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -66,10 +101,9 @@ export class ChildrenController {
             role_id: { type: 'string', example: 'children' },
             photo_url: {
               type: 'string',
-              example: 'https://example.com/photos/children.jpg',
+              example: '/avatars/2025/08/123-abc123.jpg',
             },
             is_active: { type: 'boolean', example: true },
-            is_verified: { type: 'boolean', example: false },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' },
           },
@@ -103,8 +137,11 @@ export class ChildrenController {
     description: 'User with this email already exists',
   })
   @RequirePermission(['create_children'])
-  create(@Body() body: CreateChildrenDtoByAdmin) {
-    return this.childrenService.createdByAdmin(body);
+  create(
+    @Body() body: CreateChildrenDtoByAdmin,
+    @UploadedFile() photo_file?: Express.Multer.File
+  ) {
+    return this.childrenService.createdByAdmin(body, photo_file);
   }
 
   @Get()

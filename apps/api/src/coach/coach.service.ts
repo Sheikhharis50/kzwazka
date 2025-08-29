@@ -13,6 +13,7 @@ import { coachSchema, userSchema, locationSchema, Coach } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { QueryCoachDto } from './dto/query-coach.dto';
+import { FileStorageService } from '../services';
 
 @Injectable()
 export class CoachService {
@@ -20,10 +21,14 @@ export class CoachService {
 
   constructor(
     private readonly dbService: DatabaseService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly fileStorageService: FileStorageService
   ) {}
 
-  async create(createCoachDto: CreateCoachDto) {
+  async create(
+    createCoachDto: CreateCoachDto,
+    photo_file?: Express.Multer.File
+  ) {
     try {
       // Check if coach with this email already exists
       const existingCoach = await this.dbService.db
@@ -34,6 +39,24 @@ export class CoachService {
 
       if (existingCoach.length > 0) {
         throw new ConflictException('User with this email already exists');
+      }
+
+      // Handle photo upload if provided
+      let photo_url: string | undefined;
+      if (photo_file) {
+        try {
+          // Upload photo to storage (will use local or DigitalOcean based on environment)
+          const uploadResult = await this.fileStorageService.uploadFile(
+            photo_file,
+            'avatars',
+            Date.now()
+          );
+          photo_url = uploadResult.relativePath;
+        } catch (error) {
+          throw new Error(
+            `Failed to upload photo: ${(error as Error).message}`
+          );
+        }
       }
 
       // Get the coach role
@@ -52,6 +75,7 @@ export class CoachService {
         role_id: coachRole.id,
         is_active: true,
         is_verified: true, // Coaches are typically pre-verified
+        photo_url: photo_url,
       });
 
       // Create coach record
@@ -59,7 +83,7 @@ export class CoachService {
         .insert(coachSchema)
         .values({
           user_id: newUser.id,
-          location_id: createCoachDto.location_id,
+          location_id: createCoachDto.location_id || null,
         })
         .returning();
 
@@ -74,7 +98,9 @@ export class CoachService {
             email: newUser.email,
             first_name: newUser.first_name,
             last_name: newUser.last_name,
+            phone: newUser.phone,
             role: coachRole.name,
+            photo_url: photo_url,
           },
         },
       };
@@ -281,10 +307,16 @@ export class CoachService {
 
   async remove(id: number) {
     try {
-      // Check if coach exists and get the user_id
+      // Check if coach exists and get the user_id and photo_url
       const existingCoach = await this.dbService.db
-        .select({ user_id: coachSchema.user_id })
+        .select({
+          user_id: coachSchema.user_id,
+          user: {
+            photo_url: userSchema.photo_url,
+          },
+        })
         .from(coachSchema)
+        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
         .where(eq(coachSchema.id, id))
         .limit(1);
 
@@ -293,9 +325,23 @@ export class CoachService {
       }
 
       const userId = existingCoach[0].user_id;
+      const photoUrl = existingCoach[0].user?.photo_url;
 
       if (!userId) {
         throw new Error('Coach record has no associated user');
+      }
+
+      // Delete profile photo from storage if it exists
+      if (photoUrl && photoUrl.startsWith('/')) {
+        try {
+          await this.fileStorageService.deleteFile(photoUrl);
+          this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
+        } catch (error) {
+          // Log error but don't prevent user deletion
+          this.logger.error(
+            `Failed to delete profile photo: ${(error as Error).message}`
+          );
+        }
       }
 
       // Use transaction to delete both coach and user records
@@ -313,6 +359,67 @@ export class CoachService {
     } catch (error) {
       this.logger.error(
         `Failed to delete coach and user: ${(error as Error).message}`
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update coach profile photo
+   */
+  async updatePhoto(id: number, photo_file: Express.Multer.File) {
+    try {
+      // Get the coach to find the user_id
+      const coach = await this.dbService.db
+        .select({ user_id: coachSchema.user_id })
+        .from(coachSchema)
+        .where(eq(coachSchema.id, id))
+        .limit(1);
+
+      if (coach.length === 0) {
+        throw new NotFoundException('Coach not found');
+      }
+
+      const userId = coach[0].user_id;
+
+      if (!userId) {
+        throw new Error('Coach record has no associated user');
+      }
+
+      // Upload new photo to storage
+      const uploadResult = await this.fileStorageService.uploadFile(
+        photo_file,
+        'avatars',
+        Date.now()
+      );
+
+      // Update user with new photo URL
+      const updatedUser = await this.dbService.db
+        .update(userSchema)
+        .set({
+          photo_url: uploadResult.relativePath,
+          updated_at: new Date(),
+        })
+        .where(eq(userSchema.id, userId))
+        .returning();
+
+      if (updatedUser.length === 0) {
+        throw new NotFoundException('User not found');
+      }
+
+      this.logger.log(`Coach photo updated successfully for ID: ${id}`);
+
+      return {
+        message: 'Profile photo updated successfully',
+        data: {
+          id: updatedUser[0].id,
+          photo_url: uploadResult.relativePath,
+          cdn_url: uploadResult.url,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to update coach photo: ${(error as Error).message}`
       );
       throw error;
     }

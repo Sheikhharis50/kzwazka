@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,7 +20,10 @@ import {
   ApiQuery,
   ApiParam,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CoachService } from './coach.service';
 import { CreateCoachDto } from './dto/create-coach.dto';
@@ -42,9 +47,37 @@ export class CoachController {
     summary: 'Create a new coach',
     description: 'Create a new coach account with associated user record',
   })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('photo_url', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 1,
+      },
+      fileFilter: (req, file, cb) => {
+        // Accept only image files
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed'), false);
+        }
+      },
+    })
+  )
   @ApiBody({
-    type: CreateCoachDto,
-    description: 'Coach information',
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', format: 'email' },
+        first_name: { type: 'string' },
+        last_name: { type: 'string' },
+        password: { type: 'string' },
+        phone: { type: 'string' },
+        location_id: { type: 'number' },
+        photo_url: { type: 'string', format: 'binary' },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -60,10 +93,6 @@ export class CoachController {
               type: 'object',
               properties: {
                 id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'John Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                phone: { type: 'string', example: '+1234567890' },
-                status: { type: 'boolean', example: true },
                 location_id: { type: 'number', example: 1 },
                 created_at: { type: 'string', format: 'date-time' },
                 updated_at: { type: 'string', format: 'date-time' },
@@ -77,6 +106,10 @@ export class CoachController {
                 first_name: { type: 'string', example: 'John' },
                 last_name: { type: 'string', example: 'Doe' },
                 role: { type: 'string', example: 'coach' },
+                photo_url: {
+                  type: 'string',
+                  example: '/avatars/2025/08/123-abc123.jpg',
+                },
               },
             },
           },
@@ -96,8 +129,11 @@ export class CoachController {
     status: 409,
     description: 'Conflict - Coach with this email already exists',
   })
-  create(@Body() createCoachDto: CreateCoachDto) {
-    return this.coachService.create(createCoachDto);
+  create(
+    @Body() createCoachDto: CreateCoachDto,
+    @UploadedFile() photo_file?: Express.Multer.File
+  ) {
+    return this.coachService.create(createCoachDto, photo_file);
   }
 
   @Get()
@@ -399,5 +435,89 @@ export class CoachController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.coachService.remove(id);
+  }
+
+  @Patch(':id/photo')
+  @RequirePermission(['update_coach'])
+  @ApiOperation({
+    summary: 'Update coach profile photo',
+    description: 'Update the profile photo for a specific coach',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('photo_url', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 1,
+      },
+      fileFilter: (req, file, cb) => {
+        // Accept only image files
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed'), false);
+        }
+      },
+    })
+  )
+  @ApiParam({
+    name: 'id',
+    description: 'Coach ID',
+    type: 'number',
+    example: 1,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo_url: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile photo updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Profile photo updated successfully',
+        },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            photo_url: {
+              type: 'string',
+              example: '/avatars/2025/08/123-abc123.jpg',
+            },
+            cdn_url: {
+              type: 'string',
+              example: 'https://cdn.example.com/avatars/2025/08/123-abc123.jpg',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid coach ID or file',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Coach not found',
+  })
+  updatePhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() photo_file: Express.Multer.File
+  ) {
+    return this.coachService.updatePhoto(id, photo_file);
   }
 }

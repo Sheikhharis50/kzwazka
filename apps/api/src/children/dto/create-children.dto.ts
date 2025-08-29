@@ -268,15 +268,6 @@ export class CreateChildrenDtoByAdmin {
   dob: string;
 
   @ApiPropertyOptional({
-    description: 'Child profile photo URL',
-    example: 'https://example.com/photos/child.jpg',
-    maxLength: 500,
-  })
-  @IsString({ message: 'Photo URL must be a string' })
-  @IsOptional()
-  photo_url?: string;
-
-  @ApiPropertyOptional({
     description: 'Parent name',
     example: 'Jane Doe',
     minLength: 2,

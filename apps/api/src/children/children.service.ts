@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import {
   CreateChildrenDto,
@@ -23,13 +24,17 @@ import * as bcrypt from 'bcryptjs';
 import { EmailService } from '../services/email.service';
 import { generateToken } from '../utils/auth.utils';
 import { JwtService } from '@nestjs/jwt';
+import { FileStorageService } from '../services';
 
 @Injectable()
 export class ChildrenService {
+  private readonly logger = new Logger(ChildrenService.name);
+
   constructor(
     private readonly dbService: DatabaseService,
     private readonly emailService: EmailService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly fileStorageService: FileStorageService
   ) {}
 
   async create(body: CreateChildrenDto) {
@@ -65,7 +70,7 @@ export class ChildrenService {
             role_id: body.role_id,
             is_active: body.is_active ?? true,
             is_verified: body.is_verified ?? false,
-            google_social_id: body.google_social_id,
+            google_social_id: body.google_social_id || null,
             photo_url: body.photo_url,
           })
           .returning();
@@ -78,7 +83,7 @@ export class ChildrenService {
             dob: new Date(body.dob).toISOString(),
             parent_first_name: body.parent_first_name,
             parent_last_name: body.parent_last_name,
-            location_id: body.location_id,
+            location_id: body.location_id || null,
           })
           .returning();
 
@@ -98,15 +103,37 @@ export class ChildrenService {
     }
   }
 
-  async createdByAdmin(body: CreateChildrenDtoByAdmin) {
+  async createdByAdmin(
+    body: CreateChildrenDtoByAdmin,
+    photo_file?: Express.Multer.File
+  ) {
     const { group_id, ...rest } = body;
     const first_name = rest.name;
     const parent_first_name = rest.parent_name;
+
+    // Handle photo upload if provided
+    let photo_url: string | undefined;
+    if (photo_file) {
+      try {
+        // Upload photo to storage (will use local or DigitalOcean based on environment)
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_file,
+          'avatars',
+          Date.now()
+        );
+        photo_url = uploadResult.relativePath;
+      } catch (error) {
+        throw new Error(`Failed to upload photo: ${(error as Error).message}`);
+      }
+    }
+
     const children = await this.create({
       ...rest,
       first_name,
       parent_first_name,
+      photo_url: photo_url,
     });
+
     if (group_id) {
       await this.assignGroup(children.children.id, group_id);
     }
@@ -348,10 +375,16 @@ export class ChildrenService {
   }
 
   async remove(id: number) {
-    // First get the children record to get the user_id
+    // First get the children record to get the user_id and photo_url
     const childrenRecord = await this.dbService.db
-      .select({ user_id: childrenSchema.user_id })
+      .select({
+        user_id: childrenSchema.user_id,
+        user: {
+          photo_url: userSchema.photo_url,
+        },
+      })
       .from(childrenSchema)
+      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
@@ -360,6 +393,20 @@ export class ChildrenService {
     }
 
     const userId = childrenRecord[0].user_id;
+    const photoUrl = childrenRecord[0].user?.photo_url;
+
+    // Delete profile photo from storage if it exists
+    if (photoUrl && photoUrl.startsWith('/')) {
+      try {
+        await this.fileStorageService.deleteFile(photoUrl);
+        this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
+      } catch (error) {
+        // Log error but don't prevent user deletion
+        this.logger.error(
+          `Failed to delete profile photo: ${(error as Error).message}`
+        );
+      }
+    }
 
     // Use transaction to delete both children and user records
     try {

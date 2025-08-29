@@ -110,4 +110,13 @@ export class CreateUserDto {
   @IsString({ message: 'Google social ID must be a string' })
   @IsOptional()
   google_social_id?: string;
+
+  @ApiPropertyOptional({
+    description: 'User profile photo URL',
+    example: '/avatars/2025/08/123-abc123.jpg',
+    maxLength: 500,
+  })
+  @IsString({ message: 'Photo URL must be a string' })
+  @IsOptional()
+  photo_url?: string;
 }

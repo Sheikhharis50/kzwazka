@@ -9,7 +9,7 @@ import HomeButton from './Button';
 
 const TrainWithUs = () => {
   return (
-    <Container className="bg-black md:px-8 lg:px-12 xl:px-14 grid grid-cols-1 md:grid-cols-2 items-center">
+    <Container className="bg-black md:px-8 lg:px-12 xl:px-14 grid grid-cols-1 md:grid-cols-2 items-center mb-10 md:mb-20">
       <Image
         src={TrainImage}
         alt="kzwazka surprise win"

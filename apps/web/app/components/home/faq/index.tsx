@@ -15,7 +15,7 @@ const FAQ = () => {
         alt="ribbon"
         height={700}
         width={500}
-        className="w-1/4 h-[500px] translate-x-[-25%] absolute left-0 top-0"
+        className="w-1/4 h-[430px] xl:h-[500px] translate-x-[-25%] absolute left-0 top-0 hidden lg:block"
       />
       <Container className="lg:px-20 relative">
         <Title className="text-center">FAQ</Title>

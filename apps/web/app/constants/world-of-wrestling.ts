@@ -16,17 +16,17 @@ export const worldWrestlingData = [
   },
   {
     title: 'Tadeusz Michalik',
-    winnerOf: { name: 'Tokyo 2020 – Olympic Bronze Medalist', icon: icon2 },
+    winnerOf: { name: 'Brązowy medalista olimpiady', icon: icon2 },
     quote:
-      'Every champion starts with a dream and a mat. I want every kid here to know — your journey is just as important as your medals.',
+      'Dzieciaki! Zapraszam Was do trenowania zapasów, jest to wspaniały sport, na pewno trenując tą dyscyplinę dużo osiągniecie! Zapraszam do KZ Ważka Warszawa!',
     watchLink: '#',
     imageSrc: image2,
   },
   {
     title: 'Andrzej Supron',
-    winnerOf: { name: 'Moscow 1980 – Olympic Silver Medalist', icon: icon3 },
+    winnerOf: { name: 'Srebrny medalista olimpiady', icon: icon3 },
     quote:
-      'The friendships, discipline, and pride from wrestling last a lifetime. This program is building not just athletes, but leaders.',
+      'Przez wiele lat byłem sportowcem, byłem zapaśnikiem, to był najlepszy wybór w moim życiu. Zapasy otworzyły mi taką perspektywę, której nie da się normalnie przeżyć, pamiętajcie - Ważka Warszawa!',
     watchLink: '#',
     imageSrc: image3,
   },

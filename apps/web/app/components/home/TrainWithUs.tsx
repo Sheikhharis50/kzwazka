@@ -1,7 +1,6 @@
 import React from 'react';
 import Container from './Container';
 import TrainImage from '@/images/train-with-us.png';
-import PlayButton from '@/icons/play-button.png';
 import Image from 'next/image';
 import Title from '../ui/Title';
 import Paragraph from '../Paragraph';
@@ -19,7 +18,7 @@ const TrainWithUs = () => {
       />
       <div className="text-white py-10 px-5 md:px-0 order-1 md:order-2">
         <Title className="mb-3">
-          <span className="text-yellow">TRENUJ Z NAMI</span> I <br /> WYGRAJ
+          <span className="text-yellow">TRENUJ Z NAMI</span> <br /> I WYGRAJ
           SPRZĘT
         </Title>
         <Paragraph
@@ -28,14 +27,14 @@ const TrainWithUs = () => {
         />
         <div className="flex items-center">
           <HomeButton text="Zapisz się!" className="mr-5 md:mr-8 xl:mr-10" />
-          <Image
+          {/* <Image
             src={PlayButton}
             alt="play button"
             height={80}
             width={80}
             className="w-8 md:w-10 xl:w-12 h-auto mr-2 md:mr-4"
           />
-          <Paragraph text="Obejrzyj Teraz" />
+          <Paragraph text="Obejrzyj Teraz" /> */}
         </div>
       </div>
     </Container>

@@ -28,3 +28,10 @@ export const coachesData = [
     phone: '+48  884 343 898',
   },
 ];
+
+export const sortByOptions = [
+  // { label: 'Group', value: 'group' },
+  { label: 'Joined', value: 'created_at' },
+];
+
+export const coachesTableHeader = ['Profile', 'Name', 'Email', 'Phone Number'];

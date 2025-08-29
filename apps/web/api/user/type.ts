@@ -1,6 +1,6 @@
-import { IChild, IUser } from 'api/type';
+import { IChild, IUserWithPermissions } from 'api/type';
 
 export type IMeResponse = {
-  user: IUser;
+  user: IUserWithPermissions;
   child: IChild;
 };

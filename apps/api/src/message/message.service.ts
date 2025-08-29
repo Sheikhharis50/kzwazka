@@ -13,6 +13,7 @@ import {
   groupSchema,
   locationSchema,
   coachSchema,
+  userSchema,
 } from '../db/schemas';
 import { getPageOffset } from '../utils/pagination';
 import { APP_CONSTANTS } from '../utils/constants';
@@ -313,8 +314,9 @@ export class MessageService {
           location_state: locationSchema.state,
 
           coach_id: coachSchema.id,
-          coach_name: coachSchema.name,
-          coach_email: coachSchema.email,
+          coach_first_name: userSchema.first_name,
+          coach_last_name: userSchema.last_name,
+          coach_email: userSchema.email,
         })
         .from(messageSchema)
         .leftJoin(groupSchema, eq(messageSchema.group_id, groupSchema.id))
@@ -323,6 +325,7 @@ export class MessageService {
           eq(groupSchema.location_id, locationSchema.id)
         )
         .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
+        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
         .where(eq(messageSchema.id, id))
         .limit(1);
 

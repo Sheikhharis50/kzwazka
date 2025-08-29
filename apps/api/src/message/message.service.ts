@@ -16,7 +16,7 @@ import {
   userSchema,
 } from '../db/schemas';
 import { getPageOffset } from '../utils/pagination';
-import { APP_CONSTANTS } from '../utils/constants';
+import { APP_CONSTANTS, MESSAGE_CONTENT_TYPE } from '../utils/constants';
 import { FileStorageService } from '../services';
 
 @Injectable()
@@ -34,7 +34,7 @@ export class MessageService {
       let messageId: number;
 
       // Handle file upload for non-text messages
-      if (createMessageDto.content_type !== 'text') {
+      if (createMessageDto.content_type !== MESSAGE_CONTENT_TYPE.TEXT) {
         if (!file) {
           throw new BadRequestException(
             `File is required when content_type is '${createMessageDto.content_type}'. Please provide a file in the request.`
@@ -407,8 +407,7 @@ export class MessageService {
             : message.content;
 
           // Delete the file using the key
-          const deleteResult =
-            await this.fileStorageService.deleteFile(fileKey);
+          await this.fileStorageService.deleteFile(fileKey);
           this.logger.log(
             `File deleted from DigitalOcean for message ${id}: ${fileKey}`
           );

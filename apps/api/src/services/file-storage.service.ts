@@ -4,7 +4,7 @@ import { DigitalOceanService } from './digitalocean.service';
 import { MediaConfig } from '../config/media';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface FileUploadResult {
   url: string;
@@ -132,7 +132,7 @@ export class FileStorageService {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
-    const randomString = Math.random().toString(36).substring(2, 8);
+    const randomString = uuidv4();
     const extension = file.originalname
       ? `.${file.originalname.split('.').pop()}`
       : '';
@@ -208,7 +208,7 @@ export class FileStorageService {
         message: `File deleted successfully: ${relativePath}`,
       };
     } catch (error) {
-      if ((error as any).code === 'ENOENT') {
+      if ((error as { code?: string }).code === 'ENOENT') {
         // File doesn't exist, consider it deleted
         return {
           message: `File not found (already deleted): ${relativePath}`,

@@ -6,13 +6,8 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
-export enum MessageContentType {
-  TEXT = 'text',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  AUDIO = 'audio',
-  FILE = 'file',
-}
+import { MESSAGE_CONTENT_TYPE } from '../../utils/constants';
+
 export class CreateMessageDto {
   @ApiProperty({
     description: 'Message content',
@@ -26,14 +21,14 @@ export class CreateMessageDto {
 
   @ApiProperty({
     description: 'Type of message content',
-    example: MessageContentType.TEXT,
-    enum: MessageContentType,
+    example: MESSAGE_CONTENT_TYPE.TEXT,
+    enum: MESSAGE_CONTENT_TYPE,
   })
-  @IsEnum(MessageContentType, {
+  @IsEnum(MESSAGE_CONTENT_TYPE, {
     message: 'Content type must be a valid enum value',
   })
   @IsNotEmpty({ message: 'Content type is required' })
-  content_type: MessageContentType;
+  content_type: MESSAGE_CONTENT_TYPE;
 
   @ApiPropertyOptional({
     description:

@@ -22,7 +22,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { MessageService } from './message.service';
-import { CreateMessageDto, MessageContentType } from './dto/create-message.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { MESSAGE_CONTENT_TYPE } from '../utils/constants';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
@@ -76,7 +77,7 @@ export class MessageController {
         content: { type: 'string', nullable: true },
         content_type: {
           type: 'string',
-          enum: Object.values(MessageContentType),
+          enum: Object.values(MESSAGE_CONTENT_TYPE),
         },
         file: { type: 'string', format: 'binary', nullable: true },
         group_id: { type: 'number', nullable: true },

@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   ObjectCannedACL,
 } from '@aws-sdk/client-s3';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class DigitalOceanService {
@@ -174,7 +175,7 @@ export class DigitalOceanService {
     const month = String(now.getMonth() + 1).padStart(2, '0');
 
     // Generate a unique filename with id and random string
-    const randomString = Math.random().toString(36).substring(2, 8);
+    const randomString = uuidv4();
     const extension = file.originalname
       ? `.${file.originalname.split('.').pop()}`
       : '';
@@ -220,7 +221,7 @@ export class DigitalOceanService {
 
     // Generate a unique filename with timestamp and random string
     const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 8);
+    const randomString = uuidv4();
     const extension = file.originalname
       ? `.${file.originalname.split('.').pop()}`
       : '';
@@ -253,9 +254,7 @@ export class DigitalOceanService {
         Key: key,
       };
 
-      const result = await this.s3Client.send(
-        new DeleteObjectCommand(deleteParams)
-      );
+      await this.s3Client.send(new DeleteObjectCommand(deleteParams));
 
       this.logger.log(`File deleted successfully: ${key}`);
 

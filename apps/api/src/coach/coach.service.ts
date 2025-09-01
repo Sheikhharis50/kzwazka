@@ -14,7 +14,6 @@ import {
   userSchema,
   locationSchema,
   groupSchema,
-  Coach,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
@@ -159,7 +158,7 @@ export class CoachService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
-        group: sql<
+        groups: sql<
           Array<{
             id: number;
             name: string;
@@ -274,7 +273,7 @@ export class CoachService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
-        group: sql<
+        groups: sql<
           Array<{
             id: number;
             name: string;
@@ -323,21 +322,38 @@ export class CoachService {
 
   async update(id: number, updateCoachDto: UpdateCoachDto) {
     try {
-      // Check if coach exists
+      // Check if coach exists and get the user_id
       const existingCoach = await this.dbService.db
-        .select()
-        .from(userSchema)
-        .where(eq(userSchema.id, id))
+        .select({ user_id: coachSchema.user_id })
+        .from(coachSchema)
+        .where(eq(coachSchema.id, id))
         .limit(1);
 
       if (existingCoach.length === 0) {
         throw new NotFoundException('Coach not found');
       }
 
-      // Check if email is being updated and if it conflicts with existing coach
+      const userId = existingCoach[0].user_id;
+
+      if (!userId) {
+        throw new Error('Coach record has no associated user');
+      }
+
+      // Get the existing user data
+      const existingUser = await this.dbService.db
+        .select()
+        .from(userSchema)
+        .where(eq(userSchema.id, userId))
+        .limit(1);
+
+      if (existingUser.length === 0) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Check if email is being updated and if it conflicts with existing user
       if (
         updateCoachDto.email &&
-        updateCoachDto.email !== existingCoach[0].email
+        updateCoachDto.email !== existingUser[0].email
       ) {
         const emailConflict = await this.dbService.db
           .select()
@@ -350,26 +366,50 @@ export class CoachService {
         }
       }
 
-      // Prepare update data with proper type conversion
-      const updateData: Partial<Coach> = {};
-      if (updateCoachDto.location_id)
-        updateData.location_id = updateCoachDto.location_id;
+      // Use transaction to update both user and coach records
+      await this.dbService.db.transaction(async (tx) => {
+        // Update user record if user data is provided
+        if (
+          updateCoachDto.email ||
+          updateCoachDto.first_name ||
+          updateCoachDto.last_name ||
+          updateCoachDto.phone
+        ) {
+          const userUpdateData: any = { updated_at: new Date() };
 
-      // Update coach record
-      const updatedCoach = await this.dbService.db
-        .update(coachSchema)
-        .set({
-          ...updateData,
-          updated_at: new Date(),
-        })
-        .where(eq(coachSchema.id, id))
-        .returning();
+          if (updateCoachDto.email) userUpdateData.email = updateCoachDto.email;
+          if (updateCoachDto.first_name)
+            userUpdateData.first_name = updateCoachDto.first_name;
+          if (updateCoachDto.last_name)
+            userUpdateData.last_name = updateCoachDto.last_name;
+          if (updateCoachDto.phone) userUpdateData.phone = updateCoachDto.phone;
+
+          await tx
+            .update(userSchema)
+            .set(userUpdateData)
+            .where(eq(userSchema.id, userId));
+        }
+
+        // Update coach record if location_id is provided
+        if (updateCoachDto.location_id !== undefined) {
+          await tx
+            .update(coachSchema)
+            .set({
+              location_id: updateCoachDto.location_id,
+              updated_at: new Date(),
+            })
+            .where(eq(coachSchema.id, id));
+        }
+      });
+
+      // Get the updated coach data
+      const updatedCoach = await this.findOne(id);
 
       this.logger.log(`Coach updated successfully with ID: ${id}`);
 
       return {
         message: 'Coach updated successfully',
-        data: updatedCoach[0],
+        data: updatedCoach.data,
       };
     } catch (error) {
       this.logger.error(`Failed to update coach: ${(error as Error).message}`);

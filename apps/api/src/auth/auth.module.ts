@@ -7,11 +7,7 @@ import { AuthController } from './auth.controller';
 import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
 import { ChildrenModule } from '../children/children.module';
-import {
-  DigitalOceanService,
-  EmailService,
-  FileStorageService,
-} from '../services';
+import { EmailService, FileStorageService } from '../services';
 import { GoogleAuthService } from './google-auth.service';
 import { SharedJwtModule } from './jwt.module';
 
@@ -30,7 +26,6 @@ import { SharedJwtModule } from './jwt.module';
     FileStorageService,
     JwtStrategy,
     GoogleAuthService,
-    DigitalOceanService,
   ],
   exports: [AuthService],
 })

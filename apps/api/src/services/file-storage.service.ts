@@ -1,7 +1,11 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DigitalOceanService } from './digitalocean.service';
-import { MediaConfig } from '../config/media';
+import {
+  S3,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  ObjectCannedACL,
+} from '@aws-sdk/client-s3';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,20 +17,42 @@ export interface FileUploadResult {
   storage: 'local' | 'digitalocean';
 }
 
+export interface StorageConfig {
+  storage: 'local' | 'digitalocean';
+  localPath: string;
+  publicUrl: string;
+  digitalOcean: {
+    endpoint: string;
+    bucket: string;
+    cdnEndpoint: string;
+    region: string;
+    accessKey: string;
+    secretKey: string;
+  };
+}
+
 @Injectable()
 export class FileStorageService {
   private readonly logger = new Logger(FileStorageService.name);
-  private readonly mediaConfig: MediaConfig;
+  private readonly config: StorageConfig;
+  private readonly s3Client?: S3;
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly digitalOceanService: DigitalOceanService
-  ) {
-    // Check NODE_ENV directly for more reliable environment detection
+  constructor(private readonly configService: ConfigService) {
+    this.config = this.initializeConfig();
+
+    if (this.config.storage === 'digitalocean') {
+      this.s3Client = this.initializeS3Client();
+    }
+  }
+
+  /**
+   * Initialize storage configuration based on environment
+   */
+  private initializeConfig(): StorageConfig {
     const nodeEnv = process.env.NODE_ENV;
     const isProduction = nodeEnv === 'production';
 
-    this.mediaConfig = {
+    const config: StorageConfig = {
       storage: isProduction ? 'digitalocean' : 'local',
       localPath: process.env.LOCAL_MEDIA_PATH || 'media',
       publicUrl: process.env.LOCAL_MEDIA_URL || '/media',
@@ -40,13 +66,9 @@ export class FileStorageService {
       },
     };
 
-    this.logger.log(
-      `File storage initialized with: ${this.mediaConfig.storage} (NODE_ENV: ${nodeEnv})`
-    );
-
     // Validate production configuration
     if (isProduction) {
-      const { digitalOcean } = this.mediaConfig;
+      const { digitalOcean } = config;
       const missingVars: string[] = [];
 
       if (!digitalOcean.endpoint) missingVars.push('DO_SPACE_ENDPOINT');
@@ -61,22 +83,40 @@ export class FileStorageService {
           `Missing required DigitalOcean environment variables: ${missingVars.join(', ')}`
         );
         this.logger.error('Falling back to local storage');
-        this.mediaConfig.storage = 'local';
-      } else {
-        this.logger.log(
-          `DigitalOcean config validated: bucket=${digitalOcean.bucket}, region=${digitalOcean.region}`
-        );
+        config.storage = 'local';
       }
     }
+
+    this.logger.log(
+      `File storage initialized with: ${config.storage} (NODE_ENV: ${nodeEnv})`
+    );
+    return config;
   }
 
   /**
-   * Upload a file with automatic storage selection based on environment
+   * Initialize S3 client for DigitalOcean Spaces
+   */
+  private initializeS3Client(): S3 {
+    const { digitalOcean } = this.config;
+
+    return new S3({
+      forcePathStyle: false,
+      endpoint: `https://${digitalOcean.endpoint}`,
+      region: digitalOcean.region,
+      credentials: {
+        accessKeyId: digitalOcean.accessKey,
+        secretAccessKey: digitalOcean.secretKey,
+      },
+    });
+  }
+
+  /**
+   * Upload a file with automatic storage selection
    * @param file - The file to upload
    * @param bucket - The bucket/folder name
    * @param id - The ID for file naming
    * @param contentType - Optional MIME type override
-   * @returns File upload result with URL, relative path, and key
+   * @returns File upload result
    */
   async uploadFile(
     file: Express.Multer.File,
@@ -84,7 +124,15 @@ export class FileStorageService {
     id: number,
     contentType?: string
   ): Promise<FileUploadResult> {
-    if (this.mediaConfig.storage === 'digitalocean') {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    if (!id || typeof id !== 'number') {
+      throw new BadRequestException('Valid id is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
       return this.uploadToDigitalOcean(file, bucket, id, contentType);
     } else {
       return this.uploadToLocal(file, bucket, id, contentType);
@@ -100,23 +148,54 @@ export class FileStorageService {
     id: number,
     contentType?: string
   ): Promise<FileUploadResult> {
-    const result = await this.digitalOceanService.uploadFileWithAutoKey(
-      file,
-      bucket,
-      id,
-      contentType
-    );
+    if (!this.s3Client) {
+      throw new BadRequestException('S3 client not initialized');
+    }
 
-    return {
-      url: result.cdnUrl,
-      relativePath: result.relativePath,
-      key: result.key,
-      storage: 'digitalocean',
-    };
+    try {
+      // Generate file path
+      const { key, relativePath } = this.generateFilePath(
+        bucket,
+        id,
+        file.originalname
+      );
+
+      // Get file content
+      const fileBody = await this.getFileContent(file);
+
+      // Upload to S3
+      const uploadParams = {
+        Bucket: this.config.digitalOcean.bucket,
+        Key: key,
+        Body: fileBody,
+        ContentType: contentType || file.mimetype || 'application/octet-stream',
+        ACL: 'public-read' as ObjectCannedACL,
+      };
+
+      await this.s3Client.send(new PutObjectCommand(uploadParams));
+
+      const url = `${this.config.digitalOcean.cdnEndpoint}/${key}`;
+
+      this.logger.log(`File uploaded to DigitalOcean: ${key}`);
+
+      return {
+        url,
+        relativePath,
+        key,
+        storage: 'digitalocean',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to upload file to DigitalOcean: ${(error as Error).message}`
+      );
+      throw new BadRequestException(
+        `Failed to upload file: ${(error as Error).message}`
+      );
+    }
   }
 
   /**
-   * Upload file to local media directory
+   * Upload file to local storage
    */
   private async uploadToLocal(
     file: Express.Multer.File,
@@ -124,46 +203,77 @@ export class FileStorageService {
     id: number,
     contentType?: string
   ): Promise<FileUploadResult> {
-    if (!file || !file.buffer) {
-      throw new BadRequestException('File buffer is required');
-    }
+    try {
+      if (!file.buffer) {
+        throw new BadRequestException(
+          'File buffer is required for local storage'
+        );
+      }
 
-    // Create directory structure
+      // Generate file path
+      const { key, relativePath, fullPath, fileName } = this.generateFilePath(
+        bucket,
+        id,
+        file.originalname
+      );
+
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+
+      // Write file
+      await fs.writeFile(fullPath, file.buffer);
+
+      const url = `${this.config.publicUrl}${relativePath}`;
+
+      this.logger.log(`File uploaded locally: ${fullPath}`);
+
+      return {
+        url,
+        relativePath,
+        key,
+        storage: 'local',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to upload file locally: ${(error as Error).message}`
+      );
+      throw new BadRequestException(
+        `Failed to upload file: ${(error as Error).message}`
+      );
+    }
+  }
+
+  /**
+   * Generate consistent file path structure
+   */
+  private generateFilePath(bucket: string, id: number, originalName?: string) {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const randomString = uuidv4();
-    const extension = file.originalname
-      ? `.${file.originalname.split('.').pop()}`
-      : '';
+    const extension = originalName ? `.${originalName.split('.').pop()}` : '';
     const fileName = `${id}-${randomString}${extension}`;
 
-    const relativePath = `/${bucket}/${year}/${month}/${fileName}`;
-    const fullPath = path.join(
-      process.cwd(),
-      this.mediaConfig.localPath,
-      bucket,
-      String(year),
-      month
-    );
-    const filePath = path.join(fullPath, fileName);
+    const key = `${bucket}/${year}/${month}/${fileName}`;
+    const relativePath = `/${key}`;
+    const fullPath = path.join(process.cwd(), this.config.localPath, key);
 
-    // Ensure directory exists
-    await fs.mkdir(fullPath, { recursive: true });
+    return { key, relativePath, fullPath, fileName };
+  }
 
-    // Write file
-    await fs.writeFile(filePath, file.buffer);
-
-    const url = `${this.mediaConfig.publicUrl}${relativePath}`;
-
-    this.logger.log(`File uploaded locally: ${filePath}`);
-
-    return {
-      url,
-      relativePath,
-      key: `${bucket}/${year}/${month}/${fileName}`,
-      storage: 'local',
-    };
+  /**
+   * Get file content from buffer or path
+   */
+  private async getFileContent(file: Express.Multer.File): Promise<Buffer> {
+    if (file.buffer) {
+      return file.buffer;
+    } else if (file.path) {
+      return await fs.readFile(file.path);
+    } else {
+      throw new BadRequestException(
+        'File must have either buffer or path property'
+      );
+    }
   }
 
   /**
@@ -172,14 +282,51 @@ export class FileStorageService {
    * @returns Success message
    */
   async deleteFile(relativePath: string): Promise<{ message: string }> {
-    if (this.mediaConfig.storage === 'digitalocean') {
-      // Remove leading slash for DigitalOcean key
+    if (!relativePath) {
+      throw new BadRequestException('Relative path is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
+      return this.deleteFromDigitalOcean(relativePath);
+    } else {
+      return this.deleteFromLocal(relativePath);
+    }
+  }
+
+  /**
+   * Delete file from DigitalOcean Spaces
+   */
+  private async deleteFromDigitalOcean(
+    relativePath: string
+  ): Promise<{ message: string }> {
+    if (!this.s3Client) {
+      throw new BadRequestException('S3 client not initialized');
+    }
+
+    try {
       const key = relativePath.startsWith('/')
         ? relativePath.substring(1)
         : relativePath;
-      return this.digitalOceanService.deleteFile(key);
-    } else {
-      return this.deleteFromLocal(relativePath);
+
+      const deleteParams = {
+        Bucket: this.config.digitalOcean.bucket,
+        Key: key,
+      };
+
+      await this.s3Client.send(new DeleteObjectCommand(deleteParams));
+
+      this.logger.log(`File deleted from DigitalOcean: ${key}`);
+
+      return {
+        message: `File deleted successfully: ${relativePath}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete file from DigitalOcean: ${(error as Error).message}`
+      );
+      throw new BadRequestException(
+        `Failed to delete file: ${(error as Error).message}`
+      );
     }
   }
 
@@ -192,7 +339,7 @@ export class FileStorageService {
     try {
       const fullPath = path.join(
         process.cwd(),
-        this.mediaConfig.localPath,
+        this.config.localPath,
         relativePath.substring(1)
       );
 
@@ -226,12 +373,17 @@ export class FileStorageService {
    * @returns The public URL
    */
   getFileUrl(relativePath: string): string {
-    if (this.mediaConfig.storage === 'digitalocean') {
-      // Convert relative path to CDN URL
-      return this.digitalOceanService.getCdnUrlFromRelativePath(relativePath);
+    if (!relativePath) {
+      throw new BadRequestException('Relative path is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
+      const key = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+      return `${this.config.digitalOcean.cdnEndpoint}/${key}`;
     } else {
-      // Return local media URL
-      return `${this.mediaConfig.publicUrl}${relativePath}`;
+      return `${this.config.publicUrl}${relativePath}`;
     }
   }
 
@@ -240,43 +392,7 @@ export class FileStorageService {
    * @returns Current storage type
    */
   getStorageType(): 'local' | 'digitalocean' {
-    return this.mediaConfig.storage;
-  }
-
-  /**
-   * Get debug information about the current configuration
-   * Useful for troubleshooting environment issues
-   */
-  getDebugInfo() {
-    return {
-      nodeEnv: process.env.NODE_ENV,
-      storage: this.mediaConfig.storage,
-      localConfig: {
-        path: this.mediaConfig.localPath,
-        url: this.mediaConfig.publicUrl,
-      },
-      digitalOceanConfig: {
-        endpoint: this.mediaConfig.digitalOcean.endpoint || 'NOT_SET',
-        bucket: this.mediaConfig.digitalOcean.bucket || 'NOT_SET',
-        cdnEndpoint: this.mediaConfig.digitalOcean.cdnEndpoint || 'NOT_SET',
-        region: this.mediaConfig.digitalOcean.region || 'NOT_SET',
-        hasAccessKey: !!this.mediaConfig.digitalOcean.accessKey,
-        hasSecretKey: !!this.mediaConfig.digitalOcean.secretKey,
-      },
-      environmentVariables: {
-        NODE_ENV: process.env.NODE_ENV,
-        DO_SPACE_ENDPOINT: process.env.DO_SPACE_ENDPOINT || 'NOT_SET',
-        DO_SPACE_BUCKET: process.env.DO_SPACE_BUCKET || 'NOT_SET',
-        DO_SPACE_CDN_ENDPOINT: process.env.DO_SPACE_CDN_ENDPOINT || 'NOT_SET',
-        DO_SPACE_REGION: process.env.DO_SPACE_REGION || 'NOT_SET',
-        DO_SPACE_ACCESS_KEY: process.env.DO_SPACE_ACCESS_KEY
-          ? 'SET'
-          : 'NOT_SET',
-        DO_SPACE_SECRET_KEY: process.env.DO_SPACE_SECRET_KEY
-          ? 'SET'
-          : 'NOT_SET',
-      },
-    };
+    return this.config.storage;
   }
 
   /**
@@ -285,7 +401,11 @@ export class FileStorageService {
    * @returns Whether the file exists
    */
   async fileExists(relativePath: string): Promise<boolean> {
-    if (this.mediaConfig.storage === 'digitalocean') {
+    if (!relativePath) {
+      return false;
+    }
+
+    if (this.config.storage === 'digitalocean') {
       // For DigitalOcean, we'll assume it exists if we have the path
       // In a real implementation, you might want to check with HeadObject
       return true;
@@ -293,7 +413,7 @@ export class FileStorageService {
       try {
         const fullPath = path.join(
           process.cwd(),
-          this.mediaConfig.localPath,
+          this.config.localPath,
           relativePath.substring(1)
         );
         await fs.access(fullPath);
@@ -301,6 +421,43 @@ export class FileStorageService {
       } catch {
         return false;
       }
+    }
+  }
+
+  /**
+   * Get debug information about the current configuration
+   */
+  getDebugInfo() {
+    return {
+      nodeEnv: process.env.NODE_ENV,
+      storage: this.config.storage,
+      localConfig: {
+        path: this.config.localPath,
+        url: this.config.publicUrl,
+      },
+      digitalOceanConfig: {
+        endpoint: this.config.digitalOcean.endpoint || 'NOT_SET',
+        bucket: this.config.digitalOcean.bucket || 'NOT_SET',
+        cdnEndpoint: this.config.digitalOcean.cdnEndpoint || 'NOT_SET',
+        region: this.config.digitalOcean.region || 'NOT_SET',
+        hasAccessKey: !!this.config.digitalOcean.accessKey,
+        hasSecretKey: !!this.config.digitalOcean.secretKey,
+      },
+    };
+  }
+
+  getPhotoUrlforAPIResponse(relativePath: string): string {
+    if (!relativePath) {
+      throw new BadRequestException('Relative path is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
+      const key = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+      return `https://${this.config.digitalOcean.bucket}.${this.config.digitalOcean.cdnEndpoint}/${key}`;
+    } else {
+      return `${this.config.publicUrl}${relativePath}`;
     }
   }
 }

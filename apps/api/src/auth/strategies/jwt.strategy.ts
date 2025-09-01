@@ -41,18 +41,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account is deactivated');
     }
 
-    // Get the current route path
-    const routePath = request?.route?.path || '';
-
-    // Define allowed routes for unverified users
-    const allowedRoutesForUnverified = ['/auth/resend-otp', '/auth/verify-otp'];
-
-    // If user is not verified, check if they're accessing an allowed route
-    if (!user.is_verified && !allowedRoutesForUnverified.includes(routePath)) {
-      throw new ForbiddenException(
-        'Email verification required. Please verify your email first.'
-      );
-    }
     return {
       id: payload.sub,
     };

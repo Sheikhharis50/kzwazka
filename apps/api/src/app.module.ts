@@ -14,8 +14,6 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ChildrenGroupModule } from './children-group/children-group.module';
-import { mediaConfig } from './config';
-
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -25,7 +23,6 @@ import { mediaConfig } from './config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
-      load: [mediaConfig],
     }),
     AuthModule,
     UserModule,

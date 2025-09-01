@@ -30,8 +30,7 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { createGeneralFileUploadInterceptor } from '../utils/file-interceptor.utils';
 
 @ApiTags('messages')
 @Controller('api/message')
@@ -43,27 +42,7 @@ export class MessageController {
   @Post()
   @RequirePermission(['create_message'])
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
-        files: 1, // Only allow 1 file
-      },
-      fileFilter: (req, file, cb) => {
-        // Log file information for debugging
-        console.log('File upload attempt:', {
-          fieldname: file.fieldname,
-          originalname: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size,
-        });
-
-        // Accept all file types for now, but you can add validation here
-        cb(null, true);
-      },
-    })
-  )
+  @UseInterceptors(createGeneralFileUploadInterceptor('file', 10 * 1024 * 1024))
   @ApiOperation({
     summary: 'Create a new message',
     description:

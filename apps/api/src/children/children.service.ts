@@ -25,6 +25,7 @@ import { EmailService } from '../services/email.service';
 import { generateToken } from '../utils/auth.utils';
 import { JwtService } from '@nestjs/jwt';
 import { FileStorageService } from '../services';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class ChildrenService {
@@ -34,7 +35,8 @@ export class ChildrenService {
     private readonly dbService: DatabaseService,
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
-    private readonly fileStorageService: FileStorageService
+    private readonly fileStorageService: FileStorageService,
+    private readonly userService: UserService
   ) {}
 
   async create(body: CreateChildrenDto) {
@@ -48,6 +50,10 @@ export class ChildrenService {
     if (existingUser.length > 0) {
       throw new ConflictException('User with this email already exists');
     }
+
+    const childrenRole = await this.userService.getRoleByName('children');
+    if (!childrenRole)
+      throw new Error('Child role not found. Please seed the database.');
 
     // Hash password if provided
     let hashedPassword: string | null = null;
@@ -67,7 +73,7 @@ export class ChildrenService {
             last_name: body.last_name || '',
             phone: body.phone,
             password: hashedPassword,
-            role_id: body.role_id,
+            role_id: childrenRole.id,
             is_active: body.is_active ?? true,
             is_verified: body.is_verified ?? false,
             google_social_id: body.google_social_id || null,
@@ -264,9 +270,21 @@ export class ChildrenService {
 
     const count = countResult[0]?.count || 0;
 
+    const resultswithphotoUrl = results.map((child) => ({
+      ...child,
+      user: {
+        ...child.user,
+        photo_url: child.user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              child.user.photo_url
+            )
+          : child.user?.photo_url,
+      },
+    }));
+
     return {
       message: 'Children records',
-      data: results,
+      data: resultswithphotoUrl,
       page,
       limit,
       count,
@@ -310,10 +328,19 @@ export class ChildrenService {
       throw new NotFoundException('Children not found');
     }
 
-    return {
-      message: 'Children record',
-      data: children[0],
+    const childrenwithphotoUrl = {
+      ...children[0],
+      user: {
+        ...children[0].user,
+        photo_url: children[0].user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              children[0].user.photo_url
+            )
+          : children[0].user?.photo_url,
+      },
     };
+
+    return childrenwithphotoUrl;
   }
 
   async findByUserId(userId: number) {

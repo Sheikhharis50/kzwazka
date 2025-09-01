@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
@@ -71,7 +71,7 @@ export class AuthController {
       ],
     },
   })
-  @UseInterceptors(FileInterceptor('photo_url'))
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiResponse({
     status: 201,
     description: 'User registered successfully. Check email for verification.',

@@ -15,18 +15,28 @@ export type IUser = {
   email: string;
   first_name: string;
   last_name: string;
+  phone: string;
   role: string;
+  is_active: boolean;
   is_verified: boolean;
+  created_at: string;
+  updated_at: string | null;
 };
+
+export type IUserWithPermissions = IUser & { permissions: string[] };
+
+type IChildUser = Omit<
+  IUser,
+  'is_active' | 'is_verified' | 'created_at' | 'updated_at'
+> & { photo_url: string | null };
 
 export type IChild = {
   id: number;
-  user_id: number;
+  user: IChildUser;
   dob: string;
-  photo_url: string;
   parent_first_name: string;
   parent_last_name: string;
-  location_id: number | null;
+  location: number | null;
   created_at: string;
   updated_at: string | null;
 };

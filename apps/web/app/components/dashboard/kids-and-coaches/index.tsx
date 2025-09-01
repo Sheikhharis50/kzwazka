@@ -14,11 +14,15 @@ import * as api from 'api';
 import { useDebounce } from 'use-debounce';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'react-toastify';
-import { APIError } from 'api/type';
+import { APIError, ICoach } from 'api/type';
 import AddCoachForm from './add-coach';
+import { Dashboard, ListView } from '@/svgs';
+import Loader from '@/components/Loader';
+import CoachGridView from './coach-grid-view';
 
 const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isListView, setIsListView] = React.useState(true);
   const [currentModal, setCurrentModal] = React.useState<
     'add' | 'edit' | 'delete'
   >('add');
@@ -70,18 +74,74 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
     setIsModalOpen(true);
   };
 
+  const handleEdit = (id: number) => {
+    setIdToEditOrDel(id);
+    handleModalOpen('edit');
+  };
+
+  const handleDelete = (id: number) => {
+    setIdToEditOrDel(id);
+    handleModalOpen('delete');
+  };
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between mb-5 mt-2 px-3 md:px-5">
-        <div className="flex justify-between items-center sm:block">
+      <div
+        className={`flex flex-col ${coach ? 'md:flex-row md:items-center' : 'sm:flex-row sm:items-center'} gap-3 justify-between mb-5 mt-2 px-3 md:px-5`}
+      >
+        <div
+          className={`flex ${coach ? 'md:block' : 'sm:block'} justify-between items-center`}
+        >
           <Heading text={coach ? 'Coaches' : 'Kids'} />
-          <Button
-            text={coach ? 'Add Coach' : 'Add Kid'}
-            className="!font-light !px-10 py-2.5 2xl:py-2 sm:hidden"
-            onClick={() => handleModalOpen('add')}
-          />
+          <div className="flex gap-2 xs:gap-3 items-center">
+            {coach && (
+              <>
+                <button
+                  onClick={() => setIsListView(true)}
+                  className="md:hidden"
+                >
+                  <ListView
+                    className={`w-5 sm:w-6 h-auto ${isListView ? 'text-black' : 'text-black/20'}`}
+                  />
+                </button>
+                <button
+                  onClick={() => setIsListView(false)}
+                  className="md:hidden"
+                >
+                  <Dashboard
+                    className={`w-5 sm:w-6 h-auto ${isListView ? 'text-black/20' : 'text-black'}`}
+                  />
+                </button>
+              </>
+            )}
+            <Button
+              text={coach ? 'Add Coach' : 'Add Kid'}
+              className={`!font-light py-2.5 2xl:py-2 ${coach ? 'md:hidden sm:!px-10' : 'sm:hidden !px-10'}`}
+              onClick={() => handleModalOpen('add')}
+            />
+          </div>
         </div>
         <div className="flex justify-end items-center gap-1.5 md:gap-3">
+          {coach && (
+            <>
+              <button
+                onClick={() => setIsListView(true)}
+                className="hidden md:block"
+              >
+                <ListView
+                  className={`w-7 h-auto ${isListView ? 'text-black' : 'text-black/20'}`}
+                />
+              </button>
+              <button
+                onClick={() => setIsListView(false)}
+                className="hidden md:block"
+              >
+                <Dashboard
+                  className={`w-7 h-auto ${isListView ? 'text-black/20' : 'text-black'}`}
+                />
+              </button>
+            </>
+          )}
           <Input
             type="text"
             classes={{
@@ -105,24 +165,30 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
           />
           <Button
             text={coach ? 'Add Coach' : 'Add Kid'}
-            className="!font-light !px-10 py-2.5 2xl:py-2 hidden sm:block"
+            className={`!font-light !px-10 py-2.5 2xl:py-2 hidden ${coach ? 'md:block' : 'sm:block'}`}
             onClick={() => handleModalOpen('add')}
           />
         </div>
       </div>
-      <Table
-        coach={coach}
-        data={data}
-        isLoading={isLoading}
-        onEdit={(id) => {
-          setIdToEditOrDel(id);
-          handleModalOpen('edit');
-        }}
-        onDelete={(id) => {
-          setIdToEditOrDel(id);
-          handleModalOpen('delete');
-        }}
-      />
+      {!coach || (coach && isListView) ? (
+        <Table
+          coach={coach}
+          data={data}
+          isLoading={isLoading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      ) : !data ? (
+        <div className="size-full flex justify-center items-center">
+          <Loader black />
+        </div>
+      ) : (
+        <CoachGridView
+          data={data as ICoach[]}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

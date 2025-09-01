@@ -13,7 +13,11 @@ export const auth = {
     payload: RegisterPayload
   ): Promise<APIResponse<IRegisterResponse>> => {
     try {
-      const response = await apiClient.post(`/auth/signup`, payload);
+      const response = await apiClient.post(`/auth/signup`, payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to create user, please try again later');

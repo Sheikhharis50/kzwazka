@@ -17,5 +17,5 @@ export type AddCoachPayload = {
   email: string;
   password: string;
   phone: string;
-  photo_url: string;
+  photo_url: File | undefined;
 };

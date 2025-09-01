@@ -29,7 +29,7 @@ const ModalLayout = ({
             <div className="rounded-full overflow-hidden">
               <Image
                 src={preview}
-                alt="kid image"
+                alt="profile image"
                 height={300}
                 width={300}
                 className="w-full h-auto object-cover"

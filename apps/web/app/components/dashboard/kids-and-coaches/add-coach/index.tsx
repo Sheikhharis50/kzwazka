@@ -25,7 +25,7 @@ const AddCoachForm = ({
     resolver: zodResolver(addCoachSchema),
   });
 
-  const { base64, error, handleFileChange, preview, removeFile } =
+  const { error, handleFileChange, preview, removeFile, file } =
     useFileUpload();
   const queryClient = useQueryClient();
 
@@ -45,7 +45,7 @@ const AddCoachForm = ({
 
   const onSubmit = (data: AddCoachFormData) => {
     if (!error) {
-      addCoachMutation.mutate({ ...data, photo_url: base64 });
+      addCoachMutation.mutate({ ...data, photo_url: file });
     }
   };
 

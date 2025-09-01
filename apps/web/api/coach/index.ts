@@ -41,7 +41,11 @@ export const coach = {
 
   create: async (data: AddCoachPayload): Promise<APIResponse<ICoach>> => {
     try {
-      const response = await apiClient.post(`/coach`, data);
+      const response = await apiClient.post(`/coach`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to create coach, please try again later');

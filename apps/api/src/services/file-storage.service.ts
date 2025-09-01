@@ -445,4 +445,19 @@ export class FileStorageService {
       },
     };
   }
+
+  getPhotoUrlforAPIResponse(relativePath: string): string {
+    if (!relativePath) {
+      throw new BadRequestException('Relative path is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
+      const key = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+      return `https://${this.config.digitalOcean.bucket}.${this.config.digitalOcean.cdnEndpoint}/${key}`;
+    } else {
+      return `${this.config.publicUrl}${relativePath}`;
+    }
+  }
 }

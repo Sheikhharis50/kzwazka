@@ -22,8 +22,7 @@ import {
   ApiQuery,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { ChildrenService } from './children.service';
 import { CreateChildrenDtoByAdmin } from './dto/create-children.dto';
 import { UpdateChildrenDto } from './dto/update-children.dto';
@@ -48,23 +47,7 @@ export class ChildrenController {
       'Create both a user account and children record in a single transaction',
   })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('photo_url', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1,
-      },
-      fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only image files are allowed'), false);
-        }
-      },
-    })
-  )
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiBody({
     schema: {
       type: 'object',

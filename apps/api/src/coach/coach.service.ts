@@ -241,9 +241,21 @@ export class CoachService {
 
     const count = countResult[0]?.count || 0;
 
+    const resultswithphotoUrl = results.map((coach) => ({
+      ...coach,
+      user: {
+        ...coach.user,
+        photo_url: coach.user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              coach.user.photo_url
+            )
+          : coach.user?.photo_url,
+      },
+    }));
+
     return {
       message: 'Coaches retrieved successfully',
-      data: results,
+      data: resultswithphotoUrl,
       page,
       limit,
       count,
@@ -314,9 +326,21 @@ export class CoachService {
       throw new NotFoundException('Coach not found');
     }
 
+    const coachwithphotoUrl = {
+      ...coach[0],
+      user: {
+        ...coach[0].user,
+        photo_url: coach[0].user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              coach[0].user.photo_url
+            )
+          : coach[0].user?.photo_url,
+      },
+    };
+
     return {
       message: 'Coach retrieved successfully',
-      data: coach[0],
+      data: coachwithphotoUrl,
     };
   }
 
@@ -525,7 +549,9 @@ export class CoachService {
         message: 'Profile photo updated successfully',
         data: {
           id: updatedUser[0].id,
-          photo_url: uploadResult.relativePath,
+          photo_url: this.fileStorageService.getPhotoUrlforAPIResponse(
+            uploadResult.relativePath
+          ),
           cdn_url: uploadResult.url,
         },
       };

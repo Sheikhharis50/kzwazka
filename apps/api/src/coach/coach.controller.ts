@@ -22,8 +22,7 @@ import {
   ApiBody,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CoachService } from './coach.service';
 import { CreateCoachDto } from './dto/create-coach.dto';
@@ -53,23 +52,7 @@ export class CoachController {
     description: 'Create a new coach account with associated user record',
   })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('photo_url', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1,
-      },
-      fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only image files are allowed'), false);
-        }
-      },
-    })
-  )
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiBody({
     type: CreateCoachDto,
     description: 'Coach creation data',
@@ -268,23 +251,7 @@ export class CoachController {
     description: 'Update the profile photo for a specific coach',
   })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('photo_url', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1,
-      },
-      fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only image files are allowed'), false);
-        }
-      },
-    })
-  )
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiParam({
     name: 'id',
     description: 'Coach ID',

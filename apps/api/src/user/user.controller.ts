@@ -18,8 +18,7 @@ import {
   ApiConsumes,
   ApiParam,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -35,23 +34,7 @@ export class UserController {
   @ApiTags('Admin')
   @ApiOperation({ summary: 'Create a new admin user' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('photo', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1,
-      },
-      fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only image files are allowed'), false);
-        }
-      },
-    })
-  )
+  @UseInterceptors(createImageUploadInterceptor('photo'))
   @ApiBody({
     schema: {
       type: 'object',
@@ -79,23 +62,7 @@ export class UserController {
   @Patch(':id/photo')
   @ApiOperation({ summary: 'Update user profile photo' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('photo', {
-      storage: memoryStorage(),
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 1,
-      },
-      fileFilter: (req, file, cb) => {
-        // Accept only image files
-        if (file.mimetype.startsWith('image/')) {
-          cb(null, true);
-        } else {
-          cb(new Error('Only image files are allowed'), false);
-        }
-      },
-    })
-  )
+  @UseInterceptors(createImageUploadInterceptor('photo'))
   @ApiParam({
     name: 'id',
     description: 'User ID',

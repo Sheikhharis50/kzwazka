@@ -270,9 +270,21 @@ export class ChildrenService {
 
     const count = countResult[0]?.count || 0;
 
+    const resultswithphotoUrl = results.map((child) => ({
+      ...child,
+      user: {
+        ...child.user,
+        photo_url: child.user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              child.user.photo_url
+            )
+          : child.user?.photo_url,
+      },
+    }));
+
     return {
       message: 'Children records',
-      data: results,
+      data: resultswithphotoUrl,
       page,
       limit,
       count,
@@ -316,10 +328,19 @@ export class ChildrenService {
       throw new NotFoundException('Children not found');
     }
 
-    return {
-      message: 'Children record',
-      data: children[0],
+    const childrenwithphotoUrl = {
+      ...children[0],
+      user: {
+        ...children[0].user,
+        photo_url: children[0].user?.photo_url
+          ? this.fileStorageService.getPhotoUrlforAPIResponse(
+              children[0].user.photo_url
+            )
+          : children[0].user?.photo_url,
+      },
     };
+
+    return childrenwithphotoUrl;
   }
 
   async findByUserId(userId: number) {

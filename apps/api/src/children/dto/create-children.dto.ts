@@ -77,14 +77,14 @@ export class CreateChildrenDto {
   })
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User role identifier',
     example: 'children',
     maxLength: 50,
   })
   @IsString({ message: 'Role ID must be a string' })
-  @IsNotEmpty({ message: 'Role ID is required' })
-  role_id: string;
+  @IsOptional({ message: 'Role ID is required' })
+  role_id?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the user account is active',
@@ -222,14 +222,14 @@ export class CreateChildrenDtoByAdmin {
   })
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User role identifier',
     example: 'children',
     maxLength: 50,
   })
   @IsString({ message: 'Role ID must be a string' })
-  @IsNotEmpty({ message: 'Role ID is required' })
-  role_id: string;
+  @IsOptional({ message: 'Role ID is required' })
+  role_id?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the user account is active',

@@ -17,6 +17,7 @@ import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
 import { APP_CONSTANTS } from '../utils/constants';
 import { Logger } from '@nestjs/common';
+import { FileStorageService } from '../services';
 
 import {
   generateToken,
@@ -37,10 +38,11 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
     private readonly emailService: EmailService,
+    private readonly fileStorageService: FileStorageService,
     private jwtService: JwtService
   ) {}
 
-  async signUp(signUpDto: SignUpDto) {
+  async signUp(signUpDto: SignUpDto, photo_url?: Express.Multer.File) {
     const {
       email,
       password,
@@ -48,7 +50,6 @@ export class AuthService {
       last_name,
       dob,
       phone,
-      photo_url,
       parent_first_name,
       parent_last_name,
     } = signUpDto;
@@ -65,6 +66,27 @@ export class AuthService {
       throw new Error('Children role not found. Please seed the database.');
     }
 
+    // Handle photo upload if provided
+    let photo_url_path: string | undefined;
+    if (photo_url) {
+      try {
+        // Upload photo to storage (will use local or DigitalOcean based on environment)
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'avatars',
+          Date.now() // Use timestamp as temporary ID for upload
+        );
+        photo_url_path = uploadResult.relativePath;
+      } catch (error) {
+        this.logger.error(
+          `Failed to upload photo: ${(error as Error).message}`
+        );
+        throw new BadRequestException(
+          `Failed to upload photo: ${(error as Error).message}`
+        );
+      }
+    }
+
     // Create both user and children in a single transaction
     const { user: newUser, children: newChildren } =
       await this.childrenService.create({
@@ -77,7 +99,7 @@ export class AuthService {
         is_active: true,
         is_verified: false, // Will be verified after OTP confirmation
         dob,
-        photo_url,
+        photo_url: photo_url_path || undefined,
         parent_first_name,
         parent_last_name,
       });

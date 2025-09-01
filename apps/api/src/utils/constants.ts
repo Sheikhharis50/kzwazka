@@ -85,3 +85,14 @@ export const APP_CONSTANTS = {
     },
   },
 } as const;
+
+export enum MESSAGE_CONTENT_TYPE {
+  TEXT = 'text',
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+  DOCUMENT = 'document',
+  LINK = 'link',
+  ATTACHMENT = 'attachment',
+  OTHER = 'other',
+}

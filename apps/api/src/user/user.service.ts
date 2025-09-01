@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -9,20 +10,43 @@ import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { userSchema, roleSchema } from '../db/schemas';
 import * as bcrypt from 'bcryptjs';
+import { FileStorageService } from '../services';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly dbService: DatabaseService) {}
+  private readonly logger = new Logger(UserService.name);
 
-  async createAdmin(createUserDto: CreateUserDto) {
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly fileStorageService: FileStorageService
+  ) {}
+
+  async createAdmin(createUserDto: CreateUserDto, photo?: Express.Multer.File) {
     const adminRole = await this.getRoleByName('admin');
     if (!adminRole) {
       throw new Error('Admin role not found. Please seed the database.');
     }
 
+    // Handle photo upload if provided
+    let photoUrl: string | undefined;
+    if (photo) {
+      try {
+        // Upload photo to storage (will use local or DigitalOcean based on environment)
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo,
+          'avatars',
+          Date.now() // Use timestamp as temporary ID for upload
+        );
+        photoUrl = uploadResult.relativePath;
+      } catch (error) {
+        throw new Error(`Failed to upload photo: ${(error as Error).message}`);
+      }
+    }
+
     const admin = await this.create({
       ...createUserDto,
       role_id: adminRole.id,
+      photo_url: photoUrl,
     });
     return {
       message: 'Admin user created successfully',
@@ -144,14 +168,36 @@ export class UserService {
   }
 
   async remove(id: number) {
+    // First get the user to check if they have a profile photo
+    const user = await this.dbService.db
+      .select({ photo_url: userSchema.photo_url })
+      .from(userSchema)
+      .where(eq(userSchema.id, id))
+      .limit(1);
+
+    if (user.length === 0) {
+      throw new NotFoundException('User not found');
+    }
+
+    const photoUrl = user[0].photo_url;
+
+    // Delete profile photo from storage if it exists
+    if (photoUrl && photoUrl.startsWith('/')) {
+      try {
+        await this.fileStorageService.deleteFile(photoUrl);
+        this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
+      } catch (error) {
+        // Log error but don't prevent user deletion
+        this.logger.error(
+          `Failed to delete profile photo: ${(error as Error).message}`
+        );
+      }
+    }
+
     const deletedUser = await this.dbService.db
       .delete(userSchema)
       .where(eq(userSchema.id, id))
       .returning();
-
-    if (deletedUser.length === 0) {
-      throw new NotFoundException('User not found');
-    }
 
     return { message: 'User deleted successfully' };
   }
@@ -203,5 +249,46 @@ export class UserService {
    */
   async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
+  }
+
+  /**
+   * Update user profile photo
+   */
+  async updatePhoto(id: number, photo: Express.Multer.File): Promise<any> {
+    try {
+      // Upload new photo to storage
+      const uploadResult = await this.fileStorageService.uploadFile(
+        photo,
+        'avatars',
+        Date.now() // Use timestamp as temporary ID for upload
+      );
+
+      // Update user with new photo URL
+      const updatedUser = await this.dbService.db
+        .update(userSchema)
+        .set({
+          photo_url: uploadResult.relativePath,
+          updated_at: new Date(),
+        })
+        .where(eq(userSchema.id, id))
+        .returning();
+
+      if (updatedUser.length === 0) {
+        throw new NotFoundException('User not found');
+      }
+
+      return {
+        message: 'Profile photo updated successfully',
+        data: {
+          id: updatedUser[0].id,
+          photo_url: uploadResult.relativePath,
+          cdn_url: uploadResult.url,
+        },
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to update profile photo: ${(error as Error).message}`
+      );
+    }
   }
 }

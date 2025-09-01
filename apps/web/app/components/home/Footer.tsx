@@ -2,11 +2,12 @@ import React from 'react';
 import Container from './Container';
 import Logo from '@/icons/logo-footer.png';
 import Image from 'next/image';
-import { address, footerLinks, socialLinks } from '@/constants/footer-links';
+import { address, socialLinks } from '@/constants/footer-links';
 import Paragraph from '../Paragraph';
 import Link from 'next/link';
 import Heading from '../Heading';
 import HomeButton from './Button';
+import { navLinks } from '@/constants/nav-links';
 
 const Footer = () => {
   return (
@@ -26,7 +27,11 @@ const Footer = () => {
             ))}
             <div className="flex gap-5 items-baseline pt-3 md:pt-5 lg:pt-10">
               {socialLinks.map((link) => (
-                <Link href={link.url} key={link.name}>
+                <Link
+                  href={link.url}
+                  key={link.name}
+                  className="size-10 md:size-12 rounded-full bg-white flex items-center justify-center"
+                >
                   {link.icon}
                 </Link>
               ))}
@@ -34,11 +39,11 @@ const Footer = () => {
           </div>
           <div className="space-y-3">
             <Heading
-              text="Company"
+              text="KZ Ważka"
               className="!font-Inter mb-2 lg:mb-6 font-bold"
               xs
             />
-            {footerLinks.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 href={link.url}
                 key={link.id}
@@ -50,14 +55,8 @@ const Footer = () => {
           </div>
           <div>
             <Paragraph text="All Rights Reserved 2025  WAZKA WARSZAWA" />
-            <Link href={'/privacy-policy'} className="inline-block">
-              <Paragraph text="Privacy Policy , " />
-            </Link>
-            <Link
-              href={'/terms-and-condition'}
-              className="inline-block mb-5 lg:mb-14"
-            >
-              <Paragraph text="Terms and Condition" />
+            <Link href={'/regulamin-klubu'} className="block mb-5 lg:mb-14">
+              <Paragraph text="Regulamin Klubu" />
             </Link>
             <div className="flex gap-2 xs:gap-3">
               <HomeButton text="Zapisz się na trening" className="md:py-3" />

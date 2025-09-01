@@ -33,7 +33,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly dbService: DatabaseService,
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
     private readonly emailService: EmailService,
@@ -126,7 +126,7 @@ export class AuthService {
     await this.markUserAsVerified(userId);
 
     // Get user details with role_id
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({
         id: userSchema.id,
         email: userSchema.email,
@@ -146,7 +146,7 @@ export class AuthService {
     const userData = user[0];
 
     // Get role name
-    const role = await this.db.db
+    const role = await this.dbService.db
       .select({ name: roleSchema.name })
       .from(roleSchema)
       .where(eq(roleSchema.id, userData.role_id))
@@ -237,7 +237,7 @@ export class AuthService {
     }
 
     // Get role name
-    const role = await this.db.db
+    const role = await this.dbService.db
       .select({ name: roleSchema.name })
       .from(roleSchema)
       .where(eq(roleSchema.id, user.role_id))
@@ -273,6 +273,9 @@ export class AuthService {
             last_name: user.last_name,
             role: role[0]?.name || 'children',
             is_verified: user.is_verified,
+            is_active: user.is_active,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
           },
         },
         requiresVerification: true,
@@ -292,6 +295,9 @@ export class AuthService {
           last_name: user.last_name,
           role: role[0]?.name || 'children',
           is_verified: user.is_verified,
+          is_active: user.is_active,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
         },
       },
     };
@@ -299,7 +305,7 @@ export class AuthService {
 
   async getProfile(userId: number) {
     // Get user with role information and permissions in a single query
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({
         id: userSchema.id,
         email: userSchema.email,
@@ -364,7 +370,7 @@ export class AuthService {
    * Store OTP in user record with creation timestamp
    */
   async storeOTP(userId: number, otp: string): Promise<void> {
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         otp,
@@ -387,7 +393,7 @@ export class AuthService {
    * Verify OTP for user with expiration check
    */
   async verifyOTP(userId: number, otp: string): Promise<boolean> {
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({
         otp: userSchema.otp,
         otp_created_at: userSchema.otp_created_at,
@@ -412,7 +418,7 @@ export class AuthService {
    * Mark user as verified and clear OTP
    */
   async markUserAsVerified(userId: number): Promise<void> {
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         is_verified: true,
@@ -427,7 +433,7 @@ export class AuthService {
    * Clear OTP for user (after successful verification or expiration)
    */
   async clearOTP(userId: number): Promise<void> {
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         otp: null,
@@ -441,7 +447,7 @@ export class AuthService {
    * Check if user is verified
    */
   async isUserVerified(userId: number): Promise<boolean> {
-    const user = await this.db.db
+    const user = await this.dbService.db
       .select({ is_verified: userSchema.is_verified })
       .from(userSchema)
       .where(eq(userSchema.id, userId))
@@ -481,7 +487,7 @@ export class AuthService {
     const hashedToken = hashResetToken(resetToken);
 
     // Store hashed token in database
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         token: hashedToken,
@@ -522,7 +528,7 @@ export class AuthService {
     }
 
     // Find user with this reset token
-    const users = await this.db.db
+    const users = await this.dbService.db
       .select({
         id: userSchema.id,
         email: userSchema.email,
@@ -553,7 +559,7 @@ export class AuthService {
     const hashedPassword = await this.userService.hashPassword(password);
 
     // Update user password and clear reset token
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         password: hashedPassword,
@@ -583,7 +589,7 @@ export class AuthService {
    * Clear reset token for user
    */
   private async clearResetToken(userId: number): Promise<void> {
-    await this.db.db
+    await this.dbService.db
       .update(userSchema)
       .set({
         token: null,

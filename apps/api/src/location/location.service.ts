@@ -5,12 +5,12 @@ import { locationSchema } from '../db/schemas';
 import { CreateLocationDto } from './dto/create-location.dto';
 @Injectable()
 export class LocationService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly dbService: DatabaseService) {}
 
   async create(createLocationDto: CreateLocationDto) {
     const { opening_time, closing_time, ...locationData } = createLocationDto;
 
-    const newLocation = await this.db.db
+    const newLocation = await this.dbService.db
       .insert(locationSchema)
       .values({
         ...locationData,
@@ -27,7 +27,7 @@ export class LocationService {
   }
 
   async findAll() {
-    const locations = await this.db.db
+    const locations = await this.dbService.db
       .select()
       .from(locationSchema)
       .where(eq(locationSchema.is_active, true));
@@ -39,7 +39,7 @@ export class LocationService {
   }
 
   async findOne(id: number) {
-    const location = await this.db.db
+    const location = await this.dbService.db
       .select()
       .from(locationSchema)
       .where(eq(locationSchema.id, id))
@@ -65,7 +65,7 @@ export class LocationService {
       updated_at: new Date(),
     };
 
-    const updatedLocation = await this.db.db
+    const updatedLocation = await this.dbService.db
       .update(locationSchema)
       .set(updateValues)
       .where(eq(locationSchema.id, id))
@@ -82,7 +82,7 @@ export class LocationService {
   }
 
   async remove(id: number) {
-    const deletedLocation = await this.db.db
+    const deletedLocation = await this.dbService.db
       .delete(locationSchema)
       .where(eq(locationSchema.id, id))
       .returning();
@@ -98,7 +98,7 @@ export class LocationService {
   }
 
   async deactivate(id: number) {
-    const updatedLocation = await this.db.db
+    const updatedLocation = await this.dbService.db
       .update(locationSchema)
       .set({
         is_active: false,

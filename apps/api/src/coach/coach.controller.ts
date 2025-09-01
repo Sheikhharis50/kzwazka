@@ -27,6 +27,12 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
+import { QueryCoachDto } from './dto/query-coach.dto';
+import {
+  CoachListResponseDto,
+  CoachDetailResponseDto,
+  CreateCoachResponseDto,
+} from './dto/coach-response.dto';
 
 @ApiTags('Coaches')
 @Controller('api/coach')
@@ -36,52 +42,19 @@ export class CoachController {
   constructor(private readonly coachService: CoachService) {}
 
   @Post()
-  @RequirePermission(['coach_create'])
+  @RequirePermission(['create_coach'])
   @ApiOperation({
     summary: 'Create a new coach',
     description: 'Create a new coach account with associated user record',
   })
   @ApiBody({
     type: CreateCoachDto,
-    description: 'Coach information',
+    description: 'Coach creation data',
   })
   @ApiResponse({
     status: 201,
     description: 'Coach created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coach created successfully' },
-        data: {
-          type: 'object',
-          properties: {
-            coach: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'John Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                phone: { type: 'string', example: '+1234567890' },
-                status: { type: 'boolean', example: true },
-                location_id: { type: 'number', example: 1 },
-                created_at: { type: 'string', format: 'date-time' },
-                updated_at: { type: 'string', format: 'date-time' },
-              },
-            },
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                first_name: { type: 'string', example: 'John' },
-                last_name: { type: 'string', example: 'Doe' },
-                role: { type: 'string', example: 'coach' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: CreateCoachResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -100,11 +73,11 @@ export class CoachController {
   }
 
   @Get()
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get all coaches',
     description:
-      'Retrieve a paginated list of all coaches with user and location information',
+      'Retrieve a paginated list of all coaches with user, location, and groups information',
   })
   @ApiQuery({
     name: 'page',
@@ -120,72 +93,53 @@ export class CoachController {
     type: 'number',
     example: 10,
   })
+  @ApiQuery({
+    name: 'search',
+    description: 'Search query',
+    required: false,
+    type: 'string',
+    example: 'John',
+  })
+  @ApiQuery({
+    name: 'location_id',
+    description: 'Location ID',
+    required: false,
+    type: 'number',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    description: 'Sort by field',
+    required: false,
+    type: 'string',
+    example: 'created_at',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    description: 'Sort order',
+    required: false,
+    type: 'string',
+    example: 'desc',
+  })
   @ApiResponse({
     status: 200,
     description: 'Coaches retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coaches retrieved successfully' },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              name: { type: 'string', example: 'John Doe' },
-              email: { type: 'string', example: 'john.doe@example.com' },
-              phone: { type: 'string', example: '+1234567890' },
-              status: { type: 'boolean', example: true },
-              created_at: { type: 'string', format: 'date-time' },
-              updated_at: { type: 'string', format: 'date-time' },
-              user: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  first_name: { type: 'string', example: 'John' },
-                  last_name: { type: 'string', example: 'Doe' },
-                  email: { type: 'string', example: 'john.doe@example.com' },
-                  is_active: { type: 'boolean', example: true },
-                  is_verified: { type: 'boolean', example: true },
-                },
-              },
-              location: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  name: { type: 'string', example: 'Downtown Gym' },
-                  address1: { type: 'string', example: '123 Main St' },
-                  city: { type: 'string', example: 'New York' },
-                  state: { type: 'string', example: 'NY' },
-                },
-              },
-            },
-          },
-        },
-        page: { type: 'string', example: '1' },
-        limit: { type: 'string', example: '10' },
-        count: { type: 'number', example: 25 },
-      },
-    },
+    type: CoachListResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid JWT token',
   })
-  findAll(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
-  ) {
-    return this.coachService.findAll({ page, limit });
+  findAll(@Query() query: QueryCoachDto) {
+    return this.coachService.findAll(query);
   }
 
   @Get(':id')
-  @RequirePermission(['coach_read'])
+  @RequirePermission(['read_coach'])
   @ApiOperation({
     summary: 'Get coach by ID',
     description:
-      'Retrieve a specific coach by their ID with user and location information',
+      'Retrieve a specific coach by their ID with user, location, and groups information',
   })
   @ApiParam({
     name: 'id',
@@ -196,45 +150,7 @@ export class CoachController {
   @ApiResponse({
     status: 200,
     description: 'Coach retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coach retrieved successfully' },
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            name: { type: 'string', example: 'John Doe' },
-            email: { type: 'string', example: 'john.doe@example.com' },
-            phone: { type: 'string', example: '+1234567890' },
-            status: { type: 'boolean', example: true },
-            created_at: { type: 'string', format: 'date-time' },
-            updated_at: { type: 'string', format: 'date-time' },
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                first_name: { type: 'string', example: 'John' },
-                last_name: { type: 'string', example: 'Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                is_active: { type: 'boolean', example: true },
-                is_verified: { type: 'boolean', example: true },
-              },
-            },
-            location: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'Downtown Gym' },
-                address1: { type: 'string', example: '123 Main St' },
-                city: { type: 'string', example: 'New York' },
-                state: { type: 'string', example: 'NY' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: CoachDetailResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -249,7 +165,7 @@ export class CoachController {
   }
 
   @Patch(':id')
-  @RequirePermission(['coach_update'])
+  @RequirePermission(['update_coach'])
   @ApiOperation({
     summary: 'Update coach',
     description: 'Update coach information and optionally associated user data',
@@ -291,52 +207,8 @@ export class CoachController {
     return this.coachService.update(id, updateCoachDto);
   }
 
-  @Patch(':id/status')
-  @RequirePermission(['coach_update'])
-  @ApiOperation({
-    summary: 'Update coach status',
-    description: 'Update the active/inactive status of a coach',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Coach ID',
-    type: 'number',
-    example: 1,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'boolean',
-          description: 'Coach status (true for active, false for inactive)',
-          example: true,
-        },
-      },
-      required: ['status'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Coach status updated successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid JWT token',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Coach not found',
-  })
-  updateStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: boolean
-  ) {
-    return this.coachService.updateStatus(id, status);
-  }
-
   @Delete(':id')
-  @RequirePermission(['coach_delete'])
+  @RequirePermission(['delete_coach'])
   @ApiOperation({
     summary: 'Delete coach',
     description: 'Remove a coach from the system (user record is preserved)',

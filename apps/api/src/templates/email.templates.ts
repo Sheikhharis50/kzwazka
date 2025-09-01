@@ -135,4 +135,42 @@ export const emailTemplates = {
       The Kzwazka Team
     `,
   }),
+
+  createdChildrenByAdmin: (
+    userName: string,
+    configUrl: string
+  ): EmailTemplate => ({
+    subject: 'Welcome to Kzwazka',
+    html: `
+      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Welcome to Kzwazka</h2>
+        <p>Hello ${userName},</p>
+        <p>You have been created as a child in Kzwazka. Please use the following link to configure your account:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${configUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Configure Account</a>
+        </div>
+        <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #007bff;">${configUrl}</p>
+        <p>This link will expire in 1 hour for security reasons.</p>
+        <p>If you didn't request this account creation, please contact our support team.</p>
+        <p>Best regards,<br>The Kzwazka Team</p>
+      </div>
+    `,
+    text: `
+      Welcome to Kzwazka
+
+      Hello ${userName},
+
+      You have been created as a child in Kzwazka. Please use the following link to configure your account:
+
+      ${configUrl}
+
+      This link will expire in 1 hour for security reasons.
+  
+      If you didn't request this account creation, please contact our support team.
+
+      Best regards,
+      The Kzwazka Team
+    `,
+  }),
 };

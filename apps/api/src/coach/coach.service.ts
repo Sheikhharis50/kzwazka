@@ -9,9 +9,16 @@ import { UpdateCoachDto } from './dto/update-coach.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { UserService } from '../user/user.service';
 import { eq, sql } from 'drizzle-orm';
-import { coachSchema, userSchema, locationSchema, Coach } from '../db/schemas';
+import {
+  coachSchema,
+  userSchema,
+  locationSchema,
+  groupSchema,
+  Coach,
+} from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import { QueryCoachDto } from './dto/query-coach.dto';
 
 @Injectable()
 export class CoachService {
@@ -27,12 +34,12 @@ export class CoachService {
       // Check if coach with this email already exists
       const existingCoach = await this.dbService.db
         .select()
-        .from(coachSchema)
-        .where(eq(coachSchema.email, createCoachDto.email))
+        .from(userSchema)
+        .where(eq(userSchema.email, createCoachDto.email))
         .limit(1);
 
       if (existingCoach.length > 0) {
-        throw new ConflictException('Coach with this email already exists');
+        throw new ConflictException('User with this email already exists');
       }
 
       // Get the coach role
@@ -58,10 +65,6 @@ export class CoachService {
         .insert(coachSchema)
         .values({
           user_id: newUser.id,
-          name: `${createCoachDto.first_name} ${createCoachDto.last_name}`,
-          email: createCoachDto.email,
-          phone: createCoachDto.phone,
-          status: true,
           location_id: createCoachDto.location_id,
         })
         .returning();
@@ -82,7 +85,7 @@ export class CoachService {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to create coach: ${error.message}`);
+      this.logger.error(`Failed to create coach: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -95,50 +98,122 @@ export class CoachService {
     return count;
   }
 
-  async findAll(params: { page: string; limit: string }) {
+  async findAll(params: QueryCoachDto) {
     const {
-      page = '1',
-      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+      page = 1,
+      limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+      search,
+      location_id,
+      sort_by = 'created_at',
+      sort_order = 'desc',
     } = params;
 
-    const offset = getPageOffset(page, limit);
+    const offset = getPageOffset(page.toString(), limit.toString());
 
-    const [count, results] = await Promise.all([
-      this.count(),
-      this.dbService.db
-        .select({
-          id: coachSchema.id,
-          name: coachSchema.name,
-          email: coachSchema.email,
-          phone: coachSchema.phone,
-          status: coachSchema.status,
-          created_at: coachSchema.created_at,
-          updated_at: coachSchema.updated_at,
-          user: {
-            id: userSchema.id,
-            first_name: userSchema.first_name,
-            last_name: userSchema.last_name,
-            email: userSchema.email,
-            is_active: userSchema.is_active,
-            is_verified: userSchema.is_verified,
-          },
-          location: {
-            id: locationSchema.id,
-            name: locationSchema.name,
-            address1: locationSchema.address1,
-            city: locationSchema.city,
-            state: locationSchema.state,
-          },
-        })
-        .from(coachSchema)
-        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .leftJoin(
-          locationSchema,
-          eq(coachSchema.location_id, locationSchema.id)
-        )
-        .offset(offset)
-        .limit(Number(limit)),
+    // Build the base query
+    const baseQuery = this.dbService.db
+      .select({
+        id: coachSchema.id,
+        created_at: coachSchema.created_at,
+        updated_at: coachSchema.updated_at,
+        user: {
+          id: userSchema.id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+          is_active: userSchema.is_active,
+          is_verified: userSchema.is_verified,
+          photo_url: userSchema.photo_url,
+        },
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          city: locationSchema.city,
+          state: locationSchema.state,
+        },
+        group: sql<
+          Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            min_age: number;
+            max_age: number;
+            skill_level: string;
+            max_group_size: number;
+            created_at: Date;
+            updated_at: Date;
+          }>
+        >`COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${groupSchema.id},
+              'name', ${groupSchema.name},
+              'description', ${groupSchema.description},
+              'min_age', ${groupSchema.min_age},
+              'max_age', ${groupSchema.max_age},
+              'skill_level', ${groupSchema.skill_level},
+              'max_group_size', ${groupSchema.max_group_size},
+              'created_at', ${groupSchema.created_at},
+              'updated_at', ${groupSchema.updated_at}
+            )
+          ) FILTER (WHERE ${groupSchema.id} IS NOT NULL),
+          '[]'::json
+        )`,
+      })
+      .from(coachSchema)
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id))
+      .leftJoin(groupSchema, eq(coachSchema.id, groupSchema.coach_id));
+
+    // Build count query
+    const countQuery = this.dbService.db
+      .select({ count: sql<number>`COUNT(DISTINCT ${coachSchema.id})` })
+      .from(coachSchema)
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id));
+
+    // Apply search filter if search parameter is provided
+    if (search) {
+      const searchCondition = sql`(${userSchema.first_name} ILIKE ${`%${search}%`} OR ${userSchema.last_name} ILIKE ${`%${search}%`})`;
+      baseQuery.where(searchCondition);
+      countQuery.where(searchCondition);
+    }
+
+    // Apply location filter
+    if (location_id) {
+      baseQuery.where(eq(coachSchema.location_id, location_id));
+      countQuery.where(eq(coachSchema.location_id, location_id));
+    }
+
+    // Apply sorting
+    if (sort_by === 'created_at') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? coachSchema.created_at
+          : sql`${coachSchema.created_at} DESC`
+      );
+    } else if (sort_by === 'name') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? userSchema.first_name
+          : sql`${userSchema.first_name} DESC`
+      );
+    }
+
+    // Apply pagination
+    baseQuery.offset(offset).limit(limit);
+
+    // Add GROUP BY clause for the JSON_AGG to work properly
+    baseQuery.groupBy(coachSchema.id, userSchema.id, locationSchema.id);
+
+    // Execute both queries
+    const [countResult, results] = await Promise.all([
+      countQuery.limit(1),
+      baseQuery,
     ]);
+
+    const count = countResult[0]?.count || 0;
 
     return {
       message: 'Coaches retrieved successfully',
@@ -153,10 +228,6 @@ export class CoachService {
     const coach = await this.dbService.db
       .select({
         id: coachSchema.id,
-        name: coachSchema.name,
-        email: coachSchema.email,
-        phone: coachSchema.phone,
-        status: coachSchema.status,
         created_at: coachSchema.created_at,
         updated_at: coachSchema.updated_at,
         user: {
@@ -166,6 +237,7 @@ export class CoachService {
           email: userSchema.email,
           is_active: userSchema.is_active,
           is_verified: userSchema.is_verified,
+          photo_url: userSchema.photo_url,
         },
         location: {
           id: locationSchema.id,
@@ -174,11 +246,41 @@ export class CoachService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
+        group: sql<
+          Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            min_age: number;
+            max_age: number;
+            skill_level: string;
+            max_group_size: number;
+            created_at: Date;
+            updated_at: Date;
+          }>
+        >`COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', ${groupSchema.id},
+              'name', ${groupSchema.name},
+              'description', ${groupSchema.description},
+              'min_age', ${groupSchema.min_age},
+              'max_age', ${groupSchema.max_age},
+              'skill_level', ${groupSchema.skill_level},
+              'max_group_size', ${groupSchema.max_group_size},
+              'created_at', ${groupSchema.created_at},
+              'updated_at', ${groupSchema.updated_at}
+            )
+          ) FILTER (WHERE ${groupSchema.id} IS NOT NULL),
+          '[]'::json
+        )`,
       })
       .from(coachSchema)
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id))
+      .leftJoin(groupSchema, eq(coachSchema.id, groupSchema.coach_id))
       .where(eq(coachSchema.id, id))
+      .groupBy(coachSchema.id, userSchema.id, locationSchema.id)
       .limit(1);
 
     if (coach.length === 0) {
@@ -196,8 +298,8 @@ export class CoachService {
       // Check if coach exists
       const existingCoach = await this.dbService.db
         .select()
-        .from(coachSchema)
-        .where(eq(coachSchema.id, id))
+        .from(userSchema)
+        .where(eq(userSchema.id, id))
         .limit(1);
 
       if (existingCoach.length === 0) {
@@ -211,26 +313,19 @@ export class CoachService {
       ) {
         const emailConflict = await this.dbService.db
           .select()
-          .from(coachSchema)
-          .where(eq(coachSchema.email, updateCoachDto.email))
+          .from(userSchema)
+          .where(eq(userSchema.email, updateCoachDto.email))
           .limit(1);
 
         if (emailConflict.length > 0) {
-          throw new ConflictException('Coach with this email already exists');
+          throw new ConflictException('User with this email already exists');
         }
       }
 
       // Prepare update data with proper type conversion
       const updateData: Partial<Coach> = {};
-      if (updateCoachDto.first_name)
-        updateData.name = `${updateCoachDto.first_name} ${updateCoachDto.last_name}`;
-      if (updateCoachDto.last_name)
-        updateData.name = `${updateCoachDto.first_name} ${updateCoachDto.last_name}`;
-      if (updateCoachDto.email) updateData.email = updateCoachDto.email;
-      if (updateCoachDto.phone) updateData.phone = updateCoachDto.phone;
       if (updateCoachDto.location_id)
         updateData.location_id = updateCoachDto.location_id;
-      updateData.status = true;
 
       // Update coach record
       const updatedCoach = await this.dbService.db
@@ -249,16 +344,16 @@ export class CoachService {
         data: updatedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to update coach: ${error.message}`);
+      this.logger.error(`Failed to update coach: ${(error as Error).message}`);
       throw error;
     }
   }
 
   async remove(id: number) {
     try {
-      // Check if coach exists
+      // Check if coach exists and get the user_id
       const existingCoach = await this.dbService.db
-        .select()
+        .select({ user_id: coachSchema.user_id })
         .from(coachSchema)
         .where(eq(coachSchema.id, id))
         .limit(1);
@@ -267,50 +362,28 @@ export class CoachService {
         throw new NotFoundException('Coach not found');
       }
 
-      // Delete coach record
-      const deletedCoach = await this.dbService.db
-        .delete(coachSchema)
-        .where(eq(coachSchema.id, id))
-        .returning();
+      const userId = existingCoach[0].user_id;
 
-      // Note: User record is not automatically deleted to preserve data integrity
-      // You may want to implement a soft delete or handle user deletion separately
+      if (!userId) {
+        throw new Error('Coach record has no associated user');
+      }
 
-      this.logger.log(`Coach deleted successfully with ID: ${id}`);
+      // Use transaction to delete both coach and user records
+      await this.dbService.db.transaction(async (tx) => {
+        // Delete coach record first
+        await tx.delete(coachSchema).where(eq(coachSchema.id, id));
+
+        // Delete the associated user record
+        await tx.delete(userSchema).where(eq(userSchema.id, userId));
+      });
 
       return {
         message: 'Coach deleted successfully',
-        data: deletedCoach[0],
       };
     } catch (error) {
-      this.logger.error(`Failed to delete coach: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async updateStatus(id: number, status: boolean) {
-    try {
-      const updatedCoach = await this.dbService.db
-        .update(coachSchema)
-        .set({
-          status,
-          updated_at: new Date(),
-        })
-        .where(eq(coachSchema.id, id))
-        .returning();
-
-      if (updatedCoach.length === 0) {
-        throw new NotFoundException('Coach not found');
-      }
-
-      this.logger.log(`Coach status updated successfully with ID: ${id}`);
-
-      return {
-        message: 'Coach status updated successfully',
-        data: updatedCoach[0],
-      };
-    } catch (error) {
-      this.logger.error(`Failed to update coach status: ${error.message}`);
+      this.logger.error(
+        `Failed to delete coach and user: ${(error as Error).message}`
+      );
       throw error;
     }
   }

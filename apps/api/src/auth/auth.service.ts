@@ -9,7 +9,11 @@ import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+} from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { roleSchema, userSchema, rolePermissionSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
@@ -633,5 +637,38 @@ export class AuthService {
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
+  }
+
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: number) {
+    const user = await this.userService.findOne(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await this.userService.verifyPassword(
+      user.id,
+      changePasswordDto.old_password
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid old password');
+    }
+
+    if (changePasswordDto.new_password !== changePasswordDto.confirm_password) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const hashedPassword = await this.userService.hashPassword(
+      changePasswordDto.new_password
+    );
+    await this.dbService.db
+      .update(userSchema)
+      .set({ password: hashedPassword })
+      .where(eq(userSchema.id, user.id));
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 }

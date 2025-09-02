@@ -19,6 +19,7 @@ import AddCoachForm from './add-coach';
 import { Dashboard, ListView } from '@/svgs';
 import Loader from '@/components/Loader';
 import CoachGridView from './coach-grid-view';
+import EditCoachForm from './edit-coach';
 
 const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -202,6 +203,15 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
           <AddCoachForm setIsModalOpen={setIsModalOpen} />
         ) : currentModal === 'add' && !coach ? (
           <AddKidForm />
+        ) : currentModal === 'edit' && coach ? (
+          <>
+            {idToEditOrDel != null && (
+              <EditCoachForm
+                setIsModalOpen={setIsModalOpen}
+                id={idToEditOrDel}
+              />
+            )}
+          </>
         ) : null}
       </Modal>
     </>

@@ -1,8 +1,8 @@
 import z from 'zod';
 
 export const addCoachSchema = z.object({
-  first_name: z.string().min(1, 'Parent name is required'),
-  last_name: z.string().min(1, 'Child name is required'),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
   email: z.email('Invalid email address'),
   password: z
     .string()

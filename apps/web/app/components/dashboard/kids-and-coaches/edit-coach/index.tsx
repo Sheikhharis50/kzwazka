@@ -1,37 +1,48 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { AddCoachFormData, addCoachSchema } from './schema';
+import { EditCoachFormData, editCoachSchema } from './schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import ModalLayout from '../ModalLayout';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from 'api';
-import { AddCoachPayload, APIError } from 'api/type';
+import { EditCoachPayload, APIError } from 'api/type';
 import { toast } from 'react-toastify';
+import Loader from '@/components/Loader';
 
-const AddCoachForm = ({
+const EditCoachForm = ({
   setIsModalOpen,
+  id,
 }: {
   setIsModalOpen: (val: boolean) => void;
+  id: number;
 }) => {
+  const { data: coach, isLoading } = useQuery({
+    queryKey: ['coach', id],
+    queryFn: async () => {
+      const res = await api.coach.getOne(id);
+      return res.data;
+    },
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<AddCoachFormData>({
-    resolver: zodResolver(addCoachSchema),
+  } = useForm<EditCoachFormData>({
+    resolver: zodResolver(editCoachSchema),
   });
 
   const { error, handleFileChange, preview, removeFile, file } =
     useFileUpload();
   const queryClient = useQueryClient();
 
-  const addCoachMutation = useMutation({
-    mutationFn: async (newCoach: AddCoachPayload) =>
-      await api.coach.create(newCoach),
+  const editCoachMutation = useMutation({
+    mutationFn: async (data: EditCoachPayload) =>
+      await api.coach.update({ data, id }),
     onSuccess: (data) => {
       toast(data.message, { type: 'success' });
       reset();
@@ -43,11 +54,19 @@ const AddCoachForm = ({
     },
   });
 
-  const onSubmit = (data: AddCoachFormData) => {
-    if (!error) {
-      addCoachMutation.mutate({ ...data, photo_url: file });
-    }
+  const onSubmit = (data: EditCoachFormData) => {
+    editCoachMutation.mutate({ ...data, photo_url: file || null });
   };
+
+  React.useEffect(() => {
+    if (coach) {
+      reset({
+        first_name: coach.user.first_name || '',
+        last_name: coach.user.last_name || '',
+        phone: coach.user.phone || '',
+      });
+    }
+  }, [coach, reset]);
 
   return (
     <ModalLayout
@@ -55,7 +74,8 @@ const AddCoachForm = ({
       handleFileChange={handleFileChange}
       preview={preview}
       removeFile={removeFile}
-      heading="Add Coach"
+      heading="Edit Coach"
+      defaultPhoto={coach?.user.photo_url || undefined}
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -74,20 +94,6 @@ const AddCoachForm = ({
           error={errors.last_name?.message}
         />
         <Input
-          type="email"
-          {...register('email')}
-          label="Email"
-          placeholder={`Enter coach email`}
-          error={errors.email?.message}
-        />
-        <Input
-          type="password"
-          {...register('password')}
-          label="Password"
-          placeholder={`Enter password`}
-          error={errors.password?.message}
-        />
-        <Input
           type="tel"
           {...register('phone')}
           label="Tel Number"
@@ -95,14 +101,19 @@ const AddCoachForm = ({
           error={errors.phone?.message}
         />
         <Button
-          isLoading={addCoachMutation.isPending}
-          text="Add"
+          isLoading={editCoachMutation.isPending}
+          text="Update"
           type="submit"
           className="w-2/3 mx-auto mt-5 lg:mt-10"
         />
       </form>
+      {isLoading && (
+        <div className="absolute left-0 top-0 size-full bg-white/80 flex items-center justify-center">
+          <Loader black />
+        </div>
+      )}
     </ModalLayout>
   );
 };
 
-export default AddCoachForm;
+export default EditCoachForm;

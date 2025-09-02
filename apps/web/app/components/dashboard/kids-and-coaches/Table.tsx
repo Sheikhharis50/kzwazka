@@ -54,7 +54,7 @@ const Table = ({ data, isLoading, onDelete, onEdit, coach }: TableProps) => {
                   {data?.user?.photo_url ? (
                     <Image
                       src={data.user?.photo_url}
-                      alt="kid"
+                      alt="profile"
                       height={50}
                       width={50}
                       className="size-10 rounded-full"

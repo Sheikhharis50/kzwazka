@@ -10,7 +10,7 @@ apiClient.interceptors.request.use(
     if (!config.headers) config.headers = new AxiosHeaders();
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
-      config.headers['Content-Type'] = 'application/json';
+      // config.headers['Content-Type'] = 'application/json';
       if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }

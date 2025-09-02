@@ -1,8 +1,6 @@
-import { PartialType } from '@nestjs/mapped-types';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { CreateUserDto } from './create-user.dto';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
+export class UpdateUserDto {
   @ApiPropertyOptional({
     description: 'User email address',
     example: 'john.doe@example.com',
@@ -28,16 +26,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   last_name?: string;
 
   @ApiPropertyOptional({
-    description:
-      'User password (min 8 chars, must contain uppercase, lowercase, and number)',
-    example: 'SecurePass123',
-    minLength: 8,
-    maxLength: 128,
-    pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)',
-  })
-  password?: string | null;
-
-  @ApiPropertyOptional({
     description: 'User phone number (international format supported)',
     example: '+1-555-123-4567',
     maxLength: 20,
@@ -46,30 +34,9 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   phone?: string;
 
   @ApiPropertyOptional({
-    description: 'User role identifier',
-    example: 'user',
-    maxLength: 50,
+    description: 'User photo URL',
+    example: 'https://example.com/photos/user.jpg',
+    maxLength: 500,
   })
-  role_id?: string;
-
-  @ApiPropertyOptional({
-    description: 'Whether the user account is active',
-    example: true,
-    default: true,
-  })
-  is_active?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Whether the user email is verified',
-    example: false,
-    default: false,
-  })
-  is_verified?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Google OAuth social ID',
-    example: 'google_123456789',
-    maxLength: 255,
-  })
-  google_social_id?: string;
+  photo_url?: string;
 }

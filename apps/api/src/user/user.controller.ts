@@ -5,9 +5,6 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  Patch,
-  Param,
-  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +13,6 @@ import {
   ApiBody,
   ApiBearerAuth,
   ApiConsumes,
-  ApiParam,
 } from '@nestjs/swagger';
 import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { UserService } from './user.service';
@@ -57,34 +53,5 @@ export class UserController {
     @UploadedFile() photo?: Express.Multer.File
   ) {
     return this.userService.createAdmin(createUserDto, photo);
-  }
-
-  @Patch(':id/photo')
-  @ApiOperation({ summary: 'Update user profile photo' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(createImageUploadInterceptor('photo'))
-  @ApiParam({
-    name: 'id',
-    description: 'User ID',
-    type: 'number',
-    example: 1,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        photo: { type: 'string', format: 'binary' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Profile photo updated successfully',
-  })
-  async updatePhoto(
-    @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() photo: Express.Multer.File
-  ) {
-    return this.userService.updatePhoto(id, photo);
   }
 }

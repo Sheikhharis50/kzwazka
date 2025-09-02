@@ -41,13 +41,9 @@ export class ChildrenService {
 
   async create(body: CreateChildrenDto) {
     // Check if user already exists
-    const existingUser = await this.dbService.db
-      .select({ id: userSchema.id })
-      .from(userSchema)
-      .where(eq(userSchema.email, body.email))
-      .limit(1);
+    const existingUser = await this.userService.findByEmail(body.email);
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
@@ -376,7 +372,11 @@ export class ChildrenService {
       .where(eq(childrenSchema.user_id, userId));
   }
 
-  async update(id: number, updateChildrenDto: UpdateChildrenDto) {
+  async update(
+    id: number,
+    updateChildrenDto: UpdateChildrenDto,
+    photo_url?: Express.Multer.File
+  ) {
     const updateValues = {
       ...updateChildrenDto,
       ...(updateChildrenDto.dob && {
@@ -384,93 +384,55 @@ export class ChildrenService {
       }),
       updated_at: new Date(),
     };
+    const children = await this.findOne(id);
+
+    if (!children) {
+      throw new NotFoundException('Children not found');
+    }
+
+    const user = await this.userService.findOne(children.user.id!);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userService.update(children.user.id!, updateValues, photo_url);
 
     const updatedChildren = await this.dbService.db
       .update(childrenSchema)
       .set(updateValues)
-      .where(eq(childrenSchema.id, id))
+      .where(eq(childrenSchema.id, children.id))
       .returning();
-
-    if (updatedChildren.length === 0) {
-      throw new NotFoundException('Children not found');
-    }
 
     return {
       message: 'Children updated successfully',
-      data: updatedChildren[0],
+      data: {
+        children: updatedChildren[0],
+      },
     };
   }
 
   async remove(id: number) {
-    // First get the children record to get the user_id and photo_url
-    const childrenRecord = await this.dbService.db
-      .select({
-        user_id: childrenSchema.user_id,
-        user: {
-          photo_url: userSchema.photo_url,
-        },
-      })
-      .from(childrenSchema)
-      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .where(eq(childrenSchema.id, id))
-      .limit(1);
+    const children = await this.findOne(id);
 
-    if (childrenRecord.length === 0) {
+    if (!children) {
       throw new NotFoundException('Children not found');
     }
 
-    const userId = childrenRecord[0].user_id;
-    const photoUrl = childrenRecord[0].user?.photo_url;
+    const user = await this.userService.findOne(children.user.id!);
 
-    // Delete profile photo from storage if it exists
-    if (photoUrl && photoUrl.startsWith('/')) {
-      try {
-        await this.fileStorageService.deleteFile(photoUrl);
-        this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
-      } catch (error) {
-        // Log error but don't prevent user deletion
-        this.logger.error(
-          `Failed to delete profile photo: ${(error as Error).message}`
-        );
-      }
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    // Use transaction to delete both children and user records
-    try {
-      await this.dbService.db.transaction(async (tx) => {
-        // Delete children record first
-        await tx.delete(childrenSchema).where(eq(childrenSchema.id, id));
+    await this.userService.remove(children.user.id!);
 
-        // Delete the associated user record
-        await tx.delete(userSchema).where(eq(userSchema.id, userId));
-      });
-
-      return {
-        message: 'Children deleted successfully',
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to delete children and user: ${(error as Error).message}`
-      );
-    }
-  }
-
-  async updatePhotoUrl(id: number) {
-    const updatedChildren = await this.dbService.db
-      .update(childrenSchema)
-      .set({
-        updated_at: new Date(),
-      })
-      .where(eq(childrenSchema.id, id))
-      .returning();
-
-    if (updatedChildren.length === 0) {
-      throw new NotFoundException('Children not found');
-    }
+    await this.dbService.db
+      .delete(childrenSchema)
+      .where(eq(childrenSchema.id, children.id));
 
     return {
-      message: 'Photo URL updated successfully',
-      data: updatedChildren[0],
+      message: 'Children deleted successfully',
     };
   }
 

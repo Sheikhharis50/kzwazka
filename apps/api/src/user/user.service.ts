@@ -116,6 +116,7 @@ export class UserService {
         role_name: roleSchema.name,
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
+        photo_url: userSchema.photo_url,
       })
       .from(userSchema)
       .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
@@ -139,18 +140,35 @@ export class UserService {
     return user.length > 0 ? user[0] : null;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const { password, ...updateData } = updateUserDto;
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    photo_url?: Express.Multer.File
+  ) {
+    const { ...updateData } = updateUserDto;
 
-    // Hash password if provided
-    let hashedPassword: string | undefined;
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const photoUrl = user.photo_url;
+
+    if (photoUrl && photoUrl.startsWith('/')) {
+      await this.fileStorageService.deleteFile(photoUrl);
+    }
+    if (photo_url) {
+      const uploadResult = await this.fileStorageService.uploadFile(
+        photo_url,
+        'avatars',
+        id
+      );
+      updateData.photo_url = uploadResult.relativePath;
     }
 
     const updateValues = {
       ...updateData,
-      ...(hashedPassword && { password: hashedPassword }),
       updated_at: new Date(),
     };
 
@@ -169,32 +187,19 @@ export class UserService {
 
   async remove(id: number) {
     // First get the user to check if they have a profile photo
-    const user = await this.dbService.db
-      .select({ photo_url: userSchema.photo_url })
-      .from(userSchema)
-      .where(eq(userSchema.id, id))
-      .limit(1);
+    const user = await this.findOne(id);
 
-    if (user.length === 0) {
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const photoUrl = user[0].photo_url;
+    const photoUrl = user.photo_url;
 
-    // Delete profile photo from storage if it exists
     if (photoUrl && photoUrl.startsWith('/')) {
-      try {
-        await this.fileStorageService.deleteFile(photoUrl);
-        this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
-      } catch (error) {
-        // Log error but don't prevent user deletion
-        this.logger.error(
-          `Failed to delete profile photo: ${(error as Error).message}`
-        );
-      }
+      await this.fileStorageService.deleteFile(photoUrl);
     }
 
-    const deletedUser = await this.dbService.db
+    await this.dbService.db
       .delete(userSchema)
       .where(eq(userSchema.id, id))
       .returning();
@@ -249,46 +254,5 @@ export class UserService {
    */
   async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
-  }
-
-  /**
-   * Update user profile photo
-   */
-  async updatePhoto(id: number, photo: Express.Multer.File): Promise<any> {
-    try {
-      // Upload new photo to storage
-      const uploadResult = await this.fileStorageService.uploadFile(
-        photo,
-        'avatars',
-        Date.now() // Use timestamp as temporary ID for upload
-      );
-
-      // Update user with new photo URL
-      const updatedUser = await this.dbService.db
-        .update(userSchema)
-        .set({
-          photo_url: uploadResult.relativePath,
-          updated_at: new Date(),
-        })
-        .where(eq(userSchema.id, id))
-        .returning();
-
-      if (updatedUser.length === 0) {
-        throw new NotFoundException('User not found');
-      }
-
-      return {
-        message: 'Profile photo updated successfully',
-        data: {
-          id: updatedUser[0].id,
-          photo_url: uploadResult.relativePath,
-          cdn_url: uploadResult.url,
-        },
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to update profile photo: ${(error as Error).message}`
-      );
-    }
   }
 }

@@ -204,7 +204,14 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
         ) : currentModal === 'add' && !coach ? (
           <AddKidForm />
         ) : currentModal === 'edit' && coach ? (
-          <EditCoachForm setIsModalOpen={setIsModalOpen} id={idToEditOrDel!} />
+          <>
+            {idToEditOrDel != null && (
+              <EditCoachForm
+                setIsModalOpen={setIsModalOpen}
+                id={idToEditOrDel}
+              />
+            )}
+          </>
         ) : null}
       </Modal>
     </>

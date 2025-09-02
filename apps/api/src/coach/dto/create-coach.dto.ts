@@ -61,4 +61,13 @@ export class CreateCoachDto {
   @IsOptional()
   @IsNumber({}, { message: 'Location ID must be a number' })
   location_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Coach profile photo URL',
+    example: 'https://example.com/photos/coach.jpg',
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsString({ message: 'Photo URL must be a string' })
+  photo_url?: string;
 }

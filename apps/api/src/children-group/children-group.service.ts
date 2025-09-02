@@ -13,22 +13,21 @@ import {
 import { CreateChildrenGroupDto } from './dto/create-children-group.dto';
 import { UpdateChildrenGroupDto } from './dto/update-children-group.dto';
 import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
+import { GroupService } from '../group/group.service';
 
 @Injectable()
 export class ChildrenGroupService {
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly groupService: GroupService
+  ) {}
 
   async create(createChildrenGroupDto: CreateChildrenGroupDto) {
     const { children_ids, group_id } = createChildrenGroupDto;
 
     // Verify that the group exists
-    const group = await this.dbService.db
-      .select()
-      .from(groupSchema)
-      .where(eq(groupSchema.id, group_id))
-      .limit(1);
-
-    if (group.length === 0) {
+    const group = await this.groupService.findOne(group_id);
+    if (!group) {
       throw new NotFoundException('Group not found');
     }
 

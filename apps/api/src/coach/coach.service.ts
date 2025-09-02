@@ -36,13 +36,10 @@ export class CoachService {
   ) {
     try {
       // Check if coach with this email already exists
-      const existingCoach = await this.dbService.db
-        .select()
-        .from(userSchema)
-        .where(eq(userSchema.email, createCoachDto.email))
-        .limit(1);
-
-      if (existingCoach.length > 0) {
+      const existingUser = await this.userService.findByEmail(
+        createCoachDto.email
+      );
+      if (existingUser) {
         throw new ConflictException('User with this email already exists');
       }
 
@@ -344,96 +341,45 @@ export class CoachService {
     };
   }
 
-  async update(id: number, updateCoachDto: UpdateCoachDto) {
+  async update(
+    id: number,
+    updateCoachDto: UpdateCoachDto,
+    photo_url?: Express.Multer.File
+  ) {
     try {
-      // Check if coach exists and get the user_id
-      const existingCoach = await this.dbService.db
-        .select({ user_id: coachSchema.user_id })
-        .from(coachSchema)
-        .where(eq(coachSchema.id, id))
-        .limit(1);
+      const coach = await this.findOne(id);
 
-      if (existingCoach.length === 0) {
+      if (!coach) {
         throw new NotFoundException('Coach not found');
       }
 
-      const userId = existingCoach[0].user_id;
+      const user = await this.userService.findOne(coach.data.user.id!);
 
-      if (!userId) {
-        throw new Error('Coach record has no associated user');
-      }
-
-      // Get the existing user data
-      const existingUser = await this.dbService.db
-        .select()
-        .from(userSchema)
-        .where(eq(userSchema.id, userId))
-        .limit(1);
-
-      if (existingUser.length === 0) {
+      if (!user) {
         throw new NotFoundException('User not found');
       }
 
-      // Check if email is being updated and if it conflicts with existing user
-      if (
-        updateCoachDto.email &&
-        updateCoachDto.email !== existingUser[0].email
-      ) {
-        const emailConflict = await this.dbService.db
-          .select()
-          .from(userSchema)
-          .where(eq(userSchema.email, updateCoachDto.email))
-          .limit(1);
+      await this.userService.update(
+        coach.data.user.id!,
+        updateCoachDto,
+        photo_url
+      );
 
-        if (emailConflict.length > 0) {
-          throw new ConflictException('User with this email already exists');
-        }
-      }
+      await this.dbService.db
+        .update(coachSchema)
+        .set({
+          location_id: updateCoachDto.location_id || null,
+          updated_at: new Date(),
+        })
+        .where(eq(coachSchema.id, coach.data.id));
 
-      // Use transaction to update both user and coach records
-      await this.dbService.db.transaction(async (tx) => {
-        // Update user record if user data is provided
-        if (
-          updateCoachDto.email ||
-          updateCoachDto.first_name ||
-          updateCoachDto.last_name ||
-          updateCoachDto.phone
-        ) {
-          const userUpdateData: any = { updated_at: new Date() };
-
-          if (updateCoachDto.email) userUpdateData.email = updateCoachDto.email;
-          if (updateCoachDto.first_name)
-            userUpdateData.first_name = updateCoachDto.first_name;
-          if (updateCoachDto.last_name)
-            userUpdateData.last_name = updateCoachDto.last_name;
-          if (updateCoachDto.phone) userUpdateData.phone = updateCoachDto.phone;
-
-          await tx
-            .update(userSchema)
-            .set(userUpdateData)
-            .where(eq(userSchema.id, userId));
-        }
-
-        // Update coach record if location_id is provided
-        if (updateCoachDto.location_id !== undefined) {
-          await tx
-            .update(coachSchema)
-            .set({
-              location_id: updateCoachDto.location_id,
-              updated_at: new Date(),
-            })
-            .where(eq(coachSchema.id, id));
-        }
-      });
-
-      // Get the updated coach data
-      const updatedCoach = await this.findOne(id);
-
-      this.logger.log(`Coach updated successfully with ID: ${id}`);
+      this.logger.log(`Coach updated successfully with ID: ${coach.data.id}`);
 
       return {
         message: 'Coach updated successfully',
-        data: updatedCoach.data,
+        data: {
+          coach: coach.data,
+        },
       };
     } catch (error) {
       this.logger.error(`Failed to update coach: ${(error as Error).message}`);
@@ -443,51 +389,17 @@ export class CoachService {
 
   async remove(id: number) {
     try {
-      // Check if coach exists and get the user_id and photo_url
-      const existingCoach = await this.dbService.db
-        .select({
-          user_id: coachSchema.user_id,
-          user: {
-            photo_url: userSchema.photo_url,
-          },
-        })
-        .from(coachSchema)
-        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .where(eq(coachSchema.id, id))
-        .limit(1);
+      const coach = await this.findOne(id);
 
-      if (existingCoach.length === 0) {
+      if (!coach) {
         throw new NotFoundException('Coach not found');
       }
 
-      const userId = existingCoach[0].user_id;
-      const photoUrl = existingCoach[0].user?.photo_url;
+      await this.userService.remove(coach.data.user.id!);
 
-      if (!userId) {
-        throw new Error('Coach record has no associated user');
-      }
-
-      // Delete profile photo from storage if it exists
-      if (photoUrl && photoUrl.startsWith('/')) {
-        try {
-          await this.fileStorageService.deleteFile(photoUrl);
-          this.logger.log(`Profile photo deleted from storage: ${photoUrl}`);
-        } catch (error) {
-          // Log error but don't prevent user deletion
-          this.logger.error(
-            `Failed to delete profile photo: ${(error as Error).message}`
-          );
-        }
-      }
-
-      // Use transaction to delete both coach and user records
-      await this.dbService.db.transaction(async (tx) => {
-        // Delete coach record first
-        await tx.delete(coachSchema).where(eq(coachSchema.id, id));
-
-        // Delete the associated user record
-        await tx.delete(userSchema).where(eq(userSchema.id, userId));
-      });
+      await this.dbService.db
+        .delete(coachSchema)
+        .where(eq(coachSchema.id, coach.data.id));
 
       return {
         message: 'Coach deleted successfully',
@@ -495,69 +407,6 @@ export class CoachService {
     } catch (error) {
       this.logger.error(
         `Failed to delete coach and user: ${(error as Error).message}`
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Update coach profile photo
-   */
-  async updatePhoto(id: number, photo_file: Express.Multer.File) {
-    try {
-      // Get the coach to find the user_id
-      const coach = await this.dbService.db
-        .select({ user_id: coachSchema.user_id })
-        .from(coachSchema)
-        .where(eq(coachSchema.id, id))
-        .limit(1);
-
-      if (coach.length === 0) {
-        throw new NotFoundException('Coach not found');
-      }
-
-      const userId = coach[0].user_id;
-
-      if (!userId) {
-        throw new Error('Coach record has no associated user');
-      }
-
-      // Upload new photo to storage
-      const uploadResult = await this.fileStorageService.uploadFile(
-        photo_file,
-        'avatars',
-        Date.now()
-      );
-
-      // Update user with new photo URL
-      const updatedUser = await this.dbService.db
-        .update(userSchema)
-        .set({
-          photo_url: uploadResult.relativePath,
-          updated_at: new Date(),
-        })
-        .where(eq(userSchema.id, userId))
-        .returning();
-
-      if (updatedUser.length === 0) {
-        throw new NotFoundException('User not found');
-      }
-
-      this.logger.log(`Coach photo updated successfully for ID: ${id}`);
-
-      return {
-        message: 'Profile photo updated successfully',
-        data: {
-          id: updatedUser[0].id,
-          photo_url: this.fileStorageService.getPhotoUrlforAPIResponse(
-            uploadResult.relativePath
-          ),
-          cdn_url: uploadResult.url,
-        },
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to update coach photo: ${(error as Error).message}`
       );
       throw error;
     }

@@ -175,6 +175,8 @@ export class CoachController {
 
   @Patch(':id')
   @RequirePermission(['update_coach'])
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiOperation({
     summary: 'Update coach',
     description: 'Update coach information and optionally associated user data',
@@ -211,9 +213,10 @@ export class CoachController {
   })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateCoachDto: UpdateCoachDto
+    @Body() updateCoachDto: UpdateCoachDto,
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.coachService.update(id, updateCoachDto);
+    return this.coachService.update(id, updateCoachDto, photo_url);
   }
 
   @Delete(':id')
@@ -242,73 +245,5 @@ export class CoachController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.coachService.remove(id);
-  }
-
-  @Patch(':id/photo')
-  @RequirePermission(['update_coach'])
-  @ApiOperation({
-    summary: 'Update coach profile photo',
-    description: 'Update the profile photo for a specific coach',
-  })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(createImageUploadInterceptor('photo_url'))
-  @ApiParam({
-    name: 'id',
-    description: 'Coach ID',
-    type: 'number',
-    example: 1,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        photo_url: { type: 'string', format: 'binary' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Profile photo updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Profile photo updated successfully',
-        },
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            photo_url: {
-              type: 'string',
-              example: '/avatars/2025/08/123-abc123.jpg',
-            },
-            cdn_url: {
-              type: 'string',
-              example: 'https://cdn.example.com/avatars/2025/08/123-abc123.jpg',
-            },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid coach ID or file',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid JWT token',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Coach not found',
-  })
-  updatePhoto(
-    @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() photo_file: Express.Multer.File
-  ) {
-    return this.coachService.updatePhoto(id, photo_file);
   }
 }

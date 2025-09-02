@@ -5,6 +5,7 @@ import {
   AddCoachPayload,
   APIListResponse,
   APIResponse,
+  EditCoachPayload,
   ICoach,
 } from 'api/type';
 import { handleApiError } from 'utils/apiErrorHandler';
@@ -30,6 +31,15 @@ export const coach = {
     }
   },
 
+  getOne: async (id: number): Promise<APIResponse<ICoach>> => {
+    try {
+      const response = await apiClient.get(`/coach/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch coach, please try again later');
+    }
+  },
+
   delete: async (id: number): Promise<APIResponse<null>> => {
     try {
       const response = await apiClient.delete(`/coach/${id}`);
@@ -49,6 +59,25 @@ export const coach = {
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to create coach, please try again later');
+    }
+  },
+
+  update: async ({
+    data,
+    id,
+  }: {
+    data: EditCoachPayload;
+    id: number;
+  }): Promise<APIResponse<ICoach>> => {
+    try {
+      const response = await apiClient.patch(`/coach/${id}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to update coach, please try again later');
     }
   },
 };

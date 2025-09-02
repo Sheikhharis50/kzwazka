@@ -31,14 +31,13 @@ const CoachCard = ({
   ];
 
   return (
-    <div className="rounded-md p-2 grid grid-cols-[30%_70%] items-center bg-smoke">
-      <div className="relative">
+    <div className="rounded-md p-2 grid grid-cols-[30%_70%] items-center bg-smoke h-[130px] md:h-[150px] 2xl:h-[170px] overflow-hidden">
+      <div className="relative h-full">
         <Image
           src={coach.photo_url || Placeholder}
           alt="coach"
-          height={400}
-          width={300}
-          className="w-full h-auto rounded-sm object-cover bg-black/20"
+          fill
+          className="rounded-sm bg-black/20"
         />
         <div className="absolute top-0 right-0 px-2 py-1.5 flex justify-between w-full">
           <button onClick={() => onDelete(id)}>

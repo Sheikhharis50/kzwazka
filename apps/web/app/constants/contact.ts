@@ -3,3 +3,5 @@ export const contactDetail = [
   { label: 'Email', value: 'biuro@kzwazka.pl' },
   { label: 'Obozy Zapaśnicze', value: 'Latem i Zimą' },
 ];
+
+export const phoneNumberLink = 'tel:+48500333085';

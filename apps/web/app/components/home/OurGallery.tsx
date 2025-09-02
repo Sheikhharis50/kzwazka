@@ -4,7 +4,7 @@ import Title from '../ui/Title';
 import { galleryCol1, galleryCol2, galleryCol3 } from '@/constants/gallery';
 import Image, { StaticImageData } from 'next/image';
 import BgImg from '@/images/gallery-bg.png';
-import Button from '../Button';
+// import Button from '../Button';
 
 const OurGallery = () => {
   const GalleryImage = ({ image }: { image: StaticImageData }) => (
@@ -48,7 +48,7 @@ const OurGallery = () => {
         </div>
       </Container>
       <div className="absolute bottom-0 left-0 h-1/3 w-full bg-gradient-to-t from-white via-white to-transparent" />
-      <Button
+      {/* <Button
         className="!bg-white !text-black absolute bottom-1/5 left-1/2 -translate-x-1/2 pointer-events-auto shadow-lg !py-1 !gap-1"
         text="Więcej"
         icon={
@@ -56,7 +56,7 @@ const OurGallery = () => {
             +
           </span>
         }
-      />
+      /> */}
     </section>
   );
 };

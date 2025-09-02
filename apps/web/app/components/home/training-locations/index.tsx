@@ -12,7 +12,7 @@ import Image from 'next/image';
 
 const TrainingLocations = () => {
   return (
-    <section className="py-10 md:py-20 relative">
+    <section id="training-locations" className="py-10 md:py-20 relative">
       <Image
         src={Ribbon}
         alt="ribbon"

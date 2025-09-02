@@ -336,6 +336,8 @@ export class ChildrenController {
 
   @Patch(':id')
   @RequirePermission(['update_children'])
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiOperation({
     summary: 'Update children',
     description: "Update an existing children's information",
@@ -385,9 +387,10 @@ export class ChildrenController {
   })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: UpdateChildrenDto
+    @Body() body: UpdateChildrenDto,
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.childrenService.update(id, body);
+    return this.childrenService.update(id, body, photo_url);
   }
 
   @Delete(':id')

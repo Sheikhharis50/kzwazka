@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Title from '../ui/Title';
 import Paragraph from '../Paragraph';
 import HomeButton from './Button';
+import Link from 'next/link';
+import { phoneNumberLink } from '@/constants/contact';
 
 const TrainWithUs = () => {
   return (
@@ -26,7 +28,9 @@ const TrainWithUs = () => {
           className="mb-5 md:mb-10 xl:mb-12"
         />
         <div className="flex items-center">
-          <HomeButton text="Zapisz się!" className="mr-5 md:mr-8 xl:mr-10" />
+          <Link href={phoneNumberLink}>
+            <HomeButton text="Zapisz się!" className="mr-5 md:mr-8 xl:mr-10" />
+          </Link>
           {/* <Image
             src={PlayButton}
             alt="play button"

@@ -2,12 +2,14 @@ import React from 'react';
 import Container from './Container';
 import Logo from '@/icons/logo-footer.png';
 import Image from 'next/image';
-import { address, socialLinks } from '@/constants/footer-links';
+import { address } from '@/constants/footer-links';
 import Paragraph from '../Paragraph';
 import Link from 'next/link';
-import Heading from '../Heading';
+// import Heading from '../Heading';
 import HomeButton from './Button';
-import { navLinks } from '@/constants/nav-links';
+// import { navLinks } from '@/constants/nav-links';
+import { phoneNumberLink } from '@/constants/contact';
+import { scrollIntoView } from 'utils/scrollIntoView';
 
 const Footer = () => {
   return (
@@ -20,12 +22,13 @@ const Footer = () => {
           height={300}
           className="w-40 md:w-52 lg:w-60 h-auto mb-5 md:mb-8"
         />
-        <div className="flex flex-col lg:flex-row gap-8 md:gap-10 xl:gap-40 justify-between xl:justify-start">
+        {/* xl:justify-start */}
+        <div className="flex flex-col lg:flex-row gap-8 md:gap-10 xl:gap-40 justify-between">
           <div className="space-y-1">
             {address.map((val) => (
               <Paragraph key={val} text={val} />
             ))}
-            <div className="flex gap-5 items-baseline pt-3 md:pt-5 lg:pt-10">
+            {/* <div className="flex gap-5 items-baseline pt-3 md:pt-5 lg:pt-10">
               {socialLinks.map((link) => (
                 <Link
                   href={link.url}
@@ -35,9 +38,9 @@ const Footer = () => {
                   {link.icon}
                 </Link>
               ))}
-            </div>
+            </div> */}
           </div>
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Heading
               text="KZ Ważka"
               className="!font-Inter mb-2 lg:mb-6 font-bold"
@@ -52,15 +55,19 @@ const Footer = () => {
                 <Paragraph text={link.name} />
               </Link>
             ))}
-          </div>
+          </div> */}
           <div>
             <Paragraph text="All Rights Reserved 2025  WAZKA WARSZAWA" />
-            <Link href={'/regulamin-klubu'} className="block mb-5 lg:mb-14">
-              <Paragraph text="Regulamin Klubu" />
-            </Link>
+            <Paragraph text="Regulamin Klubu" className="mb-5 lg:mb-14" />
             <div className="flex gap-2 xs:gap-3">
-              <HomeButton text="Zapisz się na trening" className="md:py-3" />
-              <HomeButton text="Zobacz lokalizacje" className="md:py-3" />
+              <Link href={phoneNumberLink}>
+                <HomeButton text="Zapisz się na trening" className="md:py-3" />
+              </Link>
+              <HomeButton
+                text="Zobacz lokalizacje"
+                className="md:py-3"
+                onClick={() => scrollIntoView('training-locations')}
+              />
             </div>
           </div>
         </div>

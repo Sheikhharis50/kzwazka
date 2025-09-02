@@ -7,6 +7,9 @@ import Paragraph from '@/components/Paragraph';
 import HomeButton from '@/components/home/Button';
 import { Phone } from '@/svgs';
 import Title from '@/components/ui/Title';
+import Link from 'next/link';
+import { phoneNumberLink } from '@/constants/contact';
+import { scrollIntoView } from 'utils/scrollIntoView';
 
 const HeroSection = () => {
   return (
@@ -41,12 +44,18 @@ const HeroSection = () => {
           className="mb-5 md:mb-8 lg:mb-10 2xl:mb-14"
         />
         <div className="flex gap-3 md:gap-5">
+          <Link href={phoneNumberLink} className="block min-w-[35%]">
+            <HomeButton
+              text="Zadzwoń"
+              icon={<Phone className="size-5 md:size-6" />}
+              className="w-full"
+            />
+          </Link>
           <HomeButton
-            text="Zadzwoń"
-            icon={<Phone className="size-5 md:size-6" />}
+            text="Zobacz lokalizacje"
             className="min-w-[35%]"
+            onClick={() => scrollIntoView('training-locations')}
           />
-          <HomeButton text="Zobacz lokalizacje" className="min-w-[35%]" />
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ import { ageGroupsData } from '@/constants/age-group';
 import HomeButton from './Button';
 import AgeGroupImage from '@/images/age-group.png';
 import Image from 'next/image';
+import Link from 'next/link';
+import { phoneNumberLink } from '@/constants/contact';
 
 const AgeGroup = () => {
   return (
@@ -36,10 +38,12 @@ const AgeGroup = () => {
               </div>
             ))}
           </div>
-          <HomeButton
-            text="1-szy darmowy trening"
-            className="py-3 mx-auto md:mx-0 "
-          />
+          <Link href={phoneNumberLink}>
+            <HomeButton
+              text="1-szy darmowy trening"
+              className="py-3 mx-auto md:mx-0 "
+            />
+          </Link>
         </div>
         <Image
           src={AgeGroupImage}

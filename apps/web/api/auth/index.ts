@@ -7,17 +7,15 @@ import {
 } from './type';
 import { handleApiError } from 'utils/apiErrorHandler';
 import { APIResponse } from 'api/type';
+import { toFormData } from 'axios';
 
 export const auth = {
   register: async (
     payload: RegisterPayload
   ): Promise<APIResponse<IRegisterResponse>> => {
     try {
-      const response = await apiClient.post(`/auth/signup`, payload, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const form = toFormData(payload);
+      const response = await apiClient.post(`/auth/signup`, form);
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to create user, please try again later');

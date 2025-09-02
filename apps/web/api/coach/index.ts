@@ -8,6 +8,7 @@ import {
   EditCoachPayload,
   ICoach,
 } from 'api/type';
+import { toFormData } from 'axios';
 import { handleApiError } from 'utils/apiErrorHandler';
 
 export const coach = {
@@ -51,11 +52,8 @@ export const coach = {
 
   create: async (data: AddCoachPayload): Promise<APIResponse<ICoach>> => {
     try {
-      const response = await apiClient.post(`/coach`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const formData = toFormData(data);
+      const response = await apiClient.post(`/coach`, formData);
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to create coach, please try again later');
@@ -70,11 +68,8 @@ export const coach = {
     id: number;
   }): Promise<APIResponse<ICoach>> => {
     try {
-      const response = await apiClient.patch(`/coach/${id}`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const formData = toFormData(data);
+      const response = await apiClient.patch(`/coach/${id}`, formData);
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to update coach, please try again later');

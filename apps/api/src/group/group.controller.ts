@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,6 +29,7 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 @ApiTags('Groups')
 @Controller('api/group')
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -36,6 +39,7 @@ export class GroupController {
 
   @Post()
   @RequirePermission(['create_group'])
+  @UseInterceptors(FileInterceptor('photo_url'))
   @ApiOperation({
     summary: 'Create a new group',
     description:
@@ -84,8 +88,11 @@ export class GroupController {
     description:
       'Conflict - Group with this name already exists at this location',
   })
-  create(@Body() createGroupDto: CreateGroupDto) {
-    return this.groupService.create(createGroupDto);
+  create(
+    @Body() createGroupDto: CreateGroupDto,
+    @UploadedFile() photo_url?: Express.Multer.File
+  ) {
+    return this.groupService.create(createGroupDto, photo_url);
   }
 
   @Get()
@@ -242,6 +249,7 @@ export class GroupController {
 
   @Patch(':id')
   @RequirePermission(['update_group'])
+  @UseInterceptors(FileInterceptor('photo_url'))
   @ApiOperation({
     summary: 'Update group',
     description: 'Update group information',
@@ -279,9 +287,10 @@ export class GroupController {
   })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateGroupDto: UpdateGroupDto
+    @Body() updateGroupDto: UpdateGroupDto,
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.groupService.update(id, updateGroupDto);
+    return this.groupService.update(id, updateGroupDto, photo_url);
   }
 
   @Delete(':id')

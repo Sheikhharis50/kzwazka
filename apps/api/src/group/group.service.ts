@@ -7,7 +7,7 @@ import {
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, ne, desc, asc, SQL } from 'drizzle-orm';
+import { eq, sql, and, ne, desc } from 'drizzle-orm';
 import {
   groupSchema,
   locationSchema,
@@ -16,14 +16,21 @@ import {
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import { FileStorageService } from '../services/file-storage.service';
 
 @Injectable()
 export class GroupService {
   private readonly logger = new Logger(GroupService.name);
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly fileStorageService: FileStorageService
+  ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(
+    createGroupDto: CreateGroupDto,
+    photo_url?: Express.Multer.File
+  ) {
     try {
       // Validate that min_age is less than max_age
       if (createGroupDto.min_age >= createGroupDto.max_age) {
@@ -50,6 +57,15 @@ export class GroupService {
             'Group with this name already exists at this location'
           );
         }
+      }
+
+      if (photo_url) {
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'groups_profiles',
+          Date.now()
+        );
+        createGroupDto.photo_url = uploadResult.relativePath;
       }
 
       const newGroup = await this.dbService.db
@@ -104,6 +120,7 @@ export class GroupService {
         max_group_size: groupSchema.max_group_size,
         created_at: groupSchema.created_at,
         updated_at: groupSchema.updated_at,
+        photo_url: groupSchema.photo_url,
         location: {
           id: locationSchema.id,
           name: locationSchema.name,
@@ -155,6 +172,7 @@ export class GroupService {
         max_group_size: groupSchema.max_group_size,
         created_at: groupSchema.created_at,
         updated_at: groupSchema.updated_at,
+        photo_url: groupSchema.photo_url,
         location: {
           id: locationSchema.id,
           name: locationSchema.name,
@@ -188,7 +206,11 @@ export class GroupService {
     };
   }
 
-  async update(id: number, updateGroupDto: UpdateGroupDto) {
+  async update(
+    id: number,
+    updateGroupDto: UpdateGroupDto,
+    photo_url?: Express.Multer.File
+  ) {
     try {
       // Check if group exists
       const existingGroup = await this.dbService.db
@@ -246,6 +268,16 @@ export class GroupService {
         }
       }
 
+      if (photo_url && existingGroup[0].photo_url) {
+        await this.fileStorageService.deleteFile(existingGroup[0].photo_url);
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'groups_profiles',
+          Date.now()
+        );
+        updateGroupDto.photo_url = uploadResult.relativePath;
+      }
+
       const updatedGroup = await this.dbService.db
         .update(groupSchema)
         .set({
@@ -278,6 +310,10 @@ export class GroupService {
 
       if (existingGroup.length === 0) {
         throw new NotFoundException('Group not found');
+      }
+
+      if (existingGroup[0].photo_url) {
+        await this.fileStorageService.deleteFile(existingGroup[0].photo_url);
       }
 
       // Delete group record

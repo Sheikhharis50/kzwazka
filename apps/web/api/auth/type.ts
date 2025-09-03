@@ -6,7 +6,7 @@ export type RegisterPayload = {
   dob: string;
   parent_first_name: string;
   parent_last_name: string;
-  photo_url?: string;
+  photo_url?: File | undefined;
   phone: string;
 };
 

@@ -10,8 +10,8 @@ export const worldWrestlingData = [
     title: 'Agnieszka Wieszczek-Kordus',
     winnerOf: { name: 'Brązowa Medalistka Olimpiady', icon: icon1 },
     quote:
-      'Wrestling taught me discipline, resilience, and the confidence to face any challenge. I’m proud to support this program that helps young athletes build those same qualities.',
-    watchLink: '#',
+      'Zapasy są najlepszym sportem ogólnorozwojowym, nie zastanawiajcie się, posyłajcie swoje dzieci właśnie na zapasy! Zapraszam Was do KZ Ważka Warszawa!',
+    watchLink: 'https://youtu.be/qfsbXd7EDH0',
     imageSrc: image1,
   },
   {
@@ -19,7 +19,7 @@ export const worldWrestlingData = [
     winnerOf: { name: 'Brązowy medalista olimpiady', icon: icon2 },
     quote:
       'Dzieciaki! Zapraszam Was do trenowania zapasów, jest to wspaniały sport, na pewno trenując tą dyscyplinę dużo osiągniecie! Zapraszam do KZ Ważka Warszawa!',
-    watchLink: '#',
+    watchLink: 'https://youtu.be/NG6VlLyvd9g',
     imageSrc: image2,
   },
   {
@@ -27,7 +27,7 @@ export const worldWrestlingData = [
     winnerOf: { name: 'Srebrny medalista olimpiady', icon: icon3 },
     quote:
       'Przez wiele lat byłem sportowcem, byłem zapaśnikiem, to był najlepszy wybór w moim życiu. Zapasy otworzyły mi taką perspektywę, której nie da się normalnie przeżyć, pamiętajcie - Ważka Warszawa!',
-    watchLink: '#',
+    watchLink: 'https://youtu.be/5nZv-cUu5Z4',
     imageSrc: image3,
   },
 ];

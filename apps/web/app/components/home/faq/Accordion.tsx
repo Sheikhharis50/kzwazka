@@ -48,12 +48,12 @@ export default function Accordion({ faqs }: AccordionProps) {
             className="overflow-hidden transition-all duration-300 ease-in-out"
             style={{ maxHeight: openIndex === index ? heights[index] : 0 }}
           >
-            <hr className="mb-2 border-border mx-3 md:mx-5" />
+            <hr className="border-border mx-3 md:mx-5" />
             <div
               ref={(el) => {
                 contentRefs.current[index] = el;
               }}
-              className="pl-2 sm:pl-3 md:pl-6 md:pr-[60px] sm:pr-[50px] xs:pr-[42px] pr-[35px] pb-2 md:pb-4"
+              className="pl-2 sm:pl-3 md:pl-6 md:pr-[60px] sm:pr-[50px] xs:pr-[42px] pr-[35px] py-3 md:py-5"
             >
               <Paragraph text={faq.description} />
             </div>

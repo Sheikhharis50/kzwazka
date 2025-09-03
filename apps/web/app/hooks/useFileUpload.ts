@@ -12,11 +12,13 @@ export function useFileUpload({
   const [preview, setPreview] = useState<string | null>(null);
   const [base64, setBase64] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [file, setFile] = useState<File | undefined>(undefined);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setError('');
+    setFile(file);
 
     if (!validTypes.includes(file.type)) {
       setError('Only PNG, JPG, and JPEG files are allowed');
@@ -60,5 +62,6 @@ export function useFileUpload({
     error,
     handleFileChange,
     removeFile,
+    file,
   };
 }

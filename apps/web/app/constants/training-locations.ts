@@ -61,28 +61,31 @@ export const trainingLocations = [
 
 export const trainingLocationsHome = [
   {
-    imageSrc: LocationImg6,
+    imageSrc: LocationImg8,
     title: 'SP Jana Brzechwy',
-    venue: 'Przasnyska 18A, 01-756 Warszawa, Poland',
+    venue: 'Przasnyska 18A, 01-756 Warszawa',
     ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
     facilities: [
       'Trener Jabub Antoszewski',
       'Blisko tramwaj',
       'Darmowe miejsce parkingowe',
     ],
+    locationLink: 'https://maps.app.goo.gl/ATC8jCb9AtGoGrEm6',
   },
   {
-    imageSrc: LocationImg7,
+    imageSrc: LocationImg6,
     title: 'OSiR',
     venue: 'Obozowa 60 , 01-423 Warszawa',
     ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
     facilities: ['Trener Jabub Antoszewski', 'Łatwy dojazd', 'Blisko tramwaj'],
+    locationLink: 'https://maps.app.goo.gl/HTFScQYSZ3TzmE7FA',
   },
   {
-    imageSrc: LocationImg8,
+    imageSrc: LocationImg7,
     title: 'LO Wojciecha Górskiego',
     venue: 'Lwa Tołstoja 2, 01-910 Warszawa',
     ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
     facilities: ['Trener Łukasz Naworol', 'Blisko metro', 'Darmowy parking'],
+    locationLink: 'https://maps.app.goo.gl/BeJsmCju7padBuKo6',
   },
 ];

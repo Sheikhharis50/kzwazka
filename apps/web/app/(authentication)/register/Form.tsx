@@ -18,6 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterPayload } from 'api/auth/type';
 import { useAuth } from '@/hooks/useAuth';
 import { Trash } from '@/svgs';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 interface RegisterFormProps {
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -49,10 +50,9 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
   });
 
   const [formData, setFormData] = React.useState<FirstStepCleanData>();
-  const [preview, setPreview] = React.useState<string | null>(null);
-  const [base64Data, setBase64Data] = React.useState<string>('');
-  const [photoError, setPhotoError] = React.useState<string>('');
   const { register, isLoading } = useAuth();
+  const { error, handleFileChange, preview, removeFile, file } =
+    useFileUpload();
   const passwordValue = watchFirst('password');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -73,59 +73,11 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
     const fullData: RegisterPayload = {
       ...formData!,
       ...data,
-      photo_url: base64Data || '',
+      photo_url: file,
     };
+
     register(fullData);
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPhotoError('');
-
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    if (!validTypes.includes(file.type)) {
-      setPhotoError('Only PNG, JPG, and JPEG files are allowed');
-      e.target.value = '';
-      return;
-    }
-
-    const maxSize = 500 * 1024;
-    if (file.size > maxSize) {
-      setPhotoError('File size must not exceed 500KB');
-      e.target.value = '';
-      return;
-    }
-
-    if (file) {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
-      const url = URL.createObjectURL(file);
-      setPreview(url);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBase64Data(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-
-    e.target.value = '';
-  };
-
-  const handlePhotoDelete = () => {
-    setPreview(null);
-    setBase64Data('');
-    setPhotoError('');
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
-    };
-  }, [preview]);
 
   return (
     <>
@@ -241,7 +193,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
                   />
                   <button
                     onClick={(e) => {
-                      handlePhotoDelete();
+                      removeFile();
                       e.stopPropagation();
                     }}
                   >
@@ -253,7 +205,7 @@ const RegisterForm = ({ setStep, isFirstStep }: RegisterFormProps) => {
               )}
             </div>
             <span className={`text-[10px] md:text-xs xl:text-sm text-red`}>
-              {photoError}
+              {error}
             </span>
           </div>
           <Button

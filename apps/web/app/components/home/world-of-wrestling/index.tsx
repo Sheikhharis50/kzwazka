@@ -1,4 +1,5 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useRef } from 'react';
 import Container from '../Container';
 import Title from '@/components/ui/Title';
 import Logo from '@/images/world-wresling-logo.png';
@@ -7,10 +8,18 @@ import Image from 'next/image';
 import Paragraph from '@/components/Paragraph';
 import { worldWrestlingData } from '@/constants/world-of-wrestling';
 import CarousalCard from './CarousalCard';
-import { Swiper, SwiperSlide } from 'swiper/react';
+import { Swiper, SwiperRef, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 
 const WorldOfWrestling = () => {
+  const swiperRef = useRef<SwiperRef>(null);
+
+  useEffect(() => {
+    if (swiperRef.current) {
+      swiperRef.current.swiper.updateAutoHeight();
+    }
+  }, []);
+
   return (
     <section className="bg-yellow py-10 md:pt-20">
       <Container>
@@ -36,9 +45,21 @@ const WorldOfWrestling = () => {
           text="Zapasy w naszym klubie polecają legendy sportu. To najlepsza rekomendacja i inspiracja dla dzieci marzących o wielkich osiągnięciach"
           className="text-center sm:w-4/5 lg:w-3/5 mx-auto"
         />
-        <Swiper modules={[Pagination]} pagination={{ clickable: true }}>
+        <Swiper
+          ref={swiperRef}
+          observeParents
+          observeSlideChildren
+          observer
+          slidesPerView={1}
+          spaceBetween={10}
+          modules={[Pagination]}
+          pagination={{ clickable: true }}
+        >
           {worldWrestlingData.map((data, index) => (
-            <SwiperSlide key={data.title} className="!h-full">
+            <SwiperSlide
+              key={data.title}
+              className="!h-auto !flex !items-stretch"
+            >
               <CarousalCard
                 {...data}
                 classes={{

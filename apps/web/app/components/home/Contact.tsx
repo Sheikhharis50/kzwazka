@@ -5,7 +5,8 @@ import Paragraph from '../Paragraph';
 import HomeButton from './Button';
 import Image from 'next/image';
 import Ribbon from '@/images/login-ribbon.png';
-import { contactDetail } from '@/constants/contact';
+import { contactDetail, phoneNumberLink } from '@/constants/contact';
+import Link from 'next/link';
 
 const Contact = () => {
   return (
@@ -29,10 +30,12 @@ const Contact = () => {
             </div>
           </div>
         ))}
-        <HomeButton
-          text="Zapisz się →"
-          className="mx-auto md:mx-0 mt-2 md:mt-0"
-        />
+        <Link href={phoneNumberLink}>
+          <HomeButton
+            text="Zapisz się →"
+            className="mx-auto md:mx-0 mt-2 md:mt-0"
+          />
+        </Link>
       </Container>
     </section>
   );

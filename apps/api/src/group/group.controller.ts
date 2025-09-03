@@ -20,6 +20,7 @@ import {
   ApiQuery,
   ApiParam,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GroupService } from './group.service';
@@ -40,6 +41,7 @@ export class GroupController {
   @Post()
   @RequirePermission(['create_group'])
   @UseInterceptors(FileInterceptor('photo_url'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new group',
     description:
@@ -250,6 +252,7 @@ export class GroupController {
   @Patch(':id')
   @RequirePermission(['update_group'])
   @UseInterceptors(FileInterceptor('photo_url'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Update group',
     description: 'Update group information',

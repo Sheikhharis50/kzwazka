@@ -15,6 +15,7 @@ export const groupSchema = pgTable('group', {
   max_group_size: integer('max_group_size').notNull(),
   location_id: integer('location_id').references(() => locationSchema.id),
   coach_id: integer('coach_id').references(() => coachSchema.id),
+  photo_url: text('photo_url'),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
 });

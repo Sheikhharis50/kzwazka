@@ -87,4 +87,12 @@ export class CreateGroupDto {
   @IsNumber({}, { message: 'Coach ID must be a number' })
   @IsOptional()
   coach_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Photo file for the group',
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  photo_url?: string;
 }

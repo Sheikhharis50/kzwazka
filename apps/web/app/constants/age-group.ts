@@ -5,7 +5,7 @@ export const ageGroupsData = [
       '1 trening tygodniowo',
       'Nacisk na: akrobotyka, koordynacha ruchowa, rozwój mózgu',
     ],
-    price: '100zł/mies',
+    price: '150zł/mies',
   },
   {
     age: '7-10 lat',
@@ -13,7 +13,7 @@ export const ageGroupsData = [
       '2 treningi tygodniowo',
       'Nacisk na: elementy techniczne, podstawowe chwyty, akrobatyka',
     ],
-    price: '200zł/mies',
+    price: '220zł/mies',
   },
   {
     age: '11-15 lat',
@@ -21,6 +21,6 @@ export const ageGroupsData = [
       'dwa treningi tygodniowo',
       'Nacisk na: technika zapaśnicza, ćwieczenia specialistyczne, sprawność fizyczna',
     ],
-    price: '200zł/mies',
+    price: '220zł/mies',
   },
 ];

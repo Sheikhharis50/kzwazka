@@ -80,12 +80,12 @@ export const trainingLocationsHome = [
     facilities: ['Trener Jabub Antoszewski', 'Łatwy dojazd', 'Blisko tramwaj'],
     locationLink: 'https://maps.app.goo.gl/HTFScQYSZ3TzmE7FA',
   },
-  {
-    imageSrc: LocationImg7,
-    title: 'LO Wojciecha Górskiego',
-    venue: 'Lwa Tołstoja 2, 01-910 Warszawa',
-    ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
-    facilities: ['Trener Łukasz Naworol', 'Blisko metro', 'Darmowy parking'],
-    locationLink: 'https://maps.app.goo.gl/BeJsmCju7padBuKo6',
-  },
+  // {
+  //   imageSrc: LocationImg7,
+  //   title: 'LO Wojciecha Górskiego',
+  //   venue: 'Lwa Tołstoja 2, 01-910 Warszawa',
+  //   ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
+  //   facilities: ['Trener Łukasz Naworol', 'Blisko metro', 'Darmowy parking'],
+  //   locationLink: 'https://maps.app.goo.gl/BeJsmCju7padBuKo6',
+  // },
 ];

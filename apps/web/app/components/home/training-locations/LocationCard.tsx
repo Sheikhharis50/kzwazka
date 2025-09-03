@@ -4,6 +4,7 @@ import { Check, GoogleLocation, Location } from '@/svgs';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '../Button';
 import Link from 'next/link';
+import { phoneNumberLink } from '@/constants/contact';
 
 interface LocationCardProps {
   imageSrc: string | StaticImageData;
@@ -77,11 +78,13 @@ const LocationCard = ({
         ))}
       </div>
       <div className="flex items-center">
-        <Link href={locationLink} target="_blank" className="flex-1">
+        <Link href={phoneNumberLink} className="flex-1">
           <HomeButton text="Zapisz się →" className="w-full" />
         </Link>
         <div className="px-3 lg:px-5">
-          <GoogleLocation className="shrink-0 w-4 lg:w-auto" />
+          <Link href={locationLink} target="_blank">
+            <GoogleLocation className="shrink-0 w-4 lg:w-auto" />
+          </Link>
         </div>
       </div>
     </div>

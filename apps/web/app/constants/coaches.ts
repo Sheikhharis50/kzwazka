@@ -1,5 +1,5 @@
 import Coach1Img from '@/images/coach1.png';
-import Coach2Img from '@/images/coach2.png';
+// import Coach2Img from '@/images/coach2.png';
 import Coach3Img from '@/images/coach3.png';
 
 export const coachesData = [
@@ -10,13 +10,13 @@ export const coachesData = [
     expertise: ['Autorytet', 'Mistrzostwo', 'Fair Play'],
     phone: '+48 533 505 567',
   },
-  {
-    imageSrc: Coach2Img,
-    name: 'Petro Valchuk',
-    description: 'Trener, który rozbudza pasję i uczy techniki.',
-    expertise: ['Dyscyplina', 'Technika', 'Zaangażowanie'],
-    phone: '+48 885 549 658',
-  },
+  // {
+  //   imageSrc: Coach2Img,
+  //   name: 'Petro Valchuk',
+  //   description: 'Trener, który rozbudza pasję i uczy techniki.',
+  //   expertise: ['Dyscyplina', 'Technika', 'Zaangażowanie'],
+  //   phone: '+48 885 549 658',
+  // },
   {
     imageSrc: Coach3Img,
     name: 'Szymon Domański',

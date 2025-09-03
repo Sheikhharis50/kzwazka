@@ -47,19 +47,8 @@ export class AuthService {
   ) {}
 
   async signUp(signUpDto: SignUpDto, photo_url?: Express.Multer.File) {
-    const {
-      email,
-      password,
-      first_name,
-      last_name,
-      dob,
-      phone,
-      parent_first_name,
-      parent_last_name,
-    } = signUpDto;
-
     // Check if user already exists
-    const existingUser = await this.userService.findByEmail(email);
+    const existingUser = await this.userService.findByEmail(signUpDto.email);
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
@@ -94,18 +83,18 @@ export class AuthService {
     // Create both user and children in a single transaction
     const { user: newUser, children: newChildren } =
       await this.childrenService.create({
-        email,
-        password,
-        first_name,
-        last_name,
-        phone,
+        email: signUpDto.email,
+        password: signUpDto.password,
+        first_name: signUpDto.first_name,
+        last_name: signUpDto.last_name,
+        phone: signUpDto.phone,
         role_id: childrenRole.id,
         is_active: true,
         is_verified: false, // Will be verified after OTP confirmation
-        dob,
+        dob: signUpDto.dob,
         photo_url: photo_url_path || undefined,
-        parent_first_name,
-        parent_last_name,
+        parent_first_name: signUpDto.parent_first_name,
+        parent_last_name: signUpDto.parent_last_name,
       });
 
     const access_token = generateToken(this.jwtService, newUser.id);
@@ -115,7 +104,11 @@ export class AuthService {
 
     // Send OTP email
     try {
-      await this.emailService.sendOtpEmail(email, otp, first_name);
+      await this.emailService.sendOtpEmail(
+        signUpDto.email,
+        otp,
+        signUpDto.first_name
+      );
     } catch {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
@@ -140,10 +133,8 @@ export class AuthService {
   }
 
   async verifyOtp(userId: number, verifyOtpDto: VerifyOtpDto) {
-    const { otp } = verifyOtpDto;
-
     // Verify OTP
-    const isValidOtp = await this.verifyOTP(userId, otp);
+    const isValidOtp = await this.verifyOTP(userId, verifyOtpDto.otp);
     if (!isValidOtp) {
       throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.INVALID_OTP);
     }
@@ -234,10 +225,8 @@ export class AuthService {
   }
 
   async signIn(signInDto: LoginDto) {
-    const { email, password } = signInDto;
-
     // Find user by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(signInDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -256,7 +245,7 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await this.userService.verifyPassword(
       user.id,
-      password
+      signInDto.password
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -503,10 +492,8 @@ export class AuthService {
    * Initiate password reset process
    */
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const { email } = forgotPasswordDto;
-
     // Find user by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(forgotPasswordDto.email);
     if (!user) {
       // Don't reveal if user exists or not for security
       return {

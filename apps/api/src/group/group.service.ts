@@ -113,6 +113,7 @@ export class GroupService {
             first_name: userSchema.first_name,
             last_name: userSchema.last_name,
             email: userSchema.email,
+            photo_url: userSchema.photo_url,
           },
         })
         .from(groupSchema)
@@ -161,6 +162,7 @@ export class GroupService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
       })
       .from(groupSchema)

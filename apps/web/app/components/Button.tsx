@@ -18,7 +18,7 @@ const Button = ({
 }: ButtonProps) => {
   return (
     <button
-      className={`bg-red rounded-full py-2 px-5 text-white block text-xs md:text-sm lg:text-base 2xl:text-lg ${className} ${icon ? 'flex items-center gap-2 justify-center' : ''}`}
+      className={`bg-red rounded-full py-2 px-5 text-white block text-xs md:text-sm lg:text-base 2xl:text-lg h-fit ${className} ${icon ? 'flex items-center gap-2 justify-center' : ''}`}
       disabled={isLoading}
       {...rest}
     >

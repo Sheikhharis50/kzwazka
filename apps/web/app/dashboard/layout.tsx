@@ -14,10 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <section className="lg:flex lg:p-1.5 h-dvh overflow-hidden bg-white relative">
+    <section className="flex flex-col lg:flex-row lg:p-1.5 h-dvh overflow-hidden bg-white relative">
       <Sidebar />
       <Navbar />
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 h-full overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto">{children}</div>
+      </main>
     </section>
   );
 }

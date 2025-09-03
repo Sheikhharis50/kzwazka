@@ -62,7 +62,7 @@ const ModalLayout = ({
               ref={fileInputRef}
               type="file"
               accept=".png,.jpg,.jpeg"
-              className="absolute size-full opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 size-full opacity-0 cursor-pointer"
               onChange={handleFileChange}
             />
           </div>

@@ -7,7 +7,7 @@ import {
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, ne } from 'drizzle-orm';
+import { eq, sql, and, ne, desc, asc, SQL } from 'drizzle-orm';
 import {
   groupSchema,
   locationSchema,
@@ -71,14 +71,19 @@ export class GroupService {
     }
   }
 
+  /**
+   * Optimized count method - uses simple COUNT without unnecessary joins
+   */
   async count() {
     const [{ count }] = await this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
-      .from(groupSchema)
-      .limit(1);
+      .from(groupSchema);
     return count;
   }
 
+  /**
+   * Optimized findAll method with better query structure
+   */
   async findAll(params: { page: string; limit: string }) {
     const {
       page = '1',
@@ -87,45 +92,44 @@ export class GroupService {
 
     const offset = getPageOffset(page, limit);
 
-    const [count, results] = await Promise.all([
-      this.count(),
-      this.dbService.db
-        .select({
-          id: groupSchema.id,
-          name: groupSchema.name,
-          description: groupSchema.description,
-          min_age: groupSchema.min_age,
-          max_age: groupSchema.max_age,
-          skill_level: groupSchema.skill_level,
-          max_group_size: groupSchema.max_group_size,
-          created_at: groupSchema.created_at,
-          updated_at: groupSchema.updated_at,
-          location: {
-            id: locationSchema.id,
-            name: locationSchema.name,
-            address1: locationSchema.address1,
-            city: locationSchema.city,
-            state: locationSchema.state,
-          },
-          coach: {
-            id: coachSchema.id,
-            user_id: coachSchema.user_id,
-            first_name: userSchema.first_name,
-            last_name: userSchema.last_name,
-            email: userSchema.email,
-          },
-        })
-        .from(groupSchema)
-        .leftJoin(
-          locationSchema,
-          eq(groupSchema.location_id, locationSchema.id)
-        )
-        .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
-        // IMPORTANT: join userSchema before selecting its columns
-        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .offset(offset)
-        .limit(Number(limit)),
-    ]);
+    // Build optimized base query
+    const baseQuery = this.dbService.db
+      .select({
+        id: groupSchema.id,
+        name: groupSchema.name,
+        description: groupSchema.description,
+        min_age: groupSchema.min_age,
+        max_age: groupSchema.max_age,
+        skill_level: groupSchema.skill_level,
+        max_group_size: groupSchema.max_group_size,
+        created_at: groupSchema.created_at,
+        updated_at: groupSchema.updated_at,
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          city: locationSchema.city,
+          state: locationSchema.state,
+        },
+        coach: {
+          id: coachSchema.id,
+          user_id: coachSchema.user_id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+          photo_url: userSchema.photo_url,
+        },
+      })
+      .from(groupSchema)
+      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
+      .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .orderBy(desc(groupSchema.created_at))
+      .offset(offset)
+      .limit(Number(limit));
+
+    // Execute queries in parallel
+    const [count, results] = await Promise.all([this.count(), baseQuery]);
 
     return {
       message: 'Groups retrieved successfully',
@@ -136,6 +140,9 @@ export class GroupService {
     };
   }
 
+  /**
+   * Optimized findOne method
+   */
   async findOne(id: number) {
     const group = await this.dbService.db
       .select({
@@ -161,12 +168,12 @@ export class GroupService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
       })
       .from(groupSchema)
       .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
       .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
-      // IMPORTANT: join userSchema before selecting its columns
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .where(eq(groupSchema.id, id))
       .limit(1);

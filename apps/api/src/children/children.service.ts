@@ -11,7 +11,7 @@ import {
 import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, or, ilike, desc, asc, SQL } from 'drizzle-orm';
 import {
   childrenSchema,
   userSchema,
@@ -150,30 +150,109 @@ export class ChildrenService {
     return children;
   }
 
+  /**
+   * Optimized count method - uses simple COUNT without unnecessary joins
+   */
   async count() {
     const [{ count }] = await this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
-      .from(childrenSchema)
-      .limit(1);
+      .from(childrenSchema);
     return count;
   }
 
-  async assignGroup(childrenId: number, groupId: number) {
-    const updatedChildren = await this.dbService.db
-      .insert(childrenGroupSchema)
-      .values({
-        children_id: childrenId,
-        group_id: groupId,
-      })
-      .returning();
-
-    if (updatedChildren.length === 0) {
-      throw new NotFoundException('Children not found');
-    }
-
-    return updatedChildren[0];
+  /**
+   * Helper method to normalize search terms and handle extra spaces
+   */
+  private normalizeSearchTerm(searchTerm: string): string {
+    return searchTerm.trim().replace(/\s+/g, ' ');
   }
 
+  /**
+   * Helper method to build search conditions with improved logic
+   */
+  private buildSearchConditions(searchTerm: string): SQL | null {
+    const normalizedSearch = this.normalizeSearchTerm(searchTerm);
+    const searchWords = normalizedSearch
+      .split(' ')
+      .filter((word) => word.length > 0);
+
+    if (searchWords.length === 0) return null;
+
+    const conditions: SQL[] = [];
+
+    // Single word search - search in first_name, last_name, parent names, or email
+    if (searchWords.length === 1) {
+      const word = `%${searchWords[0]}%`;
+      conditions.push(
+        or(
+          ilike(userSchema.first_name, word),
+          ilike(userSchema.last_name, word),
+          ilike(userSchema.email, word),
+          ilike(childrenSchema.parent_first_name, word),
+          ilike(childrenSchema.parent_last_name, word)
+        )!
+      );
+    } else {
+      // Multiple words - try different combinations
+      const firstWord = `%${searchWords[0]}%`;
+      const lastWord = `%${searchWords[searchWords.length - 1]}%`;
+      const fullSearch = `%${normalizedSearch}%`;
+
+      // Search for full term in child's first_name or last_name
+      conditions.push(
+        or(
+          ilike(userSchema.first_name, fullSearch),
+          ilike(userSchema.last_name, fullSearch)
+        )!
+      );
+
+      // Search for full term in parent's first_name or last_name
+      conditions.push(
+        or(
+          ilike(childrenSchema.parent_first_name, fullSearch),
+          ilike(childrenSchema.parent_last_name, fullSearch)
+        )!
+      );
+
+      // Search for first word in child's first_name and last word in child's last_name
+      conditions.push(
+        and(
+          ilike(userSchema.first_name, firstWord),
+          ilike(userSchema.last_name, lastWord)
+        )!
+      );
+
+      // Search for first word in parent's first_name and last word in parent's last_name
+      conditions.push(
+        and(
+          ilike(childrenSchema.parent_first_name, firstWord),
+          ilike(childrenSchema.parent_last_name, lastWord)
+        )!
+      );
+
+      // Search for first word in child's first_name and last word in parent's last_name
+      conditions.push(
+        and(
+          ilike(userSchema.first_name, firstWord),
+          ilike(childrenSchema.parent_last_name, lastWord)
+        )!
+      );
+
+      // Search for first word in parent's first_name and last word in child's last_name
+      conditions.push(
+        and(
+          ilike(childrenSchema.parent_first_name, firstWord),
+          ilike(userSchema.last_name, lastWord)
+        )!
+      );
+    }
+
+    return or(...conditions)!;
+  }
+
+  /**
+   * Optimized findAll method with improved search and performance
+   */
   async findAll(params: QueryChildrenDto) {
     const {
       page = '1',
@@ -186,7 +265,7 @@ export class ChildrenService {
 
     const offset = getPageOffset(page.toString(), limit.toString());
 
-    // Build the base query
+    // Build optimized base query
     const baseQuery = this.dbService.db
       .select({
         id: childrenSchema.id,
@@ -211,62 +290,79 @@ export class ChildrenService {
         },
       })
       .from(childrenSchema)
-      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
       .leftJoin(
         locationSchema,
         eq(childrenSchema.location_id, locationSchema.id)
       );
 
-    // Build count query
+    // Build optimized count query
     const countQuery = this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
       .from(childrenSchema)
-      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
       .leftJoin(
         locationSchema,
         eq(childrenSchema.location_id, locationSchema.id)
       );
 
-    // Apply search filter
+    // Build where conditions array
+    const whereConditions: SQL[] = [];
+
+    // Apply search filter with improved logic
     if (search) {
-      const searchCondition = sql`(${userSchema.first_name} ILIKE ${`%${search}%`} OR ${userSchema.last_name} ILIKE ${`%${search}%`} OR ${childrenSchema.parent_first_name} ILIKE ${`%${search}%`} OR ${childrenSchema.parent_last_name} ILIKE ${`%${search}%`})`;
-      baseQuery.where(searchCondition);
-      countQuery.where(searchCondition);
+      const searchCondition = this.buildSearchConditions(search);
+      if (searchCondition) {
+        whereConditions.push(searchCondition);
+      }
     }
 
     // Apply location filter
     if (location_id) {
-      baseQuery.where(eq(childrenSchema.location_id, location_id));
-      countQuery.where(eq(childrenSchema.location_id, location_id));
+      whereConditions.push(eq(childrenSchema.location_id, location_id));
     }
 
-    // Apply sorting
+    // Apply all where conditions
+    if (whereConditions.length > 0) {
+      const finalCondition =
+        whereConditions.length === 1
+          ? whereConditions[0]
+          : and(...whereConditions);
+      baseQuery.where(finalCondition);
+      countQuery.where(finalCondition);
+    }
+
+    // Apply optimized sorting
     if (sort_by === 'created_at') {
       baseQuery.orderBy(
         sort_order === 'asc'
-          ? childrenSchema.created_at
-          : sql`${childrenSchema.created_at} DESC`
+          ? asc(childrenSchema.created_at)
+          : desc(childrenSchema.created_at)
       );
     } else if (sort_by === 'dob') {
       baseQuery.orderBy(
         sort_order === 'asc'
-          ? childrenSchema.dob
-          : sql`${childrenSchema.dob} DESC`
+          ? asc(childrenSchema.dob)
+          : desc(childrenSchema.dob)
+      );
+    } else if (sort_by === 'name') {
+      baseQuery.orderBy(
+        sort_order === 'asc'
+          ? asc(userSchema.first_name)
+          : desc(userSchema.first_name)
       );
     }
 
     // Apply pagination
     baseQuery.offset(offset).limit(Number(limit));
 
-    // Execute both queries
-    const [countResult, results] = await Promise.all([
-      countQuery.limit(1),
-      baseQuery,
-    ]);
+    // Execute queries in parallel
+    const [countResult, results] = await Promise.all([countQuery, baseQuery]);
 
     const count = countResult[0]?.count || 0;
 
-    const resultswithphotoUrl = results.map((child) => ({
+    // Optimize photo URL processing
+    const resultsWithPhotoUrl = results.map((child) => ({
       ...child,
       user: {
         ...child.user,
@@ -280,13 +376,16 @@ export class ChildrenService {
 
     return {
       message: 'Children records',
-      data: resultswithphotoUrl,
+      data: resultsWithPhotoUrl,
       page,
       limit,
       count,
     };
   }
 
+  /**
+   * Optimized findOne method
+   */
   async findOne(id: number) {
     const children = await this.dbService.db
       .select({
@@ -312,7 +411,7 @@ export class ChildrenService {
         },
       })
       .from(childrenSchema)
-      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
       .leftJoin(
         locationSchema,
         eq(childrenSchema.location_id, locationSchema.id)
@@ -324,7 +423,7 @@ export class ChildrenService {
       throw new NotFoundException('Children not found');
     }
 
-    const childrenwithphotoUrl = {
+    const childrenWithPhotoUrl = {
       ...children[0],
       user: {
         ...children[0].user,
@@ -336,7 +435,7 @@ export class ChildrenService {
       },
     };
 
-    return childrenwithphotoUrl;
+    return childrenWithPhotoUrl;
   }
 
   async findByUserId(userId: number) {
@@ -434,6 +533,22 @@ export class ChildrenService {
     return {
       message: 'Children deleted successfully',
     };
+  }
+
+  async assignGroup(childrenId: number, groupId: number) {
+    const updatedChildren = await this.dbService.db
+      .insert(childrenGroupSchema)
+      .values({
+        children_id: childrenId,
+        group_id: groupId,
+      })
+      .returning();
+
+    if (updatedChildren.length === 0) {
+      throw new NotFoundException('Children not found');
+    }
+
+    return updatedChildren[0];
   }
 
   async assignLocation(childrenId: number, locationId: number) {

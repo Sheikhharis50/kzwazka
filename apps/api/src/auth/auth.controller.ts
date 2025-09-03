@@ -21,7 +21,11 @@ import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
@@ -304,6 +308,39 @@ export class AuthController {
   })
   async resetPassword(@Body() body: ResetPasswordDto) {
     return await this.authService.resetPassword(body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @ApiOperation({
+    summary: 'Change password',
+    description: 'Change user password',
+  })
+  @ApiBody({
+    type: ChangePasswordDto,
+    description: 'Change password data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async changePassword(
+    @Body() body: ChangePasswordDto,
+    @Req() req: APIRequest
+  ) {
+    return await this.authService.changePassword(body, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

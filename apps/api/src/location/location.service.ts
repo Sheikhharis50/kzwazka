@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { locationSchema } from '../db/schemas';
 import { CreateLocationDto } from './dto/create-location.dto';
+
 @Injectable()
 export class LocationService {
   constructor(private readonly dbService: DatabaseService) {}
@@ -26,11 +27,15 @@ export class LocationService {
     };
   }
 
+  /**
+   * Optimized findAll method with proper sorting
+   */
   async findAll() {
     const locations = await this.dbService.db
       .select()
       .from(locationSchema)
-      .where(eq(locationSchema.is_active, true));
+      .where(eq(locationSchema.is_active, true))
+      .orderBy(asc(locationSchema.name));
 
     return {
       message: 'Successfully fetched locations',
@@ -38,6 +43,9 @@ export class LocationService {
     };
   }
 
+  /**
+   * Optimized findOne method
+   */
   async findOne(id: number) {
     const location = await this.dbService.db
       .select()

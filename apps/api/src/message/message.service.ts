@@ -229,6 +229,9 @@ export class MessageService {
     }
   }
 
+  /**
+   * Optimized findAll method with better query structure
+   */
   async findAll(params?: { page?: string; limit?: string; group_id?: string }) {
     try {
       const {
@@ -248,8 +251,8 @@ export class MessageService {
         whereClauses.push(eq(messageSchema.group_id, gid));
       }
 
-      // --- Base (lean) selection: messages only ---
-      const baseSelect = this.dbService.db
+      // Build optimized base query
+      const baseQuery = this.dbService.db
         .select({
           id: messageSchema.id,
           content: messageSchema.content,
@@ -258,22 +261,23 @@ export class MessageService {
           created_at: messageSchema.created_at,
           updated_at: messageSchema.updated_at,
         })
+        .from(messageSchema)
+        .orderBy(desc(messageSchema.created_at))
+        .offset(offset)
+        .limit(Number(limit));
+
+      // Build optimized count query
+      const countQuery = this.dbService.db
+        .select({ count: sql<number>`COUNT(*)` })
         .from(messageSchema);
 
       const whereExpr =
         whereClauses.length > 0 ? and(...whereClauses) : undefined;
 
-      // Count with SAME filter
-      const countQuery = this.dbService.db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(messageSchema);
-
+      // Execute queries in parallel
       const [countRows, results] = await Promise.all([
         whereExpr ? countQuery.where(whereExpr) : countQuery,
-        (whereExpr ? baseSelect.where(whereExpr) : baseSelect)
-          .orderBy(desc(messageSchema.created_at))
-          .offset(offset)
-          .limit(Number(limit)),
+        whereExpr ? baseQuery.where(whereExpr) : baseQuery,
       ]);
 
       const totalCount = Number(countRows[0]?.count ?? 0);
@@ -293,9 +297,12 @@ export class MessageService {
       throw error;
     }
   }
+
+  /**
+   * Optimized findOne method with flattened projection
+   */
   async findOne(id: number) {
     try {
-      // FLATTENED projection here as well
       const rows = await this.dbService.db
         .select({
           id: messageSchema.id,

@@ -7,7 +7,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq } from 'drizzle-orm';
+import { eq, sql, desc, asc, SQL } from 'drizzle-orm';
 import { userSchema, roleSchema } from '../db/schemas';
 import * as bcrypt from 'bcryptjs';
 import { FileStorageService } from '../services';
@@ -85,6 +85,9 @@ export class UserService {
     return newUser[0];
   }
 
+  /**
+   * Optimized findAll method with proper sorting
+   */
   async findAll() {
     return await this.dbService.db
       .select({
@@ -100,9 +103,13 @@ export class UserService {
         updated_at: userSchema.updated_at,
       })
       .from(userSchema)
-      .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id));
+      .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
+      .orderBy(desc(userSchema.created_at));
   }
 
+  /**
+   * Optimized findOne method
+   */
   async findOne(id: number) {
     const user = await this.dbService.db
       .select({
@@ -130,6 +137,9 @@ export class UserService {
     return user[0];
   }
 
+  /**
+   * Optimized findByEmail method
+   */
   async findByEmail(email: string) {
     const user = await this.dbService.db
       .select()

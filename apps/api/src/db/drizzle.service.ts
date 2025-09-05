@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schemas';
-import { getDatabaseConfig } from '../config/database.config';
 
 @Injectable()
 export class DatabaseService {
@@ -27,10 +26,7 @@ export class DatabaseService {
         user: url.username,
         password: url.password,
         database: url.pathname.length > 1 ? url.pathname.slice(1) : undefined,
-        ssl:
-          process.env.NODE_ENV === 'production'
-            ? { rejectUnauthorized: false }
-            : false,
+        ssl: false,
         // Connection pool configuration for production
         max: parseInt(process.env.DB_POOL_MAX || '20'),
         idleTimeoutMillis: parseInt(

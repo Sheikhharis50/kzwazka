@@ -20,7 +20,6 @@ export function getDatabaseConfig(
   configService: ConfigService
 ): DatabaseConfig {
   const databaseUrl = configService.get<string>('DATABASE_URL');
-  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
   if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is required');
@@ -37,6 +36,6 @@ export function getDatabaseConfig(
         configService.get<string>('DB_POOL_CONNECTION_TIMEOUT', '2000')
       ),
     },
-    ssl: nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: false,
   };
 }

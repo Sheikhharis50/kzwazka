@@ -14,6 +14,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   };
   placeholder?: string;
   options: Option[];
+  numberValue?: boolean;
 }
 
 const Select = ({
@@ -24,6 +25,7 @@ const Select = ({
   id,
   placeholder,
   options,
+  numberValue = false,
   ...rest
 }: SelectProps) => {
   const generatedId = useId();
@@ -41,10 +43,10 @@ const Select = ({
       )}
       <select
         id={inputId}
-        className={`py-2 md:py-2.5 ps-2 pe-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
+        className={`py-[7px] md:py-[9px] ps-2 pe-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
         {...rest}
       >
-        <option value={''} disabled className="text-mute!">
+        <option value={numberValue ? 0 : ''} disabled className="text-mute!">
           {placeholder || 'Select option'}
         </option>
         {options.map((option, index) => (

@@ -12,6 +12,7 @@ interface ModalLayoutProps {
   children?: React.ReactNode;
   heading?: string;
   defaultPhoto?: string;
+  group?: boolean;
 }
 
 const ModalLayout = ({
@@ -22,13 +23,16 @@ const ModalLayout = ({
   children,
   heading = 'Add Kid',
   defaultPhoto,
+  group = false,
 }: ModalLayoutProps) => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   return (
     <div className="flex flex-col gap-5 lg:gap-10 items-center justify-center relative">
-      <Heading text={heading} small />
+      <Heading text={heading} />
       <div>
-        <div className="rounded-full bg-smoke size-24 flex justify-center items-center relative mx-auto">
+        <div
+          className={`${group ? 'rounded-lg bg-[#F0F3F9] h-24 xl:h-32 w-28 xl:w-36' : 'rounded-full bg-smoke size-24'} flex justify-center items-center relative mx-auto`}
+        >
           <div
             className={`${defaultPhoto || preview ? 'block' : 'hidden'} rounded-full overflow-hidden`}
           >
@@ -56,8 +60,12 @@ const ModalLayout = ({
             ) : null}
           </div>
           <div className={!defaultPhoto && !preview ? 'space-y-1' : 'hidden'}>
-            <Camera className="mx-auto" />
-            <p className="text-[10px] text-center">Add Picture</p>
+            <Camera className={`mx-auto w-5 h-auto ${group ? 'xl:w-7' : ''}`} />
+            <p
+              className={`${group ? 'xl:text-xs' : ''} text-[10px] text-center`}
+            >
+              {group ? 'Add Group Image' : 'Add Picture'}
+            </p>
             <input
               ref={fileInputRef}
               type="file"

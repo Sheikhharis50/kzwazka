@@ -68,14 +68,14 @@ export class EventController {
     name: 'page',
     description: 'Page number for pagination',
     required: false,
-    type: 'number',
+    type: 'string',
     example: 1,
   })
   @ApiQuery({
     name: 'limit',
     description: 'Number of items per page',
     required: false,
-    type: 'number',
+    type: 'string',
     example: 10,
   })
   @ApiQuery({

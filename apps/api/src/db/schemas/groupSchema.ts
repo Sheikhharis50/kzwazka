@@ -4,6 +4,7 @@ import { locationSchema } from './locationSchema';
 import { coachSchema } from './coachSchema';
 import { childrenGroupSchema } from './childrenGroupSchema';
 import { messageSchema } from './messageSchema';
+import { groupSessionSchema } from './groupSessionSchema';
 
 export const groupSchema = pgTable('group', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
@@ -30,6 +31,7 @@ export const groupRelations = relations(groupSchema, ({ one, many }) => ({
   }),
   childrenGroups: many(childrenGroupSchema),
   messages: many(messageSchema),
+  sessions: many(groupSessionSchema),
 }));
 
 export type Group = typeof groupSchema.$inferSelect;

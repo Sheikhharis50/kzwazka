@@ -17,6 +17,7 @@ interface ModalProps {
   cancelText?: string;
   icon?: React.ReactNode;
   isLoading?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const Modal = ({
@@ -31,6 +32,7 @@ const Modal = ({
   onConfirm,
   title,
   isLoading = false,
+  size = 'sm',
 }: ModalProps) => {
   const modalRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -46,9 +48,12 @@ const Modal = ({
     >
       <div
         ref={modalRef}
-        className="w-[95vw] xs:w-sm sm:w-md max-h-11/12 bg-white rounded-2xl px-4 md:px-8 py-6 md:py-10 overflow-y-auto relative"
+        className={`w-[95vw] ${size === 'sm' ? 'xs:w-sm sm:w-md' : size === 'md' ? 'xs:w-md sm:w-lg' : 'sm:w-xl'} max-h-11/12 bg-white rounded-2xl px-4 md:px-8 pt-3 pb-6 md:pb-10 md:pt-5 overflow-y-auto relative`}
       >
-        <button className="absolute right-3 top-3" onClick={onClose}>
+        <button
+          className="sticky top-0 right-0 z-10 block ml-auto translate-x-1 md:translate-x-3"
+          onClick={onClose}
+        >
           <Cross className="w-4 md:w-5 h-auto" />
         </button>
         {children ? (

@@ -15,10 +15,11 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import {
   PermissionGuard,
   RequirePermission,
-} from 'src/auth/guards/permission.guard';
+} from '../auth/guards/permission.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('api/location')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
@@ -29,7 +30,6 @@ export class LocationController {
     description: 'The location has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
   @RequirePermission(['create_location'])
   @Post()
   create(@Body() createLocationDto: CreateLocationDto) {
@@ -42,7 +42,6 @@ export class LocationController {
     description: 'The locations have been successfully fetched.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
   @RequirePermission(['read_location'])
   @Get()
   findAll() {
@@ -55,7 +54,6 @@ export class LocationController {
     description: 'The location has been successfully fetched.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
   @RequirePermission(['read_location'])
   @Get(':id')
   findOne(@Param('id') id: number) {
@@ -68,7 +66,6 @@ export class LocationController {
     description: 'The location has been successfully updated.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
   @RequirePermission(['update_location'])
   @Patch(':id')
   update(
@@ -84,7 +81,6 @@ export class LocationController {
     description: 'The location has been successfully deleted.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
   @RequirePermission(['delete_location'])
   @Delete(':id')
   remove(@Param('id') id: number) {

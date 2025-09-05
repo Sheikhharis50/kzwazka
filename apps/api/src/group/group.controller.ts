@@ -31,12 +31,19 @@ import {
   RequirePermission,
 } from '../auth/guards/permission.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
+import { QueryGroupSessionDto } from './dto/query-groupsession.dto';
+import { GroupSessionService } from './groupSession.service';
+import { UpdateGroupSessionDto } from './dto/update-groupsession.dto';
 @ApiTags('Groups')
 @Controller('api/group')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth('JWT-auth')
 export class GroupController {
-  constructor(private readonly groupService: GroupService) {}
+  constructor(
+    private readonly groupService: GroupService,
+    private readonly groupSessionService: GroupSessionService
+  ) {}
 
   @Post()
   @RequirePermission(['create_group'])
@@ -181,6 +188,17 @@ export class GroupController {
     return this.groupService.findAll({ page, limit });
   }
 
+  @ApiBearerAuth('JWT-auth')
+  @Get('session')
+  @RequirePermission(['read_group'])
+  @ApiOperation({
+    summary: 'Get all group sessions',
+    description: 'Get all group sessions',
+  })
+  findAllGroupSessions(@Query() query: QueryGroupSessionDto) {
+    return this.groupSessionService.findAllGroupSessions(query);
+  }
+
   @Get(':id')
   @RequirePermission(['read_group'])
   @ApiOperation({
@@ -322,5 +340,62 @@ export class GroupController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.groupService.remove(id);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @Post('session')
+  @RequirePermission(['create_group'])
+  @ApiOperation({
+    summary: 'Create a new group session',
+    description: 'Create a new group session',
+  })
+  createGroupSession(@Body() createGroupSessionDto: CreateGroupSessionDto) {
+    return this.groupSessionService.createGroupSession(createGroupSessionDto);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @Patch('session/:id')
+  @RequirePermission(['update_group'])
+  @ApiOperation({
+    summary: 'Update a group session',
+    description: 'Update a group session',
+  })
+  updateGroupSession(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateGroupSessionDto: UpdateGroupSessionDto
+  ) {
+    return this.groupSessionService.updateGroupSession(
+      id,
+      updateGroupSessionDto
+    );
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @Get('session/:id')
+  @RequirePermission(['read_group'])
+  @ApiOperation({
+    summary: 'Get a group session by ID',
+    description: 'Get a group session by ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Group session ID',
+    type: 'number',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Group session retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Group session not found',
+  })
+  findOneGroupSession(@Param('id', ParseIntPipe) id: number) {
+    return this.groupSessionService.findOne(id);
   }
 }

@@ -2,27 +2,51 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq } from 'drizzle-orm';
+import { eq, sql, desc, asc, SQL } from 'drizzle-orm';
 import { userSchema, roleSchema } from '../db/schemas';
 import * as bcrypt from 'bcryptjs';
+import { FileStorageService } from '../services';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly dbService: DatabaseService) {}
+  private readonly logger = new Logger(UserService.name);
 
-  async createAdmin(createUserDto: CreateUserDto) {
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly fileStorageService: FileStorageService
+  ) {}
+
+  async createAdmin(createUserDto: CreateUserDto, photo?: Express.Multer.File) {
     const adminRole = await this.getRoleByName('admin');
     if (!adminRole) {
       throw new Error('Admin role not found. Please seed the database.');
     }
 
+    // Handle photo upload if provided
+    let photoUrl: string | undefined;
+    if (photo) {
+      try {
+        // Upload photo to storage (will use local or DigitalOcean based on environment)
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo,
+          'avatars',
+          Date.now() // Use timestamp as temporary ID for upload
+        );
+        photoUrl = uploadResult.relativePath;
+      } catch (error) {
+        throw new Error(`Failed to upload photo: ${(error as Error).message}`);
+      }
+    }
+
     const admin = await this.create({
       ...createUserDto,
       role_id: adminRole.id,
+      photo_url: photoUrl,
     });
     return {
       message: 'Admin user created successfully',
@@ -61,6 +85,9 @@ export class UserService {
     return newUser[0];
   }
 
+  /**
+   * Optimized findAll method with proper sorting
+   */
   async findAll() {
     return await this.dbService.db
       .select({
@@ -76,9 +103,13 @@ export class UserService {
         updated_at: userSchema.updated_at,
       })
       .from(userSchema)
-      .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id));
+      .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
+      .orderBy(desc(userSchema.created_at));
   }
 
+  /**
+   * Optimized findOne method
+   */
   async findOne(id: number) {
     const user = await this.dbService.db
       .select({
@@ -92,6 +123,7 @@ export class UserService {
         role_name: roleSchema.name,
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
+        photo_url: userSchema.photo_url,
       })
       .from(userSchema)
       .innerJoin(roleSchema, eq(userSchema.role_id, roleSchema.id))
@@ -105,6 +137,9 @@ export class UserService {
     return user[0];
   }
 
+  /**
+   * Optimized findByEmail method
+   */
   async findByEmail(email: string) {
     const user = await this.dbService.db
       .select()
@@ -115,18 +150,35 @@ export class UserService {
     return user.length > 0 ? user[0] : null;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const { password, ...updateData } = updateUserDto;
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    photo_url?: Express.Multer.File
+  ) {
+    const { ...updateData } = updateUserDto;
 
-    // Hash password if provided
-    let hashedPassword: string | undefined;
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const photoUrl = user.photo_url;
+
+    if (photoUrl && photoUrl.startsWith('/')) {
+      await this.fileStorageService.deleteFile(photoUrl);
+    }
+    if (photo_url) {
+      const uploadResult = await this.fileStorageService.uploadFile(
+        photo_url,
+        'avatars',
+        id
+      );
+      updateData.photo_url = uploadResult.relativePath;
     }
 
     const updateValues = {
       ...updateData,
-      ...(hashedPassword && { password: hashedPassword }),
       updated_at: new Date(),
     };
 
@@ -144,14 +196,23 @@ export class UserService {
   }
 
   async remove(id: number) {
-    const deletedUser = await this.dbService.db
+    // First get the user to check if they have a profile photo
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const photoUrl = user.photo_url;
+
+    if (photoUrl && photoUrl.startsWith('/')) {
+      await this.fileStorageService.deleteFile(photoUrl);
+    }
+
+    await this.dbService.db
       .delete(userSchema)
       .where(eq(userSchema.id, id))
       .returning();
-
-    if (deletedUser.length === 0) {
-      throw new NotFoundException('User not found');
-    }
 
     return { message: 'User deleted successfully' };
   }

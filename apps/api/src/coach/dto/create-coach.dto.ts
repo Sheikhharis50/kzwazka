@@ -63,10 +63,11 @@ export class CreateCoachDto {
   location_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Image URL of the coach',
-    example: 'https://example.com/image.jpg',
+    description: 'Coach profile photo URL',
+    example: 'https://example.com/photos/coach.jpg',
+    maxLength: 500,
   })
   @IsOptional()
-  @IsString({ message: 'Image must be a string' })
+  @IsString({ message: 'Photo URL must be a string' })
   photo_url?: string;
 }

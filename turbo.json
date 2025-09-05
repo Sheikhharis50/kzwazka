@@ -3,20 +3,45 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL","NEXT_PUBLIC_GOOGLE_CLIENT_ID"],
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "env": [
+        "NEXT_PUBLIC_API_BASE_URL",
+        "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
+        "API_BASE_URL",
+        "SERVER_PORT"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": [
+        "^check-types"
+      ]
     },
     "dev": {
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": ["API_BASE_URL","NEXT_PUBLIC_API_BASE_URL","NEXT_PUBLIC_GOOGLE_CLIENT_ID"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "env": [
+        "NEXT_PUBLIC_API_BASE_URL",
+        "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
+        "API_BASE_URL",
+        "SERVER_PORT"
+      ],
       "cache": false,
       "persistent": true
     },

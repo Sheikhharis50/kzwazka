@@ -1,11 +1,20 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -20,12 +29,29 @@ export class UserController {
   @Post()
   @ApiTags('Admin')
   @ApiOperation({ summary: 'Create a new admin user' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(createImageUploadInterceptor('photo'))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', format: 'email' },
+        first_name: { type: 'string' },
+        last_name: { type: 'string' },
+        password: { type: 'string' },
+        phone: { type: 'string' },
+        photo: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Admin user created successfully',
   })
-  async create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.createAdmin(createUserDto);
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @UploadedFile() photo?: Express.Multer.File
+  ) {
+    return this.userService.createAdmin(createUserDto, photo);
   }
 }

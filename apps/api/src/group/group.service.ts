@@ -7,7 +7,7 @@ import {
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, ne } from 'drizzle-orm';
+import { eq, sql, and, ne, desc } from 'drizzle-orm';
 import {
   groupSchema,
   locationSchema,
@@ -16,14 +16,21 @@ import {
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
+import { FileStorageService } from '../services/file-storage.service';
 
 @Injectable()
 export class GroupService {
   private readonly logger = new Logger(GroupService.name);
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly fileStorageService: FileStorageService
+  ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(
+    createGroupDto: CreateGroupDto,
+    photo_url?: Express.Multer.File
+  ) {
     try {
       // Validate that min_age is less than max_age
       if (createGroupDto.min_age >= createGroupDto.max_age) {
@@ -52,6 +59,15 @@ export class GroupService {
         }
       }
 
+      if (photo_url) {
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'groups_profiles',
+          Date.now()
+        );
+        createGroupDto.photo_url = uploadResult.relativePath;
+      }
+
       const newGroup = await this.dbService.db
         .insert(groupSchema)
         .values({
@@ -71,14 +87,19 @@ export class GroupService {
     }
   }
 
+  /**
+   * Optimized count method - uses simple COUNT without unnecessary joins
+   */
   async count() {
     const [{ count }] = await this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
-      .from(groupSchema)
-      .limit(1);
+      .from(groupSchema);
     return count;
   }
 
+  /**
+   * Optimized findAll method with better query structure
+   */
   async findAll(params: { page: string; limit: string }) {
     const {
       page = '1',
@@ -87,57 +108,8 @@ export class GroupService {
 
     const offset = getPageOffset(page, limit);
 
-    const [count, results] = await Promise.all([
-      this.count(),
-      this.dbService.db
-        .select({
-          id: groupSchema.id,
-          name: groupSchema.name,
-          description: groupSchema.description,
-          min_age: groupSchema.min_age,
-          max_age: groupSchema.max_age,
-          skill_level: groupSchema.skill_level,
-          max_group_size: groupSchema.max_group_size,
-          created_at: groupSchema.created_at,
-          updated_at: groupSchema.updated_at,
-          location: {
-            id: locationSchema.id,
-            name: locationSchema.name,
-            address1: locationSchema.address1,
-            city: locationSchema.city,
-            state: locationSchema.state,
-          },
-          coach: {
-            id: coachSchema.id,
-            user_id: coachSchema.user_id,
-            first_name: userSchema.first_name,
-            last_name: userSchema.last_name,
-            email: userSchema.email,
-          },
-        })
-        .from(groupSchema)
-        .leftJoin(
-          locationSchema,
-          eq(groupSchema.location_id, locationSchema.id)
-        )
-        .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
-        // IMPORTANT: join userSchema before selecting its columns
-        .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .offset(offset)
-        .limit(Number(limit)),
-    ]);
-
-    return {
-      message: 'Groups retrieved successfully',
-      data: results,
-      page,
-      limit,
-      count,
-    };
-  }
-
-  async findOne(id: number) {
-    const group = await this.dbService.db
+    // Build optimized base query
+    const baseQuery = this.dbService.db
       .select({
         id: groupSchema.id,
         name: groupSchema.name,
@@ -148,6 +120,7 @@ export class GroupService {
         max_group_size: groupSchema.max_group_size,
         created_at: groupSchema.created_at,
         updated_at: groupSchema.updated_at,
+        photo_url: groupSchema.photo_url,
         location: {
           id: locationSchema.id,
           name: locationSchema.name,
@@ -161,12 +134,64 @@ export class GroupService {
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
+          photo_url: userSchema.photo_url,
         },
       })
       .from(groupSchema)
       .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
       .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
-      // IMPORTANT: join userSchema before selecting its columns
+      .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+      .orderBy(desc(groupSchema.created_at))
+      .offset(offset)
+      .limit(Number(limit));
+
+    // Execute queries in parallel
+    const [count, results] = await Promise.all([this.count(), baseQuery]);
+
+    return {
+      message: 'Groups retrieved successfully',
+      data: results,
+      page,
+      limit,
+      count,
+    };
+  }
+
+  /**
+   * Optimized findOne method
+   */
+  async findOne(id: number) {
+    const group = await this.dbService.db
+      .select({
+        id: groupSchema.id,
+        name: groupSchema.name,
+        description: groupSchema.description,
+        min_age: groupSchema.min_age,
+        max_age: groupSchema.max_age,
+        skill_level: groupSchema.skill_level,
+        max_group_size: groupSchema.max_group_size,
+        created_at: groupSchema.created_at,
+        updated_at: groupSchema.updated_at,
+        photo_url: groupSchema.photo_url,
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          city: locationSchema.city,
+          state: locationSchema.state,
+        },
+        coach: {
+          id: coachSchema.id,
+          user_id: coachSchema.user_id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+          photo_url: userSchema.photo_url,
+        },
+      })
+      .from(groupSchema)
+      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
+      .leftJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
       .leftJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
       .where(eq(groupSchema.id, id))
       .limit(1);
@@ -181,7 +206,11 @@ export class GroupService {
     };
   }
 
-  async update(id: number, updateGroupDto: UpdateGroupDto) {
+  async update(
+    id: number,
+    updateGroupDto: UpdateGroupDto,
+    photo_url?: Express.Multer.File
+  ) {
     try {
       // Check if group exists
       const existingGroup = await this.dbService.db
@@ -239,6 +268,16 @@ export class GroupService {
         }
       }
 
+      if (photo_url && existingGroup[0].photo_url) {
+        await this.fileStorageService.deleteFile(existingGroup[0].photo_url);
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'groups_profiles',
+          Date.now()
+        );
+        updateGroupDto.photo_url = uploadResult.relativePath;
+      }
+
       const updatedGroup = await this.dbService.db
         .update(groupSchema)
         .set({
@@ -271,6 +310,10 @@ export class GroupService {
 
       if (existingGroup.length === 0) {
         throw new NotFoundException('Group not found');
+      }
+
+      if (existingGroup[0].photo_url) {
+        await this.fileStorageService.deleteFile(existingGroup[0].photo_url);
       }
 
       // Delete group record

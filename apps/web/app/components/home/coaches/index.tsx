@@ -23,21 +23,25 @@ const Coaches = () => {
           DOŚWIADCZENI I LICENCJONOWANI TRENERZY ZAPASÓW, KTÓRYM MOŻESZ ZAUFAĆ”
         </Title>
       </Container>
-      <div className="w-[95vw] xs:w-[85vw] md:w-[75vw] min-[950px]:w-[95vw] lg:max-w-[90vw] 2xl:max-w-[1400px] mx-auto relative">
+      {/* w-[95vw] xs:w-[85vw] md:w-[75vw] min-[950px]:w-[95vw] lg:max-w-[90vw] 2xl:max-w-[1400px] */}
+      <div className="w-[95vw] xs:w-4/5 md:w-[95vw] lg:w-4/5 xl:w-2/3 2xl:max-w-[1000px] mx-auto relative">
         <Swiper
           slidesPerView={1}
           breakpoints={{
-            640: { slidesPerView: 1.2, spaceBetween: 35 },
-            950: { slidesPerView: 2, spaceBetween: 25 },
-            1250: { slidesPerView: 2.5, spaceBetween: 25 },
-            1500: { slidesPerView: 3, spaceBetween: 15 },
+            // 640: { slidesPerView: 1.2, spaceBetween: 25 },
+            768: { slidesPerView: 2, spaceBetween: 25 },
+            // 950: { slidesPerView: 2, spaceBetween: 25 },
+            // 1250: { slidesPerView: 2.5, spaceBetween: 25 },
+            // 1500: { slidesPerView: 3, spaceBetween: 15 },
           }}
           pagination={{ clickable: true }}
           modules={[Pagination]}
         >
           {coachesData.map((coach) => (
             <SwiperSlide key={coach.name}>
-              <CoachCard {...coach} />
+              <div className="pb-10 md:pb-0">
+                <CoachCard {...coach} />
+              </div>
             </SwiperSlide>
           ))}
         </Swiper>

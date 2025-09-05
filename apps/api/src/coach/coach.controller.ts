@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,7 +20,9 @@ import {
   ApiQuery,
   ApiParam,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CoachService } from './coach.service';
 import { CreateCoachDto } from './dto/create-coach.dto';
@@ -28,6 +32,11 @@ import {
   RequirePermission,
 } from '../auth/guards/permission.guard';
 import { QueryCoachDto } from './dto/query-coach.dto';
+import {
+  CoachListResponseDto,
+  CoachDetailResponseDto,
+  CreateCoachResponseDto,
+} from './dto/coach-response.dto';
 
 @ApiTags('Coaches')
 @Controller('api/coach')
@@ -42,47 +51,16 @@ export class CoachController {
     summary: 'Create a new coach',
     description: 'Create a new coach account with associated user record',
   })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiBody({
     type: CreateCoachDto,
-    description: 'Coach information',
+    description: 'Coach creation data',
   })
   @ApiResponse({
     status: 201,
     description: 'Coach created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coach created successfully' },
-        data: {
-          type: 'object',
-          properties: {
-            coach: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'John Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                phone: { type: 'string', example: '+1234567890' },
-                status: { type: 'boolean', example: true },
-                location_id: { type: 'number', example: 1 },
-                created_at: { type: 'string', format: 'date-time' },
-                updated_at: { type: 'string', format: 'date-time' },
-              },
-            },
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                first_name: { type: 'string', example: 'John' },
-                last_name: { type: 'string', example: 'Doe' },
-                role: { type: 'string', example: 'coach' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: CreateCoachResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -96,8 +74,11 @@ export class CoachController {
     status: 409,
     description: 'Conflict - Coach with this email already exists',
   })
-  create(@Body() createCoachDto: CreateCoachDto) {
-    return this.coachService.create(createCoachDto);
+  create(
+    @Body() createCoachDto: CreateCoachDto,
+    @UploadedFile() photo_file?: Express.Multer.File
+  ) {
+    return this.coachService.create(createCoachDto, photo_file);
   }
 
   @Get()
@@ -105,7 +86,7 @@ export class CoachController {
   @ApiOperation({
     summary: 'Get all coaches',
     description:
-      'Retrieve a paginated list of all coaches with user and location information',
+      'Retrieve a paginated list of all coaches with user, location, and groups information',
   })
   @ApiQuery({
     name: 'page',
@@ -148,111 +129,11 @@ export class CoachController {
     required: false,
     type: 'string',
     example: 'desc',
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number for pagination',
-    required: false,
-    type: 'number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    type: 'number',
-    example: 10,
-  })
-  @ApiQuery({
-    name: 'search',
-    description: 'Search query',
-    required: false,
-    type: 'string',
-    example: 'John',
-  })
-  @ApiQuery({
-    name: 'location_id',
-    description: 'Location ID',
-    required: false,
-    type: 'number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'sort_by',
-    description: 'Sort by field',
-    required: false,
-    type: 'string',
-    example: 'created_at',
-  })
-  @ApiQuery({
-    name: 'sort_order',
-    description: 'Sort order',
-    required: false,
-    type: 'string',
-    example: 'desc',
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number for pagination',
-    required: false,
-    type: 'number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    type: 'number',
-    example: 10,
   })
   @ApiResponse({
     status: 200,
     description: 'Coaches retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coaches retrieved successfully' },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              name: { type: 'string', example: 'John Doe' },
-              email: { type: 'string', example: 'john.doe@example.com' },
-              phone: { type: 'string', example: '+1234567890' },
-              status: { type: 'boolean', example: true },
-              created_at: { type: 'string', format: 'date-time' },
-              updated_at: { type: 'string', format: 'date-time' },
-              user: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  first_name: { type: 'string', example: 'John' },
-                  last_name: { type: 'string', example: 'Doe' },
-                  email: { type: 'string', example: 'john.doe@example.com' },
-                  is_active: { type: 'boolean', example: true },
-                  is_verified: { type: 'boolean', example: true },
-                },
-              },
-              location: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number', example: 1 },
-                  name: { type: 'string', example: 'Downtown Gym' },
-                  address1: { type: 'string', example: '123 Main St' },
-                  city: { type: 'string', example: 'New York' },
-                  state: { type: 'string', example: 'NY' },
-                },
-              },
-            },
-          },
-        },
-        page: { type: 'string', example: '1' },
-        limit: { type: 'string', example: '10' },
-        count: { type: 'number', example: 25 },
-      },
-    },
+    type: CoachListResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -267,7 +148,7 @@ export class CoachController {
   @ApiOperation({
     summary: 'Get coach by ID',
     description:
-      'Retrieve a specific coach by their ID with user and location information',
+      'Retrieve a specific coach by their ID with user, location, and groups information',
   })
   @ApiParam({
     name: 'id',
@@ -278,45 +159,7 @@ export class CoachController {
   @ApiResponse({
     status: 200,
     description: 'Coach retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Coach retrieved successfully' },
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            name: { type: 'string', example: 'John Doe' },
-            email: { type: 'string', example: 'john.doe@example.com' },
-            phone: { type: 'string', example: '+1234567890' },
-            status: { type: 'boolean', example: true },
-            created_at: { type: 'string', format: 'date-time' },
-            updated_at: { type: 'string', format: 'date-time' },
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                first_name: { type: 'string', example: 'John' },
-                last_name: { type: 'string', example: 'Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                is_active: { type: 'boolean', example: true },
-                is_verified: { type: 'boolean', example: true },
-              },
-            },
-            location: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'Downtown Gym' },
-                address1: { type: 'string', example: '123 Main St' },
-                city: { type: 'string', example: 'New York' },
-                state: { type: 'string', example: 'NY' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: CoachDetailResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -332,6 +175,8 @@ export class CoachController {
 
   @Patch(':id')
   @RequirePermission(['update_coach'])
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiOperation({
     summary: 'Update coach',
     description: 'Update coach information and optionally associated user data',
@@ -368,9 +213,10 @@ export class CoachController {
   })
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateCoachDto: UpdateCoachDto
+    @Body() updateCoachDto: UpdateCoachDto,
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.coachService.update(id, updateCoachDto);
+    return this.coachService.update(id, updateCoachDto, photo_url);
   }
 
   @Delete(':id')

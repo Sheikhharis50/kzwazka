@@ -55,3 +55,36 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'Confirm password is required' })
   confirm_password: string;
 }
+
+export class ChangePasswordDto {
+  @ApiProperty({
+    description: 'Old password',
+    example: 'OldSecurePass123',
+  })
+  @IsString({ message: 'Old password must be a string' })
+  @IsNotEmpty({ message: 'Old password is required' })
+  old_password: string;
+
+  @ApiProperty({
+    description: 'New password',
+    example: 'NewSecurePass123',
+    minLength: 8,
+    maxLength: 128,
+  })
+  @IsString({ message: 'New password must be a string' })
+  @IsNotEmpty({ message: 'New password is required' })
+  @MinLength(8, { message: 'New password must be at least 8 characters long' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message:
+      'New password must contain at least one uppercase letter, one lowercase letter, and one number',
+  })
+  new_password: string;
+
+  @ApiProperty({
+    description: 'Confirm new password',
+    example: 'NewSecurePass123',
+  })
+  @IsString({ message: 'Confirm new password must be a string' })
+  @IsNotEmpty({ message: 'Confirm new password is required' })
+  confirm_password: string;
+}

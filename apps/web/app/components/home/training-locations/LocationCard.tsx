@@ -3,6 +3,8 @@ import React from 'react';
 import { Check, GoogleLocation, Location } from '@/svgs';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '../Button';
+import Link from 'next/link';
+import { phoneNumberLink } from '@/constants/contact';
 
 interface LocationCardProps {
   imageSrc: string | StaticImageData;
@@ -10,6 +12,7 @@ interface LocationCardProps {
   venue: string;
   ageGroups: string[];
   facilities: string[];
+  locationLink: string;
   className?: string;
 }
 
@@ -19,6 +22,7 @@ const LocationCard = ({
   venue,
   ageGroups,
   facilities,
+  locationLink,
   className = '',
 }: LocationCardProps) => {
   return (
@@ -74,9 +78,13 @@ const LocationCard = ({
         ))}
       </div>
       <div className="flex items-center">
-        <HomeButton text="Zapisz się →" className="w-full" />
+        <Link href={phoneNumberLink} className="flex-1">
+          <HomeButton text="Zapisz się →" className="w-full" />
+        </Link>
         <div className="px-3 lg:px-5">
-          <GoogleLocation className="shrink-0 w-4 lg:w-auto" />
+          <Link href={locationLink} target="_blank">
+            <GoogleLocation className="shrink-0 w-4 lg:w-auto" />
+          </Link>
         </div>
       </div>
     </div>

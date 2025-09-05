@@ -1,6 +1,6 @@
 import React from 'react';
 import Logo from '@/icons/logo-home.png';
-import { navLinks } from '@/constants/nav-links';
+// import { navLinks } from '@/constants/nav-links';
 import Image from 'next/image';
 import Link from 'next/link';
 import HomeButton from '@/components/home/Button';
@@ -15,7 +15,7 @@ const HomeSidebar = ({ isOpen, setOpen }: HomeSidebarProps) => {
   return (
     <>
       <div
-        className={`h-dvh min-w-[240px] sm:min-w-[273px] bg-white rounded-e-3xl absolute left-0 top-0 z-50 flex flex-col gap-10 items-center py-5 transition-transform ${isOpen ? 'lg:hidden translate-x-0' : '-translate-x-full'}`}
+        className={`h-dvh min-w-[240px] sm:min-w-[273px] bg-white rounded-e-3xl absolute left-0 top-0 z-50 flex flex-col gap-10 justify-between items-center py-5 transition-transform ${isOpen ? 'lg:hidden translate-x-0' : '-translate-x-full'}`}
       >
         <Image
           src={Logo}
@@ -24,7 +24,7 @@ const HomeSidebar = ({ isOpen, setOpen }: HomeSidebarProps) => {
           width={500}
           className="w-24 sm:w-28 h-auto object-contain"
         />
-        <div className="flex flex-col text-sm md:text-base font-medium w-full">
+        {/* <div className="flex flex-col text-sm md:text-base font-medium w-full">
           {navLinks.map((link) => (
             <Link
               href={link.url}
@@ -34,16 +34,16 @@ const HomeSidebar = ({ isOpen, setOpen }: HomeSidebarProps) => {
               {link.name}
             </Link>
           ))}
-        </div>
+        </div> */}
         <div className="px-3 w-full">
-          <Link href={'/login'}>
+          <Link href={'#'}>
             <HomeButton
               text="LOGOWANIE"
               icon={<ProfileRound />}
               className="!bg-transparent !text-black w-full mb-2"
             />
           </Link>
-          <Link href={'/register'}>
+          <Link href={'#'}>
             <HomeButton text="ZAPISZ SIĘ" className="w-full" />
           </Link>
         </div>

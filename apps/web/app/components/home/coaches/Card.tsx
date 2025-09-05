@@ -3,6 +3,7 @@ import Image, { StaticImageData } from 'next/image';
 import Heading from '@/components/Heading';
 import HomeButton from '../Button';
 import { Phone } from '@/svgs';
+import Link from 'next/link';
 
 interface CoachCardProps {
   imageSrc: string | StaticImageData;
@@ -36,17 +37,19 @@ const CoachCard = ({
         {expertise.map((experty) => (
           <div
             key={`coach-${name}-${experty}`}
-            className="px-3 py-1 text-[10px] sm:text-[12px] bg-[#6E86C4] text-white rounded-full"
+            className="px-3 py-1 text-[10px] sm:text-[12px] bg-[#6E86C4] text-white rounded-full flex-1"
           >
-            12 years coaching
+            {experty}
           </div>
         ))}
       </div>
-      <HomeButton
-        text={phone}
-        icon={<Phone className="w-5 md:w-6" />}
-        className="mx-auto"
-      />
+      <Link href={`tel:${phone}`}>
+        <HomeButton
+          text={phone}
+          icon={<Phone className="w-5 md:w-6" />}
+          className="mx-auto"
+        />
+      </Link>
     </div>
   );
 };

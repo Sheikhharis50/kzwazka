@@ -42,7 +42,6 @@ const Select = ({
       <select
         id={inputId}
         className={`py-2 md:py-2.5 ps-2 pe-3 rounded-lg border border-border w-full text-sm md:text-base placeholder:text-sm ${classes.input}`}
-        defaultValue={''}
         {...rest}
       >
         <option value={''} disabled className="text-mute!">

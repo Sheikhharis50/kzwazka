@@ -14,7 +14,6 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ChildrenGroupModule } from './children-group/children-group.module';
-
 @Module({
   imports: [
     ServeStaticModule.forRoot({

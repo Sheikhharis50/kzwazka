@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { DbModule } from '../db/db.module';
 import { UserModule } from '../user/user.module';
 import { ChildrenModule } from '../children/children.module';
-import { EmailService } from '../services/email.service';
+import { EmailService, FileStorageService } from '../services';
 import { GoogleAuthService } from './google-auth.service';
 import { SharedJwtModule } from './jwt.module';
 
@@ -20,7 +20,13 @@ import { SharedJwtModule } from './jwt.module';
     SharedJwtModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, JwtStrategy, GoogleAuthService],
+  providers: [
+    AuthService,
+    EmailService,
+    FileStorageService,
+    JwtStrategy,
+    GoogleAuthService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

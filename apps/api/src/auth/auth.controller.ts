@@ -6,6 +6,8 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,11 +15,17 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
@@ -34,12 +42,40 @@ export class AuthController {
   @Post('signup')
   @ApiOperation({
     summary: 'User registration',
-    description: 'Create a new user account with email verification',
+    description:
+      'Create a new user account with email verification and optional profile photo',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({
-    type: SignUpDto,
-    description: 'User registration data',
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'john.doe@example.com' },
+        password: { type: 'string', example: 'SecurePass123' },
+        first_name: { type: 'string', example: 'John' },
+        last_name: { type: 'string', example: 'Doe' },
+        dob: { type: 'string', example: '1990-01-15' },
+        phone: { type: 'string', example: '+1-555-123-4567' },
+        parent_first_name: { type: 'string', example: 'Jane' },
+        parent_last_name: { type: 'string', example: 'Doe' },
+        photo_url: {
+          type: 'string',
+          format: 'binary',
+          description: 'Profile photo (optional)',
+        },
+      },
+      required: [
+        'email',
+        'password',
+        'first_name',
+        'last_name',
+        'dob',
+        'parent_first_name',
+        'parent_last_name',
+      ],
+    },
   })
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
   @ApiResponse({
     status: 201,
     description: 'User registered successfully. Check email for verification.',
@@ -47,15 +83,28 @@ export class AuthController {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'User registered successfully' },
-        user: {
+        data: {
           type: 'object',
           properties: {
-            id: { type: 'number', example: 1 },
-            email: { type: 'string', example: 'john.doe@example.com' },
-            first_name: { type: 'string', example: 'John' },
-            last_name: { type: 'string', example: 'Doe' },
-            role: { type: 'string', example: 'user' },
-            is_verified: { type: 'boolean', example: false },
+            access_token: {
+              type: 'string',
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 1 },
+                email: { type: 'string', example: 'john.doe@example.com' },
+                first_name: { type: 'string', example: 'John' },
+                last_name: { type: 'string', example: 'Doe' },
+                role: { type: 'string', example: 'children' },
+                is_verified: { type: 'boolean', example: false },
+              },
+            },
+            children: {
+              type: 'object',
+              description: 'Children information',
+            },
           },
         },
       },
@@ -69,8 +118,11 @@ export class AuthController {
     status: 500,
     description: 'Internal server error',
   })
-  async signUp(@Body() body: SignUpDto) {
-    return await this.authService.signUp(body);
+  async signUp(
+    @Body() body: SignUpDto,
+    @UploadedFile() photo?: Express.Multer.File
+  ) {
+    return await this.authService.signUp(body, photo);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -256,6 +308,39 @@ export class AuthController {
   })
   async resetPassword(@Body() body: ResetPasswordDto) {
     return await this.authService.resetPassword(body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @ApiOperation({
+    summary: 'Change password',
+    description: 'Change user password',
+  })
+  @ApiBody({
+    type: ChangePasswordDto,
+    description: 'Change password data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async changePassword(
+    @Body() body: ChangePasswordDto,
+    @Req() req: APIRequest
+  ) {
+    return await this.authService.changePassword(body, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

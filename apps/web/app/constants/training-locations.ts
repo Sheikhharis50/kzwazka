@@ -61,36 +61,31 @@ export const trainingLocations = [
 
 export const trainingLocationsHome = [
   {
-    imageSrc: LocationImg6,
+    imageSrc: LocationImg8,
     title: 'SP Jana Brzechwy',
-    venue: 'Przasnyska 18A, 01-756 Warszawa, Poland',
-    ageGroups: ['4–6 lat', '7–10 lat'],
-    facilities: [
-      'Trener Jabub Antoszewski',
-      'Strength & conditioning',
-      'Local wrestling events',
-    ],
-  },
-  {
-    imageSrc: LocationImg7,
-    title: 'SP Anny German',
-    venue: 'Anny German 5a, 01-794 Warszawa',
+    venue: 'Przasnyska 18A, 01-756 Warszawa',
     ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
     facilities: [
       'Trener Jabub Antoszewski',
-      'Strength & conditioning',
-      'Local wrestling events',
+      'Blisko tramwaj',
+      'Darmowe miejsce parkingowe',
     ],
+    locationLink: 'https://maps.app.goo.gl/ATC8jCb9AtGoGrEm6',
   },
   {
-    imageSrc: LocationImg8,
-    title: 'LO Wojciecha Górskiego',
-    venue: 'Lwa Tołstoja 2, 01-910 Warszawa',
-    ageGroups: ['7–10 lat', '11–15 lat'],
-    facilities: [
-      'Trener Jabub Antoszewski',
-      'Strength & conditioning',
-      'Local wrestling events',
-    ],
+    imageSrc: LocationImg6,
+    title: 'OSiR',
+    venue: 'Obozowa 60 , 01-423 Warszawa',
+    ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
+    facilities: ['Trener Jabub Antoszewski', 'Łatwy dojazd', 'Blisko tramwaj'],
+    locationLink: 'https://maps.app.goo.gl/HTFScQYSZ3TzmE7FA',
   },
+  // {
+  //   imageSrc: LocationImg7,
+  //   title: 'LO Wojciecha Górskiego',
+  //   venue: 'Lwa Tołstoja 2, 01-910 Warszawa',
+  //   ageGroups: ['4–6 lat', '7–10 lat', '11–15 lat'],
+  //   facilities: ['Trener Łukasz Naworol', 'Blisko metro', 'Darmowy parking'],
+  //   locationLink: 'https://maps.app.goo.gl/BeJsmCju7padBuKo6',
+  // },
 ];

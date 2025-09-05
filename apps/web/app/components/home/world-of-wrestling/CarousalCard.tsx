@@ -24,7 +24,7 @@ const CarousalCard = ({
   const { image = '' } = classes || {};
   return (
     <div className="pt-8 lg:pt-14 2xl:pt-16 h-full">
-      <div className="bg-smoke rounded-4xl grid grid-cols-1 lg:grid-cols-[58%_42%] gap-10 lg:gap-0 py-10 lg:py-0 items-center">
+      <div className="bg-smoke rounded-4xl grid grid-cols-1 lg:grid-cols-[58%_42%] gap-10 lg:gap-0 py-10 lg:py-0 items-center h-full">
         <div className="px-8 lg:pl-12 xl:pl-16 2xl:pl-20 lg:pe-5 2xl:pr-8">
           <Heading text={title} className="2xl:text-5xl" />
           <div className="flex gap-4 xl:gap-6 items-center py-5 xl:py-8 2xl:py-10">

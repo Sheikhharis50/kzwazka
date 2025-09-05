@@ -9,7 +9,11 @@ import { DatabaseService } from '../db/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { SignUpDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+} from './dto/password.dto';
 import { VerifyOtpDto } from './dto/otp.dto';
 import { roleSchema, userSchema, rolePermissionSchema } from 'src/db/schemas';
 import { UserService } from '../user/user.service';
@@ -17,6 +21,7 @@ import { ChildrenService } from '../children/children.service';
 import { EmailService } from '../services/email.service';
 import { APP_CONSTANTS } from '../utils/constants';
 import { Logger } from '@nestjs/common';
+import { FileStorageService } from '../services';
 
 import {
   generateToken,
@@ -37,24 +42,13 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly childrenService: ChildrenService,
     private readonly emailService: EmailService,
+    private readonly fileStorageService: FileStorageService,
     private jwtService: JwtService
   ) {}
 
-  async signUp(signUpDto: SignUpDto) {
-    const {
-      email,
-      password,
-      first_name,
-      last_name,
-      dob,
-      phone,
-      photo_url,
-      parent_first_name,
-      parent_last_name,
-    } = signUpDto;
-
+  async signUp(signUpDto: SignUpDto, photo_url?: Express.Multer.File) {
     // Check if user already exists
-    const existingUser = await this.userService.findByEmail(email);
+    const existingUser = await this.userService.findByEmail(signUpDto.email);
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
@@ -65,21 +59,42 @@ export class AuthService {
       throw new Error('Children role not found. Please seed the database.');
     }
 
+    // Handle photo upload if provided
+    let photo_url_path: string | undefined;
+    if (photo_url) {
+      try {
+        // Upload photo to storage (will use local or DigitalOcean based on environment)
+        const uploadResult = await this.fileStorageService.uploadFile(
+          photo_url,
+          'avatars',
+          Date.now() // Use timestamp as temporary ID for upload
+        );
+        photo_url_path = uploadResult.relativePath;
+      } catch (error) {
+        this.logger.error(
+          `Failed to upload photo: ${(error as Error).message}`
+        );
+        throw new BadRequestException(
+          `Failed to upload photo: ${(error as Error).message}`
+        );
+      }
+    }
+
     // Create both user and children in a single transaction
     const { user: newUser, children: newChildren } =
       await this.childrenService.create({
-        email,
-        password,
-        first_name,
-        last_name,
-        phone,
+        email: signUpDto.email,
+        password: signUpDto.password,
+        first_name: signUpDto.first_name,
+        last_name: signUpDto.last_name,
+        phone: signUpDto.phone,
         role_id: childrenRole.id,
         is_active: true,
         is_verified: false, // Will be verified after OTP confirmation
-        dob,
-        photo_url,
-        parent_first_name,
-        parent_last_name,
+        dob: signUpDto.dob,
+        photo_url: photo_url_path || undefined,
+        parent_first_name: signUpDto.parent_first_name,
+        parent_last_name: signUpDto.parent_last_name,
       });
 
     const access_token = generateToken(this.jwtService, newUser.id);
@@ -89,7 +104,11 @@ export class AuthService {
 
     // Send OTP email
     try {
-      await this.emailService.sendOtpEmail(email, otp, first_name);
+      await this.emailService.sendOtpEmail(
+        signUpDto.email,
+        otp,
+        signUpDto.first_name
+      );
     } catch {
       // Don't fail the signup process if email fails
       // The OTP is still generated and stored
@@ -114,10 +133,8 @@ export class AuthService {
   }
 
   async verifyOtp(userId: number, verifyOtpDto: VerifyOtpDto) {
-    const { otp } = verifyOtpDto;
-
     // Verify OTP
-    const isValidOtp = await this.verifyOTP(userId, otp);
+    const isValidOtp = await this.verifyOTP(userId, verifyOtpDto.otp);
     if (!isValidOtp) {
       throw new BadRequestException(APP_CONSTANTS.MESSAGES.ERROR.INVALID_OTP);
     }
@@ -208,10 +225,8 @@ export class AuthService {
   }
 
   async signIn(signInDto: LoginDto) {
-    const { email, password } = signInDto;
-
     // Find user by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(signInDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -230,7 +245,7 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await this.userService.verifyPassword(
       user.id,
-      password
+      signInDto.password
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -342,6 +357,21 @@ export class AuthService {
     // Get children data for this user
     const children = await this.childrenService.findByUserId(userId);
 
+    const childrenwithphotoUrl =
+      children.length > 0
+        ? {
+            ...children[0],
+            user: {
+              ...children[0].user,
+              photo_url: children[0].user?.photo_url
+                ? this.fileStorageService.getPhotoUrlforAPIResponse(
+                    children[0].user.photo_url
+                  )
+                : children[0].user?.photo_url,
+            },
+          }
+        : null;
+
     // Return consistent structure with user object, permissions, and related data
     return {
       message: 'Profile fetched successfully',
@@ -359,7 +389,7 @@ export class AuthService {
           updated_at: userData.updated_at,
           permissions: permissionIds,
         },
-        children: children[0],
+        children: childrenwithphotoUrl,
       },
     };
   }
@@ -462,10 +492,8 @@ export class AuthService {
    * Initiate password reset process
    */
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const { email } = forgotPasswordDto;
-
     // Find user by email
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(forgotPasswordDto.email);
     if (!user) {
       // Don't reveal if user exists or not for security
       return {
@@ -596,5 +624,38 @@ export class AuthService {
         updated_at: new Date(),
       })
       .where(eq(userSchema.id, userId));
+  }
+
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: number) {
+    const user = await this.userService.findOne(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await this.userService.verifyPassword(
+      user.id,
+      changePasswordDto.old_password
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid old password');
+    }
+
+    if (changePasswordDto.new_password !== changePasswordDto.confirm_password) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const hashedPassword = await this.userService.hashPassword(
+      changePasswordDto.new_password
+    );
+    await this.dbService.db
+      .update(userSchema)
+      .set({ password: hashedPassword })
+      .where(eq(userSchema.id, user.id));
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 }

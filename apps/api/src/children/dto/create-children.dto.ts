@@ -77,14 +77,14 @@ export class CreateChildrenDto {
   })
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User role identifier',
     example: 'children',
     maxLength: 50,
   })
   @IsString({ message: 'Role ID must be a string' })
-  @IsNotEmpty({ message: 'Role ID is required' })
-  role_id: string;
+  @IsOptional({ message: 'Role ID is required' })
+  role_id?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the user account is active',
@@ -222,14 +222,14 @@ export class CreateChildrenDtoByAdmin {
   })
   phone?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'User role identifier',
     example: 'children',
     maxLength: 50,
   })
   @IsString({ message: 'Role ID must be a string' })
-  @IsNotEmpty({ message: 'Role ID is required' })
-  role_id: string;
+  @IsOptional({ message: 'Role ID is required' })
+  role_id?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the user account is active',
@@ -266,15 +266,6 @@ export class CreateChildrenDtoByAdmin {
   @IsDateString({}, { message: 'Date of birth must be a valid date string' })
   @IsNotEmpty({ message: 'Date of birth is required' })
   dob: string;
-
-  @ApiPropertyOptional({
-    description: 'Child profile photo URL',
-    example: 'https://example.com/photos/child.jpg',
-    maxLength: 500,
-  })
-  @IsString({ message: 'Photo URL must be a string' })
-  @IsOptional()
-  photo_url?: string;
 
   @ApiPropertyOptional({
     description: 'Parent name',

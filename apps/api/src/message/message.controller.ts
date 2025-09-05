@@ -22,15 +22,15 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { MessageService } from './message.service';
-import { CreateMessageDto, MessageContentType } from './dto/create-message.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { MESSAGE_CONTENT_TYPE } from '../utils/constants';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   PermissionGuard,
   RequirePermission,
 } from '../auth/guards/permission.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { FileUploadService } from '../services';
+import { createGeneralFileUploadInterceptor } from '../utils/file-interceptor.utils';
 
 @ApiTags('messages')
 @Controller('api/message')
@@ -42,11 +42,7 @@ export class MessageController {
   @Post()
   @RequirePermission(['create_message'])
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: FileUploadService.diskStorage('messages'),
-    })
-  )
+  @UseInterceptors(createGeneralFileUploadInterceptor('file', 10 * 1024 * 1024))
   @ApiOperation({
     summary: 'Create a new message',
     description:
@@ -60,7 +56,7 @@ export class MessageController {
         content: { type: 'string', nullable: true },
         content_type: {
           type: 'string',
-          enum: Object.values(MessageContentType),
+          enum: Object.values(MESSAGE_CONTENT_TYPE),
         },
         file: { type: 'string', format: 'binary', nullable: true },
         group_id: { type: 'number', nullable: true },
@@ -72,6 +68,22 @@ export class MessageController {
     @Body() createMessageDto: CreateMessageDto,
     @UploadedFile() file: Express.Multer.File
   ) {
+    // Log the received data for debugging
+    console.log('Create message request:', {
+      dto: createMessageDto,
+      hasFile: !!file,
+      fileInfo: file
+        ? {
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+            hasBuffer: !!file.buffer,
+            bufferLength: file.buffer?.length,
+          }
+        : null,
+    });
+
     return this.messageService.create(createMessageDto, file);
   }
 

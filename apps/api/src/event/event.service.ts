@@ -11,6 +11,7 @@ import { QueryEventDto } from './dto/query-event.dto';
 import { eventSchema } from '../db/schemas/eventSchema';
 import { eq, and, gte, lte, ilike, desc, sql, SQL } from 'drizzle-orm';
 import { Event } from '../db/schemas/eventSchema';
+import { APP_CONSTANTS, getPageOffset } from '../utils';
 
 @Injectable()
 export class EventService {
@@ -65,13 +66,17 @@ export class EventService {
   async findAll(query: QueryEventDto): Promise<{
     events: Event[];
     total: number;
-    page: number;
-    limit: number;
+    page: string;
+    limit: string;
     totalPages: number;
   }> {
     try {
-      const { page = 1, limit = 10, ...filters } = query;
-      const offset = (page - 1) * limit;
+      const {
+        page = '1',
+        limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
+        ...filters
+      } = query;
+      const offset = getPageOffset(page, limit);
 
       // Build where conditions
       const whereConditions: SQL<unknown>[] = [];
@@ -125,10 +130,10 @@ export class EventService {
         .from(eventSchema)
         .where(whereClause)
         .orderBy(desc(eventSchema.created_at))
-        .limit(limit)
+        .limit(Number(limit))
         .offset(offset);
 
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / Number(limit));
 
       return {
         events,

@@ -12,3 +12,4 @@ export * from './childrenInvoiceSchema';
 export * from './insuranceSchema';
 export * from './messageSchema';
 export * from './attendanceSchema';
+export * from './groupSessionSchema';

@@ -64,6 +64,13 @@
       "when": 1756898393114,
       "tag": "0008_opposite_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1756984009672,
+      "tag": "0009_abandoned_edwin_jarvis",
+      "breakpoints": true
     }
   ]
 }

@@ -7,7 +7,7 @@ import { AxiosError } from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface UserContextType {
-  user: IUser | null;
+  user: IUser | null | undefined;
   child: IChild | null;
   isLoading: boolean;
   isError: boolean;
@@ -19,11 +19,16 @@ export const UserContext = createContext<UserContextType | undefined>(
 );
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const isLoading = React.useRef(true);
   const { token } = useAuth();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isError, refetch } = useQuery({
     queryKey: ['me', token],
-    queryFn: () => api.user.me().then((res) => res.data),
+    queryFn: async () => {
+      const res = await api.user.me();
+      isLoading.current = false;
+      return res.data;
+    },
     retry: (failureCount, error: AxiosError) => {
       // Don't retry on 401 errors (unauthorized)
       if (error?.response?.status === 401) {
@@ -31,15 +36,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
       return failureCount < 3;
     },
-    enabled: !!token,
   });
+
+  console.log({ data, isLoading: isLoading.current });
 
   return (
     <UserContext.Provider
       value={{
         user: data?.user ?? null,
         child: data?.child ?? null,
-        isLoading,
+        isLoading: isLoading.current,
         isError,
         refetch,
       }}

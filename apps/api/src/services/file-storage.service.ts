@@ -446,7 +446,7 @@ export class FileStorageService {
     };
   }
 
-  getPhotoUrlforAPIResponse(relativePath: string): string {
+  getAbsoluteUrl(relativePath: string): string {
     if (!relativePath) {
       throw new BadRequestException('Relative path is required');
     }

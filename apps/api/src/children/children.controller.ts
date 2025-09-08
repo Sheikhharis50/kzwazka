@@ -121,9 +121,9 @@ export class ChildrenController {
   @RequirePermission(['create_children'])
   create(
     @Body() body: CreateChildrenDtoByAdmin,
-    @UploadedFile() photo_file?: Express.Multer.File
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.childrenService.createdByAdmin(body, photo_file);
+    return this.childrenService.createdByAdmin(body, photo_url);
   }
 
   @Get()

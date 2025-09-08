@@ -32,7 +32,7 @@ export class CoachService {
 
   async create(
     createCoachDto: CreateCoachDto,
-    photo_file?: Express.Multer.File
+    photo_url?: Express.Multer.File
   ) {
     try {
       // Check if coach with this email already exists
@@ -44,22 +44,6 @@ export class CoachService {
       }
 
       // Handle photo upload if provided
-      let photo_url: string | undefined;
-      if (photo_file) {
-        try {
-          // Upload photo to storage (will use local or DigitalOcean based on environment)
-          const uploadResult = await this.fileStorageService.uploadFile(
-            photo_file,
-            'avatars',
-            Date.now()
-          );
-          photo_url = uploadResult.relativePath;
-        } catch (error) {
-          throw new Error(
-            `Failed to upload photo: ${(error as Error).message}`
-          );
-        }
-      }
 
       // Get the coach role
       const coachRole = await this.userService.getRoleByName('coach');
@@ -77,8 +61,11 @@ export class CoachService {
         role_id: coachRole.id,
         is_active: true,
         is_verified: true, // Coaches are typically pre-verified
-        photo_url: photo_url,
       });
+
+      if (photo_url) {
+        await this.userService.updatePhotoUrl(newUser.id, photo_url);
+      }
 
       // Create coach record
       const newCoach = await this.dbService.db
@@ -102,7 +89,7 @@ export class CoachService {
             last_name: newUser.last_name,
             phone: newUser.phone,
             role: coachRole.name,
-            photo_url: photo_url,
+            photo_url: newUser.photo_url,
           },
         },
       };
@@ -360,9 +347,7 @@ export class CoachService {
       user: {
         ...coach.user,
         photo_url: coach.user?.photo_url
-          ? this.fileStorageService.getPhotoUrlforAPIResponse(
-              coach.user.photo_url
-            )
+          ? this.fileStorageService.getAbsoluteUrl(coach.user.photo_url)
           : coach.user?.photo_url,
       },
     }));
@@ -436,9 +421,7 @@ export class CoachService {
       user: {
         ...coach[0].user,
         photo_url: coach[0].user?.photo_url
-          ? this.fileStorageService.getPhotoUrlforAPIResponse(
-              coach[0].user.photo_url
-            )
+          ? this.fileStorageService.getAbsoluteUrl(coach[0].user.photo_url)
           : coach[0].user?.photo_url,
       },
     };

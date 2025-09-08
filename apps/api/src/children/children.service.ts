@@ -107,34 +107,22 @@ export class ChildrenService {
 
   async createdByAdmin(
     body: CreateChildrenDtoByAdmin,
-    photo_file?: Express.Multer.File
+    photo_url?: Express.Multer.File
   ) {
     const { group_id, ...rest } = body;
     const first_name = rest.name;
     const parent_first_name = rest.parent_name;
 
     // Handle photo upload if provided
-    let photo_url: string | undefined;
-    if (photo_file) {
-      try {
-        // Upload photo to storage (will use local or DigitalOcean based on environment)
-        const uploadResult = await this.fileStorageService.uploadFile(
-          photo_file,
-          'avatars',
-          Date.now()
-        );
-        photo_url = uploadResult.relativePath;
-      } catch (error) {
-        throw new Error(`Failed to upload photo: ${(error as Error).message}`);
-      }
-    }
 
     const children = await this.create({
       ...rest,
       first_name,
       parent_first_name,
-      photo_url: photo_url,
     });
+    if (photo_url) {
+      await this.userService.updatePhotoUrl(children.user.id, photo_url);
+    }
 
     if (group_id) {
       await this.assignGroup(children.children.id, group_id);
@@ -367,9 +355,7 @@ export class ChildrenService {
       user: {
         ...child.user,
         photo_url: child.user?.photo_url
-          ? this.fileStorageService.getPhotoUrlforAPIResponse(
-              child.user.photo_url
-            )
+          ? this.fileStorageService.getAbsoluteUrl(child.user.photo_url)
           : child.user?.photo_url,
       },
     }));
@@ -428,9 +414,7 @@ export class ChildrenService {
       user: {
         ...children[0].user,
         photo_url: children[0].user?.photo_url
-          ? this.fileStorageService.getPhotoUrlforAPIResponse(
-              children[0].user.photo_url
-            )
+          ? this.fileStorageService.getAbsoluteUrl(children[0].user.photo_url)
           : children[0].user?.photo_url,
       },
     };
@@ -489,13 +473,13 @@ export class ChildrenService {
       throw new NotFoundException('Children not found');
     }
 
-    const user = await this.userService.findOne(children.user.id!);
+    const user = await this.userService.findOne(children.user.id);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.userService.update(children.user.id!, updateValues, photo_url);
+    await this.userService.update(children.user.id, updateValues, photo_url);
 
     const updatedChildren = await this.dbService.db
       .update(childrenSchema)
@@ -518,13 +502,13 @@ export class ChildrenService {
       throw new NotFoundException('Children not found');
     }
 
-    const user = await this.userService.findOne(children.user.id!);
+    const user = await this.userService.findOne(children.user.id);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.userService.remove(children.user.id!);
+    await this.userService.remove(children.user.id);
 
     await this.dbService.db
       .delete(childrenSchema)

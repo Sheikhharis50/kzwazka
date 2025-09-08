@@ -96,3 +96,13 @@ export enum MESSAGE_CONTENT_TYPE {
   ATTACHMENT = 'attachment',
   OTHER = 'other',
 }
+
+export enum GROUP_SESSION_DAY {
+  MONDAY = 'Monday',
+  TUESDAY = 'Tuesday',
+  WEDNESDAY = 'Wednesday',
+  THURSDAY = 'Thursday',
+  FRIDAY = 'Friday',
+  SATURDAY = 'Saturday',
+  SUNDAY = 'Sunday',
+}

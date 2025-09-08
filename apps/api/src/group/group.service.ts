@@ -7,16 +7,19 @@ import {
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, ne, desc } from 'drizzle-orm';
+import { eq, sql, and, ne, desc, inArray } from 'drizzle-orm';
 import {
   groupSchema,
   locationSchema,
   coachSchema,
   userSchema,
+  groupSessionSchema,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { FileStorageService } from '../services/file-storage.service';
+import { GroupSessionService } from './groupSession.service';
+import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
 
 @Injectable()
 export class GroupService {
@@ -24,12 +27,14 @@ export class GroupService {
 
   constructor(
     private readonly dbService: DatabaseService,
-    private readonly fileStorageService: FileStorageService
+    private readonly fileStorageService: FileStorageService,
+    private readonly groupSessionService: GroupSessionService
   ) {}
 
   async create(
     createGroupDto: CreateGroupDto,
-    photo_url?: Express.Multer.File
+    photo_url?: Express.Multer.File,
+    sessions?: CreateGroupSessionDto[]
   ) {
     try {
       // Validate that min_age is less than max_age
@@ -58,7 +63,6 @@ export class GroupService {
           );
         }
       }
-
       if (photo_url) {
         const uploadResult = await this.fileStorageService.uploadFile(
           photo_url,
@@ -74,6 +78,15 @@ export class GroupService {
           ...createGroupDto,
         })
         .returning();
+
+      if (sessions && sessions.length > 0) {
+        for (const session of sessions) {
+          await this.groupSessionService.createGroupSession({
+            ...session,
+            group_id: newGroup[0].id,
+          });
+        }
+      }
 
       this.logger.log(`Group created successfully with ID: ${newGroup[0].id}`);
 
@@ -108,8 +121,8 @@ export class GroupService {
 
     const offset = getPageOffset(page, limit);
 
-    // Build optimized base query
-    const baseQuery = this.dbService.db
+    // First query: Get groups with basic relations
+    const groups = await this.dbService.db
       .select({
         id: groupSchema.id,
         name: groupSchema.name,
@@ -145,18 +158,71 @@ export class GroupService {
       .offset(offset)
       .limit(Number(limit));
 
-    // Execute queries in parallel
-    const [count, results] = await Promise.all([this.count(), baseQuery]);
+    // Early return if no groups found
+    if (groups.length === 0) {
+      const [{ count }] = await this.dbService.db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(groupSchema);
+
+      return {
+        message: 'Groups retrieved successfully',
+        data: [],
+        page,
+        limit,
+        count,
+      };
+    }
+
+    // Extract group IDs for sessions query
+    const groupIds = groups.map((group) => group.id);
+
+    // Second query: Get all sessions for these groups in a single query
+    const sessions = await this.dbService.db
+      .select({
+        id: groupSessionSchema.id,
+        group_id: groupSessionSchema.group_id,
+        day: groupSessionSchema.day,
+        start_time: groupSessionSchema.start_time,
+        end_time: groupSessionSchema.end_time,
+        created_at: groupSessionSchema.created_at,
+        updated_at: groupSessionSchema.updated_at,
+      })
+      .from(groupSessionSchema)
+      .where(inArray(groupSessionSchema.group_id, groupIds))
+      .orderBy(
+        groupSessionSchema.group_id,
+        groupSessionSchema.day,
+        groupSessionSchema.start_time
+      );
+
+    // Group sessions by group_id for O(1) lookup
+    const sessionsMap = new Map<number, typeof sessions>();
+    sessions.forEach((session) => {
+      if (!sessionsMap.has(session.group_id)) {
+        sessionsMap.set(session.group_id, []);
+      }
+      sessionsMap.get(session.group_id)!.push(session);
+    });
+
+    // Attach sessions to their respective groups
+    const groupsWithSessions = groups.map((group) => ({
+      ...group,
+      sessions: sessionsMap.get(group.id) || [],
+    }));
+
+    // Get total count
+    const [{ count }] = await this.dbService.db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(groupSchema);
 
     return {
       message: 'Groups retrieved successfully',
-      data: results,
+      data: groupsWithSessions,
       page,
       limit,
       count,
     };
   }
-
   /**
    * Optimized findOne method
    */

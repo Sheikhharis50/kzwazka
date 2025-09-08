@@ -7,6 +7,7 @@ import {
   Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CreateGroupSessionDto } from './create-groupsession.dto';
 
 export class CreateGroupDto {
   @ApiProperty({
@@ -95,4 +96,11 @@ export class CreateGroupDto {
   })
   @IsOptional()
   photo_url?: string;
+
+  @ApiPropertyOptional({
+    description: 'Group sessions',
+    type: [CreateGroupSessionDto],
+  })
+  @IsOptional()
+  sessions?: CreateGroupSessionDto[];
 }

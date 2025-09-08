@@ -42,7 +42,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className={'flex flex-col gap-1 ' + classes.root || ''}>
+      <div className={`flex flex-col gap-1 ${classes.root || ''}`}>
         {label && (
           <Label
             htmlFor={inputId}

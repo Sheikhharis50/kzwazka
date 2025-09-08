@@ -28,3 +28,4 @@ export * from './Cross';
 export * from './ListView';
 export * from './Mail';
 export * from './Book';
+export * from './Previous';

@@ -59,27 +59,6 @@ export class AuthService {
       throw new Error('Children role not found. Please seed the database.');
     }
 
-    // Handle photo upload if provided
-    let photo_url_path: string | undefined;
-    if (photo_url) {
-      try {
-        // Upload photo to storage (will use local or DigitalOcean based on environment)
-        const uploadResult = await this.fileStorageService.uploadFile(
-          photo_url,
-          'avatars',
-          Date.now() // Use timestamp as temporary ID for upload
-        );
-        photo_url_path = uploadResult.relativePath;
-      } catch (error) {
-        this.logger.error(
-          `Failed to upload photo: ${(error as Error).message}`
-        );
-        throw new BadRequestException(
-          `Failed to upload photo: ${(error as Error).message}`
-        );
-      }
-    }
-
     // Create both user and children in a single transaction
     const { user: newUser, children: newChildren } =
       await this.childrenService.create({
@@ -92,10 +71,13 @@ export class AuthService {
         is_active: true,
         is_verified: false, // Will be verified after OTP confirmation
         dob: signUpDto.dob,
-        photo_url: photo_url_path || undefined,
         parent_first_name: signUpDto.parent_first_name,
         parent_last_name: signUpDto.parent_last_name,
       });
+
+    if (photo_url) {
+      await this.userService.updatePhotoUrl(newUser.id, photo_url);
+    }
 
     const access_token = generateToken(this.jwtService, newUser.id);
 
@@ -364,7 +346,7 @@ export class AuthService {
             user: {
               ...children[0].user,
               photo_url: children[0].user?.photo_url
-                ? this.fileStorageService.getPhotoUrlforAPIResponse(
+                ? this.fileStorageService.getAbsoluteUrl(
                     children[0].user.photo_url
                   )
                 : children[0].user?.photo_url,

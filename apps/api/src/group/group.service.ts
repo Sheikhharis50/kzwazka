@@ -63,14 +63,6 @@ export class GroupService {
           );
         }
       }
-      if (photo_url) {
-        const uploadResult = await this.fileStorageService.uploadFile(
-          photo_url,
-          'groups_profiles',
-          Date.now()
-        );
-        createGroupDto.photo_url = uploadResult.relativePath;
-      }
 
       const newGroup = await this.dbService.db
         .insert(groupSchema)
@@ -86,6 +78,10 @@ export class GroupService {
             group_id: newGroup[0].id,
           });
         }
+      }
+
+      if (photo_url) {
+        await this.updatePhotoUrl(newGroup[0].id, photo_url);
       }
 
       this.logger.log(`Group created successfully with ID: ${newGroup[0].id}`);
@@ -339,7 +335,7 @@ export class GroupService {
         const uploadResult = await this.fileStorageService.uploadFile(
           photo_url,
           'groups_profiles',
-          Date.now()
+          id
         );
         updateGroupDto.photo_url = uploadResult.relativePath;
       }
@@ -398,5 +394,34 @@ export class GroupService {
       this.logger.error(`Failed to delete group: ${(error as Error).message}`);
       throw error;
     }
+  }
+
+  async updatePhotoUrl(id: number, photo_url: Express.Multer.File) {
+    const uploadResult = await this.fileStorageService.uploadFile(
+      photo_url,
+      'groups_profiles',
+      id
+    );
+
+    const updatedGroup = await this.dbService.db
+      .update(groupSchema)
+      .set({
+        photo_url: uploadResult.relativePath,
+        updated_at: new Date(),
+      })
+      .where(eq(groupSchema.id, id))
+      .returning();
+
+    return updatedGroup[0];
+  }
+
+  async deletePhotoUrl(id: number) {
+    const deletedGroup = await this.dbService.db
+      .update(groupSchema)
+      .set({ photo_url: null })
+      .where(eq(groupSchema.id, id))
+      .returning();
+
+    return deletedGroup[0];
   }
 }

@@ -3,14 +3,16 @@ import {
   ConflictException,
   NotFoundException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, desc, asc, SQL } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { userSchema, roleSchema } from '../db/schemas';
 import * as bcrypt from 'bcryptjs';
 import { FileStorageService } from '../services';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Injectable()
 export class UserService {
@@ -21,33 +23,35 @@ export class UserService {
     private readonly fileStorageService: FileStorageService
   ) {}
 
-  async createAdmin(createUserDto: CreateUserDto, photo?: Express.Multer.File) {
+  async createAdmin(
+    createAdminDto: CreateAdminDto,
+    photo_url?: Express.Multer.File
+  ) {
     const adminRole = await this.getRoleByName('admin');
     if (!adminRole) {
       throw new Error('Admin role not found. Please seed the database.');
     }
 
-    // Handle photo upload if provided
-    let photoUrl: string | undefined;
-    if (photo) {
-      try {
-        // Upload photo to storage (will use local or DigitalOcean based on environment)
-        const uploadResult = await this.fileStorageService.uploadFile(
-          photo,
-          'avatars',
-          Date.now() // Use timestamp as temporary ID for upload
-        );
-        photoUrl = uploadResult.relativePath;
-      } catch (error) {
-        throw new Error(`Failed to upload photo: ${(error as Error).message}`);
-      }
+    const adminSecret = process.env.ADMIN_SECRET;
+
+    if (createAdminDto.admin_secret !== adminSecret) {
+      throw new UnauthorizedException('Admin secret is incorrect');
     }
 
+    // Handle photo upload if provided
+    const photoUrl = undefined;
     const admin = await this.create({
-      ...createUserDto,
+      ...createAdminDto,
       role_id: adminRole.id,
       photo_url: photoUrl,
+      is_active: true,
+      is_verified: true,
     });
+
+    if (photo_url) {
+      await this.updatePhotoUrl(admin.id, photo_url);
+    }
+
     return {
       message: 'Admin user created successfully',
       data: admin,
@@ -77,6 +81,7 @@ export class UserService {
         password: hashedPassword,
         ...userData,
         phone: userData.phone,
+        role_id: userData.role_id ?? 'children',
         is_active: userData.is_active ?? true,
         is_verified: userData.is_verified ?? false,
       })
@@ -264,5 +269,25 @@ export class UserService {
    */
   async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
+  }
+
+  async updatePhotoUrl(id: number, photo_url: Express.Multer.File) {
+    const uploadResult = await this.fileStorageService.uploadFile(
+      photo_url,
+      'avatars',
+      id
+    );
+
+    const updatedUser = await this.dbService.db
+      .update(userSchema)
+      .set({ photo_url: uploadResult.relativePath })
+      .where(eq(userSchema.id, id))
+      .returning();
+
+    if (updatedUser.length === 0) {
+      throw new NotFoundException('User not found');
+    }
+
+    return updatedUser[0];
   }
 }

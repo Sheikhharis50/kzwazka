@@ -76,9 +76,9 @@ export class CoachController {
   })
   create(
     @Body() createCoachDto: CreateCoachDto,
-    @UploadedFile() photo_file?: Express.Multer.File
+    @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.coachService.create(createCoachDto, photo_file);
+    return this.coachService.create(createCoachDto, photo_url);
   }
 
   @Get()

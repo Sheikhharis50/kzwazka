@@ -10,6 +10,8 @@ import Ribbon from '@/images/sidebar-ribbon.png';
 import { useSettingsContext } from '@/hooks/useSettingsContext';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/hooks/useAuth';
+import PermissionGuard from '@/components/guard/PermissionGuard';
+import { SidebarLink } from '@/types';
 
 const Sidebar = () => {
   const { isSidebarVisible, hideSidebar } = useSettingsContext();
@@ -31,9 +33,18 @@ const Sidebar = () => {
         <Logo />
         <div className="w-full flex flex-col justify-between h-full overflow-y-auto relative pt-1">
           <div className="flex flex-col gap-1 xl:gap-2 2xl:gap-3 w-full items-end">
-            {sidebarLinks.map((link) => {
+            {sidebarLinks.map((link: SidebarLink) => {
               const isActive = pathname === link.id;
-              return <Button key={link.id} link={link} isActive={isActive} />;
+              return (
+                <PermissionGuard
+                  key={link.id}
+                  role={link?.access?.role}
+                  permissions={link?.access?.permissions}
+                  fallback={false}
+                >
+                  <Button link={link} isActive={isActive} />
+                </PermissionGuard>
+              );
             })}
           </div>
           <div className="flex flex-col gap-1 xl:gap-2 2xl:gap-3 w-full items-end">

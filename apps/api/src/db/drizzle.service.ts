@@ -49,9 +49,11 @@ export class DatabaseService {
       this.db = drizzle(pool, { schema });
 
       this.logger.log('Database service initialized successfully');
-    } catch (error) {
+    } catch (error: any) {
+      const { message } = error as { message: string };
+
       this.logger.error('Failed to initialize database service:', error);
-      throw new Error(`Database initialization failed: ${error.message}`);
+      throw new Error(`Database initialization failed: ${message}`);
     }
   }
 }

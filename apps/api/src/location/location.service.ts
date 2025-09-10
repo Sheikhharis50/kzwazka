@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { locationSchema } from '../db/schemas';
 import { CreateLocationDto } from './dto/create-location.dto';
 

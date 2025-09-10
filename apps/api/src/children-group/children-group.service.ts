@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, and, desc, sql, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray, SQLWrapper } from 'drizzle-orm';
 import {
   childrenGroupSchema,
   childrenSchema,
@@ -83,7 +83,7 @@ export class ChildrenGroupService {
     const { children_id, group_id, status, page = 1, limit = 10 } = queryDto;
 
     const offset = (page - 1) * limit;
-    const conditions: any[] = [];
+    const conditions: SQLWrapper[] = [];
 
     if (children_id) {
       conditions.push(eq(childrenGroupSchema.children_id, children_id));

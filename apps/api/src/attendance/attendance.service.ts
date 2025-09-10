@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, and, gte, lte, desc, asc, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, asc, sql, SQLWrapper } from 'drizzle-orm';
 import { attendanceSchema, childrenSchema, groupSchema } from '../db/schemas';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
@@ -45,7 +45,7 @@ export class AttendanceService {
     } = queryDto;
 
     const offset = getPageOffset(page, limit);
-    const conditions: any[] = [];
+    const conditions: SQLWrapper[] = [];
 
     if (group_id) {
       conditions.push(eq(attendanceSchema.group_id, group_id));
@@ -213,7 +213,9 @@ export class AttendanceService {
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
     } = queryDto;
     const offset = getPageOffset(page, limit);
-    const conditions: any[] = [eq(attendanceSchema.children_id, childrenId)];
+    const conditions: SQLWrapper[] = [
+      eq(attendanceSchema.children_id, childrenId),
+    ];
 
     if (from_date) {
       conditions.push(gte(attendanceSchema.date, start_of_day_date(from_date)));
@@ -274,7 +276,7 @@ export class AttendanceService {
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
     } = queryDto;
     const offset = getPageOffset(page, limit);
-    const conditions: any[] = [eq(attendanceSchema.group_id, groupId)];
+    const conditions: SQLWrapper[] = [eq(attendanceSchema.group_id, groupId)];
 
     if (from_date) {
       conditions.push(gte(attendanceSchema.date, start_of_day_date(from_date)));

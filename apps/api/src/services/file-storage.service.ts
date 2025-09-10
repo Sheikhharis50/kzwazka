@@ -135,7 +135,7 @@ export class FileStorageService {
     if (this.config.storage === 'digitalocean') {
       return this.uploadToDigitalOcean(file, bucket, id, contentType);
     } else {
-      return this.uploadToLocal(file, bucket, id, contentType);
+      return this.uploadToLocal(file, bucket, id);
     }
   }
 
@@ -200,8 +200,7 @@ export class FileStorageService {
   private async uploadToLocal(
     file: Express.Multer.File,
     bucket: string,
-    id: number,
-    contentType?: string
+    id: number
   ): Promise<FileUploadResult> {
     try {
       if (!file.buffer) {
@@ -211,7 +210,7 @@ export class FileStorageService {
       }
 
       // Generate file path
-      const { key, relativePath, fullPath, fileName } = this.generateFilePath(
+      const { key, relativePath, fullPath } = this.generateFilePath(
         bucket,
         id,
         file.originalname

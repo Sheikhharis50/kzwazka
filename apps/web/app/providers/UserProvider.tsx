@@ -1,5 +1,5 @@
 'use client';
-import { IChild, IUser } from 'api/type';
+import { IChild, IUserWithPermissions } from 'api/type';
 import React, { createContext, ReactNode } from 'react';
 import * as api from 'api';
 import { useQuery } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import { AxiosError } from 'axios';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface UserContextType {
-  user: IUser | null | undefined;
+  user: IUserWithPermissions | null | undefined;
   child: IChild | null;
   isLoading: boolean;
   isError: boolean;

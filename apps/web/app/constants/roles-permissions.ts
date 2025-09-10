@@ -1,0 +1,110 @@
+export const ROLES = {
+  ADMIN: 'admin',
+  CHILDREN: 'children',
+  COACH: 'coach',
+};
+
+export const PERMISSIONS = {
+  CREATE_USER: 'create_user',
+  READ_USER: 'read_user',
+  UPDATE_USER: 'update_user',
+  DELETE_USER: 'delete_user',
+
+  CREATE_CHILDREN: 'create_children',
+  READ_CHILDREN: 'read_children',
+  UPDATE_CHILDREN: 'update_children',
+  DELETE_CHILDREN: 'delete_children',
+
+  CREATE_LOCATION: 'create_location',
+  READ_LOCATION: 'read_location',
+  UPDATE_LOCATION: 'update_location',
+  DELETE_LOCATION: 'delete_location',
+
+  CREATE_EVENT: 'create_event',
+  READ_EVENT: 'read_event',
+  UPDATE_EVENT: 'update_event',
+  DELETE_EVENT: 'delete_event',
+
+  CREATE_COACH: 'create_coach',
+  READ_COACH: 'read_coach',
+  UPDATE_COACH: 'update_coach',
+  DELETE_COACH: 'delete_coach',
+
+  CREATE_GROUP: 'create_group',
+  READ_GROUP: 'read_group',
+  UPDATE_GROUP: 'update_group',
+  DELETE_GROUP: 'delete_group',
+
+  CREATE_MESSAGE: 'create_message',
+  READ_MESSAGE: 'read_message',
+  UPDATE_MESSAGE: 'update_message',
+  DELETE_MESSAGE: 'delete_message',
+
+  CREATE_CHILDREN_GROUP: 'create_children_group',
+  READ_CHILDREN_GROUP: 'read_children_group',
+  UPDATE_CHILDREN_GROUP: 'update_children_group',
+  DELETE_CHILDREN_GROUP: 'delete_children_group',
+
+  CREATE_ATTENDANCE: 'create_attendance',
+  READ_ATTENDANCE: 'read_attendance',
+  UPDATE_ATTENDANCE: 'update_attendance',
+  DELETE_ATTENDANCE: 'delete_attendance',
+};
+
+export const PERMISSION_GROUPS = {
+  USER_ALL: [
+    PERMISSIONS.CREATE_USER,
+    PERMISSIONS.READ_USER,
+    PERMISSIONS.UPDATE_USER,
+    PERMISSIONS.DELETE_USER,
+  ],
+
+  CHILDREN_ALL: [
+    PERMISSIONS.CREATE_CHILDREN,
+    PERMISSIONS.READ_CHILDREN,
+    PERMISSIONS.UPDATE_CHILDREN,
+    PERMISSIONS.DELETE_CHILDREN,
+  ],
+
+  EVENT_ALL: [
+    PERMISSIONS.CREATE_EVENT,
+    PERMISSIONS.READ_EVENT,
+    PERMISSIONS.UPDATE_EVENT,
+    PERMISSIONS.DELETE_EVENT,
+  ],
+
+  ALL_READ: [
+    PERMISSIONS.READ_USER,
+    PERMISSIONS.READ_CHILDREN,
+    PERMISSIONS.READ_LOCATION,
+    PERMISSIONS.READ_EVENT,
+    PERMISSIONS.READ_COACH,
+    PERMISSIONS.READ_GROUP,
+    PERMISSIONS.READ_MESSAGE,
+    PERMISSIONS.READ_CHILDREN_GROUP,
+    PERMISSIONS.READ_ATTENDANCE,
+  ],
+
+  ALL_CREATE: [
+    PERMISSIONS.CREATE_USER,
+    PERMISSIONS.CREATE_CHILDREN,
+    PERMISSIONS.CREATE_LOCATION,
+    PERMISSIONS.CREATE_EVENT,
+    PERMISSIONS.CREATE_COACH,
+    PERMISSIONS.CREATE_GROUP,
+    PERMISSIONS.CREATE_MESSAGE,
+    PERMISSIONS.CREATE_CHILDREN_GROUP,
+    PERMISSIONS.CREATE_ATTENDANCE,
+  ],
+
+  COACH_BASIC: [
+    PERMISSIONS.READ_CHILDREN,
+    PERMISSIONS.READ_EVENT,
+    PERMISSIONS.READ_GROUP,
+    PERMISSIONS.CREATE_ATTENDANCE,
+    PERMISSIONS.READ_ATTENDANCE,
+    PERMISSIONS.UPDATE_ATTENDANCE,
+  ],
+
+  ADMIN_FULL: Object.values(PERMISSIONS),
+};

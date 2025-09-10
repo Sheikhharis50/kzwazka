@@ -3,6 +3,10 @@ type SidebarLink = {
   name: string;
   icon: React.ReactNode;
   url: string;
+  access?: {
+    role?: 'admin' | 'children' | 'coach';
+    permissions?: string | string[];
+  };
 };
 
 type Option = {

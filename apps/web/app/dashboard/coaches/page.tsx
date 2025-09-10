@@ -5,7 +5,7 @@ import React from 'react';
 const Coaches = () => {
   return (
     <PermissionGuard role="admin">
-      <CoachesComponents coach />;
+      <CoachesComponents coach />
     </PermissionGuard>
   );
 };

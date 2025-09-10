@@ -106,3 +106,8 @@ export enum GROUP_SESSION_DAY {
   SATURDAY = 'Saturday',
   SUNDAY = 'Sunday',
 }
+
+export enum EVENT_TYPE {
+  TRAINING = 'training',
+  ONE_TIME = 'one_time',
+}

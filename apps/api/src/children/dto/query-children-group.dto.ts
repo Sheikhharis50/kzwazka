@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsInt, Min, Max, IsBoolean } from 'class-validator';
+import { IsOptional, IsInt, Min } from 'class-validator';
 
 export class QueryChildrenGroupDto {
   @ApiPropertyOptional({
@@ -21,31 +21,18 @@ export class QueryChildrenGroupDto {
   group_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by status',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean({ message: 'Status must be a boolean' })
-  status?: boolean;
-
-  @ApiPropertyOptional({
     description: 'Page number for pagination',
-    example: 1,
-    default: 1,
+    example: '1',
+    default: '1',
   })
   @IsOptional()
-  @IsInt({ message: 'Page must be an integer' })
-  @Min(1, { message: 'Page must be at least 1' })
-  page?: number = 1;
+  page?: string;
 
   @ApiPropertyOptional({
     description: 'Number of items per page',
-    example: 10,
-    default: 10,
+    example: '10',
+    default: '10',
   })
   @IsOptional()
-  @IsInt({ message: 'Limit must be an integer' })
-  @Min(1, { message: 'Limit must be at least 1' })
-  @Max(100, { message: 'Limit cannot exceed 100' })
-  limit?: number = 10;
+  limit?: string;
 }

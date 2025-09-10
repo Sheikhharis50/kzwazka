@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { hasToken } = useAuth();
-  const { isLoading: isUserLoading, user } = useUser();
+  const { isLoading: isUserLoading = true, user } = useUser();
 
   React.useEffect(() => {
     if (pathname.includes('login') && hasToken && !!user && user.is_verified) {

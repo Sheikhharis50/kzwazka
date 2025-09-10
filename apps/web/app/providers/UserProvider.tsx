@@ -38,8 +38,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  console.log({ data, isLoading: isLoading.current });
-
   return (
     <UserContext.Provider
       value={{

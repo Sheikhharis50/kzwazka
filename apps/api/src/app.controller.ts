@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
+import { APIResponse } from './utils/response';
 
 @ApiTags('Health Check')
 @Controller()
@@ -20,7 +21,7 @@ export class AppController {
       example: 'OK',
     },
   })
-  health(): string {
+  health(): APIResponse<undefined> {
     return this.appService.health();
   }
 }

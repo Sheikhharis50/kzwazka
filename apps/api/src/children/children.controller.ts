@@ -42,10 +42,7 @@ import {
   ChildrenGroupWithChildrenAndGroupDto,
 } from './dto/children-group-response.dto';
 import { APIResponse } from 'src/utils/response';
-import {
-  ChildrenGroup,
-  ChildrenWithUserAndLocationAndGroup,
-} from './children.types';
+import { ChildrenGroup, IChildrenResponse } from './children.types';
 
 @ApiTags('Children')
 @Controller('api/children')
@@ -247,7 +244,7 @@ export class ChildrenController {
   @RequirePermission(['read_children'])
   findAll(
     @Query() query: QueryChildrenDto
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup[]>> {
+  ): Promise<APIResponse<IChildrenResponse[]>> {
     return this.childrenService.findAll(query);
   }
 
@@ -375,7 +372,7 @@ export class ChildrenController {
   })
   findOne(
     @Param('id', ParseIntPipe) id: number
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup>> {
+  ): Promise<APIResponse<IChildrenResponse>> {
     return this.childrenService.findOne(id);
   }
 
@@ -434,7 +431,7 @@ export class ChildrenController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateChildrenDto,
     @UploadedFile() photo_url?: Express.Multer.File
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
+  ): Promise<APIResponse<IChildrenResponse | undefined>> {
     return this.childrenService.update(id, body, photo_url);
   }
 
@@ -474,7 +471,7 @@ export class ChildrenController {
   })
   remove(
     @Param('id', ParseIntPipe) id: number
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
+  ): Promise<APIResponse<IChildrenResponse | undefined>> {
     return this.childrenService.remove(id);
   }
 

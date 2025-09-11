@@ -28,7 +28,7 @@ import { JwtService } from '@nestjs/jwt';
 import { FileStorageService } from '../services';
 import { UserService } from '../user/user.service';
 import { APIResponse } from 'src/utils/response';
-import { ChildrenWithUserAndLocationAndGroup } from './children.types';
+import { IChildrenResponse } from './children.types';
 
 @Injectable()
 export class ChildrenService {
@@ -246,7 +246,7 @@ export class ChildrenService {
    */
   async findAll(
     params: QueryChildrenDto
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup[]>> {
+  ): Promise<APIResponse<IChildrenResponse[]>> {
     const {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
@@ -384,7 +384,7 @@ export class ChildrenService {
       },
     }));
 
-    return APIResponse.success<ChildrenWithUserAndLocationAndGroup[]>({
+    return APIResponse.success<IChildrenResponse[]>({
       message: 'Children records fetched successfully',
       data: resultsWithPhotoUrl,
       pagination: {
@@ -400,9 +400,7 @@ export class ChildrenService {
   /**
    * Optimized findOne method
    */
-  async findOne(
-    id: number
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup>> {
+  async findOne(id: number): Promise<APIResponse<IChildrenResponse>> {
     const children = await this.dbService.db
       .select({
         id: childrenSchema.id,
@@ -458,7 +456,7 @@ export class ChildrenService {
       },
     };
 
-    return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+    return APIResponse.success<IChildrenResponse>({
       message: 'Children record fetched successfully',
       data: childrenWithPhotoUrl,
       statusCode: 200,
@@ -502,7 +500,7 @@ export class ChildrenService {
     id: number,
     updateChildrenDto: UpdateChildrenDto,
     photo_url?: Express.Multer.File
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
+  ): Promise<APIResponse<IChildrenResponse | undefined>> {
     const updateValues = {
       ...updateChildrenDto,
       ...(updateChildrenDto.dob && {
@@ -531,7 +529,7 @@ export class ChildrenService {
         .where(eq(childrenSchema.id, children.data.id))
         .returning();
 
-      return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+      return APIResponse.success<IChildrenResponse>({
         message: 'Children updated successfully',
         data: children.data,
         statusCode: 200,
@@ -545,7 +543,7 @@ export class ChildrenService {
 
   async remove(
     id: number
-  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
+  ): Promise<APIResponse<IChildrenResponse | undefined>> {
     const children = await this.findOne(id);
 
     if (children.data) {
@@ -561,7 +559,7 @@ export class ChildrenService {
         .delete(childrenSchema)
         .where(eq(childrenSchema.id, children.data.id));
 
-      return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+      return APIResponse.success<IChildrenResponse>({
         message: 'Children deleted successfully',
         data: children.data,
         statusCode: 200,

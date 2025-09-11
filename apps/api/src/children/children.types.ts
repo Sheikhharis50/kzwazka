@@ -1,4 +1,4 @@
-export type ChildrenWithUserAndLocationAndGroup = {
+export type IChildrenResponse = {
   id: number;
   dob: string;
   parent_first_name: string | null;

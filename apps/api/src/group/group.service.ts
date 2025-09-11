@@ -22,7 +22,7 @@ import { FileStorageService } from '../services/file-storage.service';
 import { GroupSessionService } from './groupSession.service';
 import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
 import { APIResponse } from 'src/utils/response';
-import { GroupWithFullDetails } from './group.types';
+import { IGroupResponse } from './group.types';
 
 @Injectable()
 export class GroupService {
@@ -121,7 +121,7 @@ export class GroupService {
   async findAll(params: {
     page: string;
     limit: string;
-  }): Promise<APIResponse<GroupWithFullDetails[] | undefined>> {
+  }): Promise<APIResponse<IGroupResponse[] | undefined>> {
     const {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
@@ -171,7 +171,7 @@ export class GroupService {
         .select({ count: sql<number>`COUNT(*)` })
         .from(groupSchema);
 
-      return APIResponse.success<GroupWithFullDetails[]>({
+      return APIResponse.success<IGroupResponse[]>({
         message: 'No groups found',
         data: [],
         pagination: {
@@ -246,7 +246,7 @@ export class GroupService {
       .select({ count: sql<number>`COUNT(*)` })
       .from(groupSchema);
 
-    return APIResponse.success<GroupWithFullDetails[]>({
+    return APIResponse.success<IGroupResponse[]>({
       message: 'Groups retrieved successfully',
       data: groupsWithSessions,
       pagination: {
@@ -262,9 +262,7 @@ export class GroupService {
   /**
    * Optimized findOne method
    */
-  async findOne(
-    id: number
-  ): Promise<APIResponse<GroupWithFullDetails | undefined>> {
+  async findOne(id: number): Promise<APIResponse<IGroupResponse | undefined>> {
     const group = await this.dbService.db
       .select({
         id: groupSchema.id,
@@ -323,7 +321,7 @@ export class GroupService {
       .orderBy(groupSessionSchema.day, groupSessionSchema.start_time);
 
     // Convert photo URLs to absolute URLs and prepare the response
-    const groupWithDetails: GroupWithFullDetails = {
+    const groupWithDetails: IGroupResponse = {
       ...group[0],
       photo_url: group[0].photo_url
         ? this.fileStorageService.getAbsoluteUrl(group[0].photo_url)
@@ -348,7 +346,7 @@ export class GroupService {
       sessions: sessions,
     };
 
-    return APIResponse.success<GroupWithFullDetails>({
+    return APIResponse.success<IGroupResponse>({
       message: 'Group retrieved successfully',
       data: groupWithDetails,
       statusCode: 200,

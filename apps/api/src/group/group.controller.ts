@@ -37,7 +37,7 @@ import { GroupSessionService } from './groupSession.service';
 import { UpdateGroupSessionDto } from './dto/update-groupsession.dto';
 import { APIResponse } from '../utils/response';
 import { Group } from '../db/schemas';
-import { GroupWithFullDetails } from './group.types';
+import { IGroupResponse } from './group.types';
 @ApiTags('Groups')
 @Controller('api/group')
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -187,7 +187,7 @@ export class GroupController {
   findAll(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10'
-  ): Promise<APIResponse<GroupWithFullDetails[] | undefined>> {
+  ): Promise<APIResponse<IGroupResponse[] | undefined>> {
     return this.groupService.findAll({ page, limit });
   }
 
@@ -268,7 +268,7 @@ export class GroupController {
   })
   findOne(
     @Param('id', ParseIntPipe) id: number
-  ): Promise<APIResponse<GroupWithFullDetails | undefined>> {
+  ): Promise<APIResponse<IGroupResponse | undefined>> {
     return this.groupService.findOne(id);
   }
 

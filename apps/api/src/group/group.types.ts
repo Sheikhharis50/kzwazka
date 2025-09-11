@@ -1,6 +1,6 @@
 import { GroupSession } from '../db/schemas';
 
-export type GroupWithFullDetails = {
+export type IGroupResponse = {
   id: number;
   name: string;
   description: string | null;

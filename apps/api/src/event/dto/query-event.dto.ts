@@ -5,7 +5,6 @@ import {
   IsInt,
   Min,
   IsDateString,
-  IsIn,
 } from 'class-validator';
 
 export class QueryEventDto {
@@ -18,16 +17,12 @@ export class QueryEventDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter events by status',
-    example: 'active',
-    enum: ['active', 'inactive', 'cancelled', 'completed', 'draft'],
+    description: 'Filter events by group ID',
+    example: 1,
   })
   @IsOptional()
-  @IsIn(['active', 'inactive', 'cancelled', 'completed', 'draft'], {
-    message:
-      'Status must be one of: active, inactive, cancelled, completed, draft',
-  })
-  status?: string;
+  @IsInt({ message: 'Group ID must be an integer' })
+  group_id?: number;
 
   @ApiPropertyOptional({
     description: 'Filter events by location ID',
@@ -57,14 +52,14 @@ export class QueryEventDto {
 
   @ApiPropertyOptional({
     description: 'Filter events from this date',
-    example: '2024-01-01T00:00:00Z',
+    example: '2024-01-01',
   })
   @IsOptional()
   @IsDateString({}, { message: 'From date must be a valid date string' })
   from_date?: string;
   @ApiPropertyOptional({
     description: 'Filter events until this date',
-    example: '2024-12-31T23:59:59Z',
+    example: '2024-12-31',
   })
   @IsOptional()
   @IsDateString({}, { message: 'To date must be a valid date string' })

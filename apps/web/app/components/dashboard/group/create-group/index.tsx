@@ -36,24 +36,9 @@ const CreateGroupForm = () => {
     name: 'group_sessions',
   });
 
-  const { error, file, handleFileChange, preview, removeFile } =
-    useFileUpload();
-  const { getAllCoaches } = useCoach();
-  const { getAllLocations } = useLocation();
-
-  const coachOptions =
-    getAllCoaches.data?.data?.map((coach: ICoach) => ({
-      value: coach?.id,
-      label: `${coach?.user?.first_name} ${coach?.user?.last_name}`,
-    })) || [];
-
-  const locationOptions =
-    getAllLocations.data?.data?.map((location: ILocation) => ({
-      value: location?.id,
-      label: [location?.address1, location?.address2, location?.city]
-        .filter(Boolean)
-        .join(', '),
-    })) || [];
+  const { error, handleFileChange, preview, removeFile } = useFileUpload();
+  const { coachOptions } = useCoach();
+  const { locationOptions } = useLocation();
 
   const onSubmit = (data: createGroupFormData) => {
     console.log(data);

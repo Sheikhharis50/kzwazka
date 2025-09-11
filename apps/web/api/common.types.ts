@@ -16,3 +16,8 @@ export interface APIError {
   message: string;
   status: number;
 }
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}

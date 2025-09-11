@@ -32,13 +32,26 @@ import {
   PermissionGuard,
   RequirePermission,
 } from 'src/auth/guards/permission.guard';
+import { ChildrenGroup, ChildrenGroupService } from './children-group.service';
+import { CreateChildrenGroupDto } from './dto/create-children-group.dto';
+import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
+import { UpdateChildrenGroupDto } from './dto/update-children-group.dto';
+import {
+  ChildrenGroupResponseDto,
+  PaginatedChildrenGroupResponseDto,
+  ChildrenGroupWithChildrenAndGroupDto,
+} from './dto/children-group-response.dto';
+import { APIResponse } from 'src/utils/response';
 
 @ApiTags('Children')
 @Controller('api/children')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth('JWT-auth')
 export class ChildrenController {
-  constructor(private readonly childrenService: ChildrenService) {}
+  constructor(
+    private readonly childrenService: ChildrenService,
+    private readonly childrenGroupService: ChildrenGroupService
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -230,6 +243,30 @@ export class ChildrenController {
   @RequirePermission(['read_children'])
   findAll(@Query() query: QueryChildrenDto) {
     return this.childrenService.findAll(query);
+  }
+
+  @ApiOperation({
+    summary:
+      'Get all children-group relationships with filtering and pagination',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'The children-group relationships have been successfully fetched.',
+    type: PaginatedChildrenGroupResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiBearerAuth()
+  @RequirePermission(['read_children_group'])
+  @Get('group')
+  @ApiQuery({ name: 'children_id', required: false, type: Number })
+  @ApiQuery({ name: 'group_id', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, default: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
+  findAllChildrenGroup(
+    @Query() queryDto: QueryChildrenGroupDto
+  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
+    return this.childrenGroupService.findAll(queryDto);
   }
 
   @Get('user/:userId')
@@ -429,5 +466,88 @@ export class ChildrenController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.childrenService.remove(id);
+  }
+
+  @ApiOperation({ summary: 'Assign multiple children to a group' })
+  @ApiResponse({
+    status: 201,
+    description: 'The children have been successfully assigned to the group.',
+    type: [ChildrenGroupResponseDto],
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 409,
+    description: 'Some children are already assigned to this group',
+  })
+  @ApiBearerAuth()
+  @RequirePermission(['create_children_group'])
+  @Post('group')
+  createChildrenGroup(
+    @Body() createChildrenGroupDto: CreateChildrenGroupDto
+  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
+    return this.childrenGroupService.create(createChildrenGroupDto);
+  }
+
+  @ApiOperation({ summary: 'Get a specific children-group relationship by ID' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'The children-group relationship has been successfully fetched.',
+    type: ChildrenGroupWithChildrenAndGroupDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 404,
+    description: 'Children-group relationship not found',
+  })
+  @ApiBearerAuth()
+  @RequirePermission(['read_children_group'])
+  @Get('group/:id')
+  findOneChildrenGroup(@Param('id') id: string) {
+    return this.childrenGroupService.findOne(+id);
+  }
+
+  @ApiOperation({ summary: 'Update a children-group relationship by ID' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'The children-group relationship has been successfully updated.',
+    type: ChildrenGroupResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 404,
+    description: 'Children-group relationship not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Child is already assigned to this group',
+  })
+  @ApiBearerAuth()
+  @RequirePermission(['update_children_group'])
+  @Patch('group/:id')
+  updateChildrenGroup(
+    @Param('id') id: string,
+    @Body() updateChildrenGroupDto: UpdateChildrenGroupDto
+  ) {
+    return this.childrenGroupService.update(+id, updateChildrenGroupDto);
+  }
+
+  @ApiOperation({ summary: 'Remove a child from a group' })
+  @ApiResponse({
+    status: 200,
+    description: 'The child has been successfully removed from the group.',
+    type: ChildrenGroupResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 404,
+    description: 'Children-group relationship not found',
+  })
+  @ApiBearerAuth()
+  @RequirePermission(['delete_children_group'])
+  @Delete('group/:id')
+  removeChildrenGroup(@Param('id') id: string) {
+    return this.childrenGroupService.remove(+id);
   }
 }

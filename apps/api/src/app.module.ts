@@ -13,7 +13,6 @@ import { MessageModule } from './message/message.module';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AttendanceModule } from './attendance/attendance.module';
-import { ChildrenGroupModule } from './children-group/children-group.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -33,7 +32,6 @@ import { ChildrenGroupModule } from './children-group/children-group.module';
     CoachModule,
     MessageModule,
     AttendanceModule,
-    ChildrenGroupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

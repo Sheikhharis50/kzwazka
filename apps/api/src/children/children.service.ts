@@ -17,6 +17,7 @@ import {
   userSchema,
   locationSchema,
   childrenGroupSchema,
+  groupSchema,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
@@ -26,6 +27,8 @@ import { generateToken } from '../utils/auth.utils';
 import { JwtService } from '@nestjs/jwt';
 import { FileStorageService } from '../services';
 import { UserService } from '../user/user.service';
+import { APIResponse } from 'src/utils/response';
+import { ChildrenWithUserAndLocationAndGroup } from './children.types';
 
 @Injectable()
 export class ChildrenService {
@@ -241,12 +244,15 @@ export class ChildrenService {
   /**
    * Optimized findAll method with improved search and performance
    */
-  async findAll(params: QueryChildrenDto) {
+  async findAll(
+    params: QueryChildrenDto
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup[]>> {
     const {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
       search,
       location_id,
+      group_id,
       sort_by = 'created_at',
       sort_order = 'desc',
     } = params;
@@ -268,6 +274,7 @@ export class ChildrenService {
           last_name: userSchema.last_name,
           email: userSchema.email,
           photo_url: userSchema.photo_url,
+          phone: userSchema.phone,
         },
         location: {
           id: locationSchema.id,
@@ -276,9 +283,18 @@ export class ChildrenService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
+        group: {
+          id: groupSchema.id,
+          name: groupSchema.name,
+        },
       })
       .from(childrenSchema)
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .leftJoin(
+        childrenGroupSchema,
+        eq(childrenSchema.id, childrenGroupSchema.children_id)
+      )
+      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
       .leftJoin(
         locationSchema,
         eq(childrenSchema.location_id, locationSchema.id)
@@ -303,6 +319,14 @@ export class ChildrenService {
       if (searchCondition) {
         whereConditions.push(searchCondition);
       }
+    }
+
+    // Apply group filter
+    if (group_id) {
+      whereConditions.push(
+        eq(childrenGroupSchema.children_id, childrenSchema.id)
+      );
+      whereConditions.push(eq(childrenGroupSchema.group_id, group_id));
     }
 
     // Apply location filter
@@ -360,19 +384,25 @@ export class ChildrenService {
       },
     }));
 
-    return {
-      message: 'Children records',
+    return APIResponse.success<ChildrenWithUserAndLocationAndGroup[]>({
+      message: 'Children records fetched successfully',
       data: resultsWithPhotoUrl,
-      page,
-      limit,
-      count,
-    };
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        count,
+        totalPages: Math.ceil(count / Number(limit)),
+      },
+      statusCode: 200,
+    });
   }
 
   /**
    * Optimized findOne method
    */
-  async findOne(id: number) {
+  async findOne(
+    id: number
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup>> {
     const children = await this.dbService.db
       .select({
         id: childrenSchema.id,
@@ -395,6 +425,10 @@ export class ChildrenService {
           city: locationSchema.city,
           state: locationSchema.state,
         },
+        group: {
+          id: groupSchema.id,
+          name: groupSchema.name,
+        },
       })
       .from(childrenSchema)
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
@@ -402,6 +436,11 @@ export class ChildrenService {
         locationSchema,
         eq(childrenSchema.location_id, locationSchema.id)
       )
+      .leftJoin(
+        childrenGroupSchema,
+        eq(childrenSchema.id, childrenGroupSchema.children_id)
+      )
+      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
@@ -419,7 +458,11 @@ export class ChildrenService {
       },
     };
 
-    return childrenWithPhotoUrl;
+    return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+      message: 'Children record fetched successfully',
+      data: childrenWithPhotoUrl,
+      statusCode: 200,
+    });
   }
 
   async findByUserId(userId: number) {
@@ -459,7 +502,7 @@ export class ChildrenService {
     id: number,
     updateChildrenDto: UpdateChildrenDto,
     photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
     const updateValues = {
       ...updateChildrenDto,
       ...(updateChildrenDto.dob && {
@@ -469,54 +512,65 @@ export class ChildrenService {
     };
     const children = await this.findOne(id);
 
-    if (!children) {
-      throw new NotFoundException('Children not found');
+    if (children.data) {
+      const user = await this.userService.findOne(children.data.user.id);
+      if (!user) {
+        return APIResponse.error<undefined>({
+          message: 'User not found',
+          statusCode: 404,
+        });
+      }
+      await this.userService.update(
+        children.data.user.id,
+        updateValues,
+        photo_url
+      );
+      await this.dbService.db
+        .update(childrenSchema)
+        .set(updateValues)
+        .where(eq(childrenSchema.id, children.data.id))
+        .returning();
+
+      return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+        message: 'Children updated successfully',
+        data: children.data,
+        statusCode: 200,
+      });
     }
-
-    const user = await this.userService.findOne(children.user.id);
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    await this.userService.update(children.user.id, updateValues, photo_url);
-
-    const updatedChildren = await this.dbService.db
-      .update(childrenSchema)
-      .set(updateValues)
-      .where(eq(childrenSchema.id, children.id))
-      .returning();
-
-    return {
-      message: 'Children updated successfully',
-      data: {
-        children: updatedChildren[0],
-      },
-    };
+    return APIResponse.error<undefined>({
+      message: 'Children not found',
+      statusCode: 404,
+    });
   }
 
-  async remove(id: number) {
+  async remove(
+    id: number
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
     const children = await this.findOne(id);
 
-    if (!children) {
-      throw new NotFoundException('Children not found');
+    if (children.data) {
+      const user = await this.userService.findOne(children.data.user.id);
+      if (!user) {
+        return APIResponse.error<undefined>({
+          message: 'User not found',
+          statusCode: 404,
+        });
+      }
+      await this.userService.remove(children.data.user.id);
+      await this.dbService.db
+        .delete(childrenSchema)
+        .where(eq(childrenSchema.id, children.data.id));
+
+      return APIResponse.success<ChildrenWithUserAndLocationAndGroup>({
+        message: 'Children deleted successfully',
+        data: children.data,
+        statusCode: 200,
+      });
     }
-
-    const user = await this.userService.findOne(children.user.id);
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    await this.userService.remove(children.user.id);
-
-    await this.dbService.db
-      .delete(childrenSchema)
-      .where(eq(childrenSchema.id, children.id));
-
-    return {
-      message: 'Children deleted successfully',
-    };
+    return APIResponse.error<undefined>({
+      message: 'Children not found',
+      statusCode: 404,
+    });
   }
 
   async assignGroup(childrenId: number, groupId: number) {

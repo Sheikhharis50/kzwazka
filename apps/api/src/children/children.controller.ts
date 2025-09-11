@@ -32,7 +32,7 @@ import {
   PermissionGuard,
   RequirePermission,
 } from 'src/auth/guards/permission.guard';
-import { ChildrenGroup, ChildrenGroupService } from './children-group.service';
+import { ChildrenGroupService } from './children-group.service';
 import { CreateChildrenGroupDto } from './dto/create-children-group.dto';
 import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
 import { UpdateChildrenGroupDto } from './dto/update-children-group.dto';
@@ -42,6 +42,10 @@ import {
   ChildrenGroupWithChildrenAndGroupDto,
 } from './dto/children-group-response.dto';
 import { APIResponse } from 'src/utils/response';
+import {
+  ChildrenGroup,
+  ChildrenWithUserAndLocationAndGroup,
+} from './children.types';
 
 @ApiTags('Children')
 @Controller('api/children')
@@ -241,7 +245,9 @@ export class ChildrenController {
     description: 'Unauthorized - Invalid JWT token',
   })
   @RequirePermission(['read_children'])
-  findAll(@Query() query: QueryChildrenDto) {
+  findAll(
+    @Query() query: QueryChildrenDto
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup[]>> {
     return this.childrenService.findAll(query);
   }
 
@@ -367,7 +373,9 @@ export class ChildrenController {
     status: 404,
     description: 'Children not found',
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup>> {
     return this.childrenService.findOne(id);
   }
 
@@ -426,7 +434,7 @@ export class ChildrenController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateChildrenDto,
     @UploadedFile() photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
     return this.childrenService.update(id, body, photo_url);
   }
 
@@ -464,7 +472,9 @@ export class ChildrenController {
     status: 404,
     description: 'Children not found',
   })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<APIResponse<ChildrenWithUserAndLocationAndGroup | undefined>> {
     return this.childrenService.remove(id);
   }
 

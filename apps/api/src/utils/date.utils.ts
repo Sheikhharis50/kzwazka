@@ -23,3 +23,10 @@ export function end_of_day_date(date: string | Date): Date {
   dateObj.setHours(23, 59, 59, 999);
   return dateObj;
 }
+
+export function combineDateAndTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(':').map(Number);
+  const combined = new Date(date);
+  combined.setHours(hours, minutes, 0, 0);
+  return combined;
+}

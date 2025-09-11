@@ -39,7 +39,6 @@ export class EmailService {
 
       // Simple verification
       await this.transporter.verify();
-      this.logger.log('Email transporter initialized successfully');
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';

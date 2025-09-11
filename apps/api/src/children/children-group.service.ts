@@ -17,22 +17,7 @@ import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
 import { GroupService } from '../group/group.service';
 import { APP_CONSTANTS, getPageOffset } from '../utils';
 import { APIResponse } from '../utils/response';
-
-interface ChildrenGroupUpdateValues {
-  children_id?: number;
-  group_id?: number;
-  status?: boolean;
-  updated_at: Date;
-}
-
-export interface ChildrenGroup {
-  id: number;
-  children_id: number;
-  group_id: number;
-  status: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
+import { ChildrenGroup, ChildrenGroupUpdateValues } from './children.types';
 
 @Injectable()
 export class ChildrenGroupService {

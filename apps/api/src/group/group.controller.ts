@@ -35,6 +35,9 @@ import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
 import { QueryGroupSessionDto } from './dto/query-groupsession.dto';
 import { GroupSessionService } from './groupSession.service';
 import { UpdateGroupSessionDto } from './dto/update-groupsession.dto';
+import { APIResponse } from '../utils/response';
+import { Group } from '../db/schemas';
+import { IGroupResponse } from './group.types';
 @ApiTags('Groups')
 @Controller('api/group')
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -100,7 +103,7 @@ export class GroupController {
   create(
     @Body() createGroupDto: CreateGroupDto,
     @UploadedFile() photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<Group | undefined>> {
     return this.groupService.create(createGroupDto, photo_url);
   }
 
@@ -184,7 +187,7 @@ export class GroupController {
   findAll(
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10'
-  ) {
+  ): Promise<APIResponse<IGroupResponse[] | undefined>> {
     return this.groupService.findAll({ page, limit });
   }
 
@@ -263,7 +266,9 @@ export class GroupController {
     status: 404,
     description: 'Group not found',
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<APIResponse<IGroupResponse | undefined>> {
     return this.groupService.findOne(id);
   }
 
@@ -310,7 +315,7 @@ export class GroupController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateGroupDto: UpdateGroupDto,
     @UploadedFile() photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<Group | undefined>> {
     return this.groupService.update(id, updateGroupDto, photo_url);
   }
 
@@ -338,7 +343,9 @@ export class GroupController {
     status: 404,
     description: 'Group not found',
   })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<APIResponse<Group | undefined>> {
     return this.groupService.remove(id);
   }
 

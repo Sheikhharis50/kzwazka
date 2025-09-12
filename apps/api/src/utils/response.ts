@@ -46,7 +46,7 @@ export class APIResponse<T> {
     statusCode = 200,
     pagination = undefined,
   }: APISuccessResponsePayload<T>): APIResponse<T> {
-    return new APIResponse({ data, message, statusCode, ...pagination });
+    return new APIResponse({ data, message, statusCode, pagination });
   }
 
   static error<T>({

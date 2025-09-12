@@ -1,11 +1,8 @@
+import { Injectable, Logger } from '@nestjs/common';
 import {
-  ConflictException,
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import { groupSessionSchema } from 'src/db/schemas/groupSessionSchema';
+  GroupSession,
+  groupSessionSchema,
+} from 'src/db/schemas/groupSessionSchema';
 import { and, eq, ne, SQL, sql } from 'drizzle-orm';
 import { DatabaseService } from '../db/drizzle.service';
 import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
@@ -14,13 +11,17 @@ import { groupSchema } from 'src/db/schemas/groupSchema';
 import { locationSchema } from 'src/db/schemas/locationSchema';
 import { getPageOffset } from 'src/utils';
 import { QueryGroupSessionDto } from './dto/query-groupsession.dto';
+import { APIResponse } from 'src/utils/response';
+import { IGroupSessionResponse } from './group.types';
 
 @Injectable()
 export class GroupSessionService {
   private readonly logger = new Logger(GroupSessionService.name);
   constructor(private readonly dbService: DatabaseService) {}
 
-  async createGroupSession(groupSession: CreateGroupSessionDto) {
+  async createGroupSession(
+    groupSession: CreateGroupSessionDto
+  ): Promise<APIResponse<GroupSession | undefined>> {
     // Validate basic input
     this.timeValidationCheck(groupSession);
     this.dayValidationCheck(groupSession);
@@ -28,7 +29,10 @@ export class GroupSessionService {
     // Check if the group exists and get its location
     const groupInfo = await this.getGroupWithLocation(groupSession.group_id);
     if (!groupInfo) {
-      throw new NotFoundException('Group not found');
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
     }
 
     // Check for conflicts at the same location
@@ -43,10 +47,11 @@ export class GroupSessionService {
       .values(groupSession)
       .returning();
 
-    return {
+    return APIResponse.success<GroupSession>({
       message: 'Group session created successfully',
       data: newGroupSession[0],
-    };
+      statusCode: 201,
+    });
   }
 
   /**
@@ -55,7 +60,10 @@ export class GroupSessionService {
   private timeValidationCheck(groupSession: CreateGroupSessionDto) {
     const isValidTime = groupSession.start_time < groupSession.end_time;
     if (!isValidTime) {
-      throw new BadRequestException('Start time must be before end time');
+      return APIResponse.error<undefined>({
+        message: 'Start time must be before end time',
+        statusCode: 400,
+      });
     }
   }
 
@@ -67,9 +75,10 @@ export class GroupSessionService {
       groupSession.day
     );
     if (!isValidDay) {
-      throw new BadRequestException(
-        `Invalid day. Must be one of: ${Object.values(GROUP_SESSION_DAY).join(', ')}`
-      );
+      return APIResponse.error<undefined>({
+        message: `Invalid day. Must be one of: ${Object.values(GROUP_SESSION_DAY).join(', ')}`,
+        statusCode: 400,
+      });
     }
   }
 
@@ -144,11 +153,13 @@ export class GroupSessionService {
         .filter(Boolean)
         .join(', ');
 
-      throw new ConflictException(
-        `Time conflict at location "${conflict.location_name || 'Unnamed Location'}" (${locationStr}). ` +
+      return APIResponse.error<undefined>({
+        message:
+          `Time conflict at location "${conflict.location_name || 'Unnamed Location'}" (${locationStr}). ` +
           `Another session "${conflict.group_name}" is scheduled on ${conflict.day} from ${conflict.start_time} to ${conflict.end_time}. ` +
-          `Your session (${newSession.start_time} - ${newSession.end_time}) overlaps with this existing session.`
-      );
+          `Your session (${newSession.start_time} - ${newSession.end_time}) overlaps with this existing session.`,
+        statusCode: 409,
+      });
     }
   }
 
@@ -172,9 +183,10 @@ export class GroupSessionService {
       .limit(1);
 
     if (existingGroupSession.length > 0) {
-      throw new ConflictException(
-        `This exact session already exists for this group on ${groupSession.day} from ${groupSession.start_time} to ${groupSession.end_time}`
-      );
+      return APIResponse.error<undefined>({
+        message: `This exact session already exists for this group on ${groupSession.day} from ${groupSession.start_time} to ${groupSession.end_time}`,
+        statusCode: 409,
+      });
     }
   }
 
@@ -184,17 +196,21 @@ export class GroupSessionService {
   async createMultipleGroupSessions(
     groupId: number,
     sessions: CreateGroupSessionDto[]
-  ) {
+  ): Promise<APIResponse<GroupSession[] | undefined>> {
     if (!sessions || sessions.length === 0) {
-      throw new BadRequestException('No sessions provided');
+      return APIResponse.error<undefined>({
+        message: 'No sessions provided',
+        statusCode: 400,
+      });
     }
 
     // Validate all sessions first
     for (const session of sessions) {
       if (session.group_id !== groupId) {
-        throw new BadRequestException(
-          'All sessions must belong to the same group'
-        );
+        return APIResponse.error<undefined>({
+          message: 'All sessions must belong to the same group',
+          statusCode: 400,
+        });
       }
       this.timeValidationCheck(session);
       this.dayValidationCheck(session);
@@ -203,7 +219,10 @@ export class GroupSessionService {
     // Get group information
     const groupInfo = await this.getGroupWithLocation(groupId);
     if (!groupInfo) {
-      throw new NotFoundException('Group not found');
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
     }
 
     // Check for conflicts for each session
@@ -221,10 +240,11 @@ export class GroupSessionService {
       .values(sessions)
       .returning();
 
-    return {
+    return APIResponse.success<GroupSession[]>({
       message: `Successfully created ${createdSessions.length} group sessions`,
       data: createdSessions,
-    };
+      statusCode: 201,
+    });
   }
 
   /**
@@ -243,10 +263,12 @@ export class GroupSessionService {
             session1.end_time > session2.start_time;
 
           if (overlap) {
-            throw new ConflictException(
-              `Conflict between sessions: ${session1.day} ${session1.start_time}-${session1.end_time} ` +
-                `overlaps with ${session2.day} ${session2.start_time}-${session2.end_time}`
-            );
+            return APIResponse.error<undefined>({
+              message:
+                `Conflict between sessions: ${session1.day} ${session1.start_time}-${session1.end_time} ` +
+                `overlaps with ${session2.day} ${session2.start_time}-${session2.end_time}`,
+              statusCode: 409,
+            });
           }
         }
       }
@@ -259,7 +281,7 @@ export class GroupSessionService {
   async updateGroupSession(
     sessionId: number,
     updates: Partial<CreateGroupSessionDto>
-  ) {
+  ): Promise<APIResponse<GroupSession | undefined>> {
     // Get existing session
     const existingSession = await this.dbService.db
       .select()
@@ -268,7 +290,10 @@ export class GroupSessionService {
       .limit(1);
 
     if (existingSession.length === 0) {
-      throw new NotFoundException('Group session not found');
+      return APIResponse.error<undefined>({
+        message: 'Group session not found',
+        statusCode: 404,
+      });
     }
 
     const current = existingSession[0];
@@ -288,7 +313,10 @@ export class GroupSessionService {
     // Get group information
     const groupInfo = await this.getGroupWithLocation(updatedSession.group_id);
     if (!groupInfo) {
-      throw new NotFoundException('Group not found');
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
     }
 
     // Check for conflicts, excluding the current session
@@ -308,10 +336,11 @@ export class GroupSessionService {
       .where(eq(groupSessionSchema.id, sessionId))
       .returning();
 
-    return {
+    return APIResponse.success<GroupSession>({
       message: 'Group session updated successfully',
       data: updated[0],
-    };
+      statusCode: 200,
+    });
   }
 
   /**
@@ -346,14 +375,18 @@ export class GroupSessionService {
 
     if (conflictingSessions.length > 0) {
       const conflict = conflictingSessions[0];
-      throw new ConflictException(
-        `Time conflict with existing session "${conflict.group_name}" at "${conflict.location_name}" ` +
-          `from ${conflict.start_time} to ${conflict.end_time}`
-      );
+      return APIResponse.error<undefined>({
+        message:
+          `Time conflict with existing session "${conflict.group_name}" at "${conflict.location_name}" ` +
+          `from ${conflict.start_time} to ${conflict.end_time}`,
+        statusCode: 409,
+      });
     }
   }
 
-  async findAllGroupSessions(params: QueryGroupSessionDto) {
+  async findAllGroupSessions(
+    params: QueryGroupSessionDto
+  ): Promise<APIResponse<IGroupSessionResponse[] | undefined>> {
     try {
       const offset = getPageOffset(
         params.page ?? '1',
@@ -404,12 +437,17 @@ export class GroupSessionService {
 
       const total = totalResult[0]?.count || 0;
 
-      const result = {
+      const result = APIResponse.success<IGroupSessionResponse[]>({
+        message: 'Group sessions found successfully',
         data: sessions,
-        total,
-        page: params.page,
-        limit: params.limit,
-      };
+        pagination: {
+          count: total,
+          page: Number(params.page),
+          limit: Number(params.limit),
+          totalPages: Math.ceil(total / Number(params.limit)),
+        },
+        statusCode: 200,
+      });
 
       return result;
     } catch (error) {
@@ -418,7 +456,9 @@ export class GroupSessionService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(
+    id: number
+  ): Promise<APIResponse<IGroupSessionResponse | undefined>> {
     const session = await this.dbService.db
       .select({
         id: groupSessionSchema.id,
@@ -437,9 +477,16 @@ export class GroupSessionService {
       .limit(1);
 
     if (session.length === 0) {
-      throw new NotFoundException('Group session not found');
+      return APIResponse.error<undefined>({
+        message: 'Group session not found',
+        statusCode: 404,
+      });
     }
 
-    return session[0];
+    return APIResponse.success<IGroupSessionResponse>({
+      message: 'Group session found successfully',
+      data: session[0],
+      statusCode: 200,
+    });
   }
 }

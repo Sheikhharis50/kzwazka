@@ -482,7 +482,7 @@ export class CoachService {
       }
 
       if (coach.data) {
-        const user = await this.userService.findOne(coach.data.user.id!);
+        const user = await this.userService.findOne(coach.data.user.id);
         if (!user) {
           return APIResponse.error<undefined>({
             message: 'User not found',

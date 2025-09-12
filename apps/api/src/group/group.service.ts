@@ -20,7 +20,6 @@ import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { FileStorageService } from '../services/file-storage.service';
 import { GroupSessionService } from './groupSession.service';
-import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
 import { APIResponse } from '../utils/response';
 import { IGroupResponse } from './group.types';
 
@@ -36,73 +35,102 @@ export class GroupService {
 
   async create(
     createGroupDto: CreateGroupDto,
-    photo_url?: Express.Multer.File,
-    sessions?: CreateGroupSessionDto[]
+    photo_url?: Express.Multer.File
   ): Promise<APIResponse<Group | undefined>> {
-    try {
-      // Validate that min_age is less than max_age
-      if (createGroupDto.min_age >= createGroupDto.max_age) {
+    // Validate age range
+    if (createGroupDto.min_age >= createGroupDto.max_age) {
+      return APIResponse.error<undefined>({
+        message: 'Minimum age must be less than maximum age',
+        statusCode: 400,
+      });
+    }
+
+    // Check for duplicate group name at the same location
+    if (createGroupDto.location_id) {
+      const [existingGroup] = await this.dbService.db
+        .select({ id: groupSchema.id })
+        .from(groupSchema)
+        .where(
+          and(
+            eq(groupSchema.name, createGroupDto.name),
+            eq(groupSchema.location_id, createGroupDto.location_id)
+          )
+        )
+        .limit(1);
+
+      if (existingGroup) {
         return APIResponse.error<undefined>({
-          message: 'Minimum age must be less than maximum age',
+          message: 'Group with this name already exists at this location',
+          statusCode: 409,
+        });
+      }
+    }
+
+    // Validate sessions BEFORE creating the group
+    if (createGroupDto.sessions && createGroupDto.sessions.length > 0) {
+      const validationResult =
+        await this.groupSessionService.validateSessionsBeforeGroupCreation(
+          createGroupDto.sessions,
+          createGroupDto.location_id || null
+        );
+
+      if (!validationResult.valid) {
+        return APIResponse.error<undefined>({
+          message: `Cannot create group: ${validationResult.error}`,
           statusCode: 400,
         });
       }
-
-      // Check if group with this name already exists at the same location
-      if (createGroupDto.location_id) {
-        const existingGroup = await this.dbService.db
-          .select()
-          .from(groupSchema)
-          .where(
-            and(
-              eq(groupSchema.name, createGroupDto.name),
-              eq(groupSchema.location_id, createGroupDto.location_id)
-            )
-          )
-          .limit(1);
-
-        if (existingGroup.length > 0) {
-          return APIResponse.error<undefined>({
-            message: 'Group with this name already exists at this location',
-            statusCode: 400,
-          });
-        }
-      }
-
-      const newGroup = await this.dbService.db
-        .insert(groupSchema)
-        .values({
-          ...createGroupDto,
-        })
-        .returning();
-
-      if (sessions && sessions.length > 0) {
-        for (const session of sessions) {
-          await this.groupSessionService.createGroupSession({
-            ...session,
-            group_id: newGroup[0].id,
-          });
-        }
-      }
-
-      if (photo_url) {
-        await this.updatePhotoUrl(newGroup[0].id, photo_url);
-      }
-
-      this.logger.log(`Group created successfully with ID: ${newGroup[0].id}`);
-
-      return APIResponse.success<Group>({
-        message: 'Group created successfully',
-        data: newGroup[0],
-        statusCode: 201,
-      });
-    } catch (error) {
-      this.logger.error(`Failed to create group: ${(error as Error).message}`);
-      return APIResponse.error<undefined>({
-        message: 'Failed to create group',
-        statusCode: 500,
-      });
     }
+
+    // Create the group
+    const [newGroup] = await this.dbService.db
+      .insert(groupSchema)
+      .values({
+        name: createGroupDto.name,
+        description: createGroupDto.description,
+        min_age: createGroupDto.min_age,
+        max_age: createGroupDto.max_age,
+        skill_level: createGroupDto.skill_level,
+        max_group_size: createGroupDto.max_group_size,
+        location_id: createGroupDto.location_id,
+        coach_id: createGroupDto.coach_id,
+      })
+      .returning();
+
+    if (createGroupDto.sessions && createGroupDto.sessions.length > 0) {
+      const result = await this.groupSessionService.createMultipleGroupSessions(
+        newGroup.id,
+        createGroupDto.sessions.map((session) => ({
+          ...session,
+          group_id: newGroup.id,
+        }))
+      );
+
+      // If session creation fails, we need to rollback by deleting the group
+      if (result.statusCode !== 201) {
+        await this.dbService.db
+          .delete(groupSchema)
+          .where(eq(groupSchema.id, newGroup.id));
+
+        return APIResponse.error<undefined>({
+          message: `Group creation failed: ${result.message}`,
+          statusCode: 400,
+        });
+      }
+    }
+
+    // Handle photo upload
+    if (photo_url) {
+      await this.updatePhotoUrl(newGroup.id, photo_url);
+    }
+
+    this.logger.log(`Group created successfully with ID: ${newGroup.id}`);
+
+    return APIResponse.success<Group>({
+      message: 'Group created successfully',
+      data: newGroup,
+      statusCode: 201,
+    });
   }
 
   /**

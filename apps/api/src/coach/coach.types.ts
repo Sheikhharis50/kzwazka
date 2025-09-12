@@ -3,7 +3,7 @@ export type CoachWithUserAndLocationGroup = {
   created_at: Date;
   updated_at: Date;
   user: {
-    id: number | null;
+    id: number;
     email: string;
     first_name: string;
     last_name: string | null;

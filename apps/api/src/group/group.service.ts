@@ -21,7 +21,7 @@ import { getPageOffset } from '../utils/pagination';
 import { FileStorageService } from '../services/file-storage.service';
 import { GroupSessionService } from './groupSession.service';
 import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
-import { APIResponse } from 'src/utils/response';
+import { APIResponse } from '../utils/response';
 import { IGroupResponse } from './group.types';
 
 @Injectable()
@@ -167,20 +167,9 @@ export class GroupService {
       .limit(Number(limit));
 
     if (groups.length === 0) {
-      const [{ count }] = await this.dbService.db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(groupSchema);
-
-      return APIResponse.success<IGroupResponse[]>({
+      return APIResponse.error<undefined>({
         message: 'No groups found',
-        data: [],
-        pagination: {
-          count: count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / Number(limit)) || 1,
-        },
-        statusCode: 200,
+        statusCode: 404,
       });
     }
 
@@ -253,7 +242,7 @@ export class GroupService {
         count: count,
         page: Number(page),
         limit: Number(limit),
-        totalPages: Math.ceil(count / Number(limit)) || 1,
+        totalPages: Math.ceil(count / Number(limit)),
       },
       statusCode: 200,
     });

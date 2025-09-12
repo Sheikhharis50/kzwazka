@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { CreateCoachDto } from './dto/create-coach.dto';
 import { UpdateCoachDto } from './dto/update-coach.dto';
 import { DatabaseService } from '../db/drizzle.service';
@@ -14,11 +9,14 @@ import {
   userSchema,
   locationSchema,
   groupSchema,
+  Coach,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { QueryCoachDto } from './dto/query-coach.dto';
 import { FileStorageService } from '../services';
+import { APIResponse } from '../utils/response';
+import { CoachWithUserAndLocationGroup } from './coach.types';
 
 @Injectable()
 export class CoachService {
@@ -33,14 +31,17 @@ export class CoachService {
   async create(
     createCoachDto: CreateCoachDto,
     photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<Coach | undefined>> {
     try {
       // Check if coach with this email already exists
       const existingUser = await this.userService.findByEmail(
         createCoachDto.email
       );
       if (existingUser) {
-        throw new ConflictException('User with this email already exists');
+        return APIResponse.error<undefined>({
+          message: 'User with this email already exists',
+          statusCode: 409,
+        });
       }
 
       // Handle photo upload if provided
@@ -48,7 +49,10 @@ export class CoachService {
       // Get the coach role
       const coachRole = await this.userService.getRoleByName('coach');
       if (!coachRole) {
-        throw new Error('Coach role not found in system');
+        return APIResponse.error<undefined>({
+          message: 'Coach role not found in system',
+          statusCode: 500,
+        });
       }
 
       // Create user first
@@ -78,24 +82,30 @@ export class CoachService {
 
       this.logger.log(`Coach created successfully with ID: ${newCoach[0].id}`);
 
-      return {
+      return APIResponse.success({
         message: 'Coach created successfully',
         data: {
-          coach: newCoach[0],
+          ...newCoach[0],
           user: {
             id: newUser.id,
             email: newUser.email,
             first_name: newUser.first_name,
             last_name: newUser.last_name,
             phone: newUser.phone,
-            role: coachRole.name,
+            role_id: newUser.role_id,
+            is_active: newUser.is_active,
+            is_verified: newUser.is_verified,
             photo_url: newUser.photo_url,
           },
         },
-      };
+        statusCode: 201,
+      });
     } catch (error) {
       this.logger.error(`Failed to create coach: ${(error as Error).message}`);
-      throw error;
+      return APIResponse.error<undefined>({
+        message: 'Failed to create coach',
+        statusCode: 500,
+      });
     }
   }
 
@@ -176,7 +186,9 @@ export class CoachService {
   /**
    * Optimized findAll method - eliminates N+1 problem with separate queries
    */
-  async findAll(params: QueryCoachDto) {
+  async findAll(
+    params: QueryCoachDto
+  ): Promise<APIResponse<CoachWithUserAndLocationGroup[]>> {
     const {
       page = 1,
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT,
@@ -274,13 +286,17 @@ export class CoachService {
 
     // If no coaches found, return early
     if (coaches.length === 0) {
-      return {
-        message: 'Coaches retrieved successfully',
+      return APIResponse.success({
+        message: 'No coaches found',
         data: [],
-        page,
-        limit,
-        count,
-      };
+        pagination: {
+          count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit),
+        },
+        statusCode: 200,
+      });
     }
 
     // Extract coach IDs for batch group fetching (eliminates N+1)
@@ -352,126 +368,146 @@ export class CoachService {
       },
     }));
 
-    return {
+    return APIResponse.success<CoachWithUserAndLocationGroup[]>({
       message: 'Coaches retrieved successfully',
       data: resultsWithPhotoUrl,
-      page,
-      limit,
-      count,
-    };
+      pagination: {
+        count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      },
+      statusCode: 200,
+    });
   }
 
   /**
    * Optimized findOne method - eliminates N+1 with separate group query
    */
-  async findOne(id: number) {
-    // Fetch coach data without groups first
-    const coach = await this.dbService.db
-      .select({
-        id: coachSchema.id,
-        created_at: coachSchema.created_at,
-        updated_at: coachSchema.updated_at,
+  async findOne(
+    id: number
+  ): Promise<APIResponse<CoachWithUserAndLocationGroup | undefined>> {
+    try {
+      // Fetch coach data without groups first
+      const coach = await this.dbService.db
+        .select({
+          id: coachSchema.id,
+          created_at: coachSchema.created_at,
+          updated_at: coachSchema.updated_at,
+          user: {
+            id: userSchema.id,
+            first_name: userSchema.first_name,
+            last_name: userSchema.last_name,
+            email: userSchema.email,
+            is_active: userSchema.is_active,
+            phone: userSchema.phone,
+            is_verified: userSchema.is_verified,
+            photo_url: userSchema.photo_url,
+          },
+          location: {
+            id: locationSchema.id,
+            name: locationSchema.name,
+            address1: locationSchema.address1,
+            city: locationSchema.city,
+            state: locationSchema.state,
+          },
+        })
+        .from(coachSchema)
+        .innerJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
+        .leftJoin(
+          locationSchema,
+          eq(coachSchema.location_id, locationSchema.id)
+        )
+        .where(eq(coachSchema.id, id))
+        .limit(1);
+
+      if (coach.length === 0) {
+        throw new NotFoundException('Coach not found');
+      }
+
+      // Fetch groups for this coach in a separate query (no N+1)
+      const groups = await this.dbService.db
+        .select({
+          id: groupSchema.id,
+          name: groupSchema.name,
+          description: groupSchema.description,
+          min_age: groupSchema.min_age,
+          max_age: groupSchema.max_age,
+          skill_level: groupSchema.skill_level,
+          max_group_size: groupSchema.max_group_size,
+          created_at: groupSchema.created_at,
+          updated_at: groupSchema.updated_at,
+        })
+        .from(groupSchema)
+        .where(eq(groupSchema.coach_id, id));
+
+      const coachWithPhotoUrl = {
+        ...coach[0],
+        groups,
         user: {
-          id: userSchema.id,
-          first_name: userSchema.first_name,
-          last_name: userSchema.last_name,
-          email: userSchema.email,
-          is_active: userSchema.is_active,
-          phone: userSchema.phone,
-          is_verified: userSchema.is_verified,
-          photo_url: userSchema.photo_url,
+          ...coach[0].user,
+          photo_url: coach[0].user?.photo_url
+            ? this.fileStorageService.getAbsoluteUrl(coach[0].user.photo_url)
+            : coach[0].user?.photo_url,
         },
-        location: {
-          id: locationSchema.id,
-          name: locationSchema.name,
-          address1: locationSchema.address1,
-          city: locationSchema.city,
-          state: locationSchema.state,
-        },
-      })
-      .from(coachSchema)
-      .innerJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-      .leftJoin(locationSchema, eq(coachSchema.location_id, locationSchema.id))
-      .where(eq(coachSchema.id, id))
-      .limit(1);
+      };
 
-    if (coach.length === 0) {
-      throw new NotFoundException('Coach not found');
+      return APIResponse.success({
+        message: 'Coach retrieved successfully',
+        data: coachWithPhotoUrl,
+        statusCode: 200,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to find coach: ${(error as Error).message}`);
+      return APIResponse.error<undefined>({
+        message: 'Failed to find coach',
+        statusCode: 500,
+      });
     }
-
-    // Fetch groups for this coach in a separate query (no N+1)
-    const groups = await this.dbService.db
-      .select({
-        id: groupSchema.id,
-        name: groupSchema.name,
-        description: groupSchema.description,
-        min_age: groupSchema.min_age,
-        max_age: groupSchema.max_age,
-        skill_level: groupSchema.skill_level,
-        max_group_size: groupSchema.max_group_size,
-        created_at: groupSchema.created_at,
-        updated_at: groupSchema.updated_at,
-      })
-      .from(groupSchema)
-      .where(eq(groupSchema.coach_id, id));
-
-    const coachWithPhotoUrl = {
-      ...coach[0],
-      groups,
-      user: {
-        ...coach[0].user,
-        photo_url: coach[0].user?.photo_url
-          ? this.fileStorageService.getAbsoluteUrl(coach[0].user.photo_url)
-          : coach[0].user?.photo_url,
-      },
-    };
-
-    return {
-      message: 'Coach retrieved successfully',
-      data: coachWithPhotoUrl,
-    };
   }
 
   async update(
     id: number,
     updateCoachDto: UpdateCoachDto,
     photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<CoachWithUserAndLocationGroup | undefined>> {
     try {
       const coach = await this.findOne(id);
 
-      if (!coach) {
-        throw new NotFoundException('Coach not found');
+      if (!coach.data) {
+        return APIResponse.error<undefined>({
+          message: 'Coach not found',
+          statusCode: 404,
+        });
       }
 
-      const user = await this.userService.findOne(coach.data.user.id);
+      if (coach.data) {
+        const user = await this.userService.findOne(coach.data.user.id!);
+        if (!user) {
+          return APIResponse.error<undefined>({
+            message: 'User not found',
+            statusCode: 404,
+          });
+        }
 
-      if (!user) {
-        throw new NotFoundException('User not found');
+        if (user) {
+          await this.userService.update(user.id, updateCoachDto, photo_url);
+        }
+        await this.dbService.db
+          .update(coachSchema)
+          .set({
+            location_id: updateCoachDto.location_id,
+            updated_at: new Date(),
+          })
+          .where(eq(coachSchema.id, id));
       }
+      this.logger.log(`Coach updated successfully with ID: ${id}`);
 
-      await this.userService.update(
-        coach.data.user.id,
-        updateCoachDto,
-        photo_url
-      );
-
-      await this.dbService.db
-        .update(coachSchema)
-        .set({
-          location_id: updateCoachDto.location_id || null,
-          updated_at: new Date(),
-        })
-        .where(eq(coachSchema.id, coach.data.id));
-
-      this.logger.log(`Coach updated successfully with ID: ${coach.data.id}`);
-
-      return {
+      return APIResponse.success({
         message: 'Coach updated successfully',
-        data: {
-          coach: coach.data,
-        },
-      };
+        data: coach.data,
+        statusCode: 200,
+      });
     } catch (error) {
       this.logger.error(`Failed to update coach: ${(error as Error).message}`);
       throw error;
@@ -482,11 +518,16 @@ export class CoachService {
     try {
       const coach = await this.findOne(id);
 
-      if (!coach) {
-        throw new NotFoundException('Coach not found');
+      if (!coach.data) {
+        return APIResponse.error<undefined>({
+          message: 'Coach not found',
+          statusCode: 404,
+        });
       }
 
-      await this.userService.remove(coach.data.user.id);
+      if (coach.data.user.id) {
+        await this.userService.remove(coach.data.user.id);
+      }
 
       await this.dbService.db
         .delete(coachSchema)

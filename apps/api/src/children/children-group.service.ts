@@ -4,16 +4,20 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, and, desc, sql, inArray, SQLWrapper } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray, SQL } from 'drizzle-orm';
 import {
   childrenGroupSchema,
   childrenSchema,
   groupSchema,
+  userSchema,
 } from '../db/schemas';
 import { CreateChildrenGroupDto } from './dto/create-children-group.dto';
 import { UpdateChildrenGroupDto } from './dto/update-children-group.dto';
 import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
 import { GroupService } from '../group/group.service';
+import { APP_CONSTANTS, getPageOffset } from '../utils';
+import { APIResponse } from '../utils/response';
+import { ChildrenGroup, ChildrenGroupUpdateValues } from './children.types';
 
 @Injectable()
 export class ChildrenGroupService {
@@ -22,23 +26,35 @@ export class ChildrenGroupService {
     private readonly groupService: GroupService
   ) {}
 
-  async create(createChildrenGroupDto: CreateChildrenGroupDto) {
-    const { children_ids, group_id } = createChildrenGroupDto;
+  async create(
+    createChildrenGroupDto: CreateChildrenGroupDto
+  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
+    const groupId = Number(createChildrenGroupDto.group_id);
+    const childrenIds: number[] =
+      createChildrenGroupDto.children_ids?.map((id: string | number) =>
+        Number(id)
+      ) || [];
 
     // Verify that the group exists
-    const group = await this.groupService.findOne(group_id);
+    const group = await this.groupService.findOne(groupId);
     if (!group) {
-      throw new NotFoundException('Group not found');
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
     }
 
     // Verify that all children exist
     const children = await this.dbService.db
       .select()
       .from(childrenSchema)
-      .where(inArray(childrenSchema.id, children_ids));
+      .where(inArray(childrenSchema.id, childrenIds));
 
-    if (children.length !== children_ids.length) {
-      throw new NotFoundException('Some children not found');
+    if (children.length !== childrenIds.length) {
+      return APIResponse.error<undefined>({
+        message: 'Some children not found',
+        statusCode: 404,
+      });
     }
 
     // Check for existing relationships
@@ -47,8 +63,8 @@ export class ChildrenGroupService {
       .from(childrenGroupSchema)
       .where(
         and(
-          eq(childrenGroupSchema.group_id, group_id),
-          inArray(childrenGroupSchema.children_id, children_ids)
+          eq(childrenGroupSchema.group_id, groupId),
+          inArray(childrenGroupSchema.children_id, childrenIds)
         )
       );
 
@@ -56,45 +72,50 @@ export class ChildrenGroupService {
       const existingChildrenIds = existingRelationships.map(
         (r) => r.children_id
       );
-      throw new ConflictException(
-        `Children with IDs [${existingChildrenIds.join(', ')}] are already assigned to this group`
-      );
+      return APIResponse.error<undefined>({
+        message: `Children with IDs [${existingChildrenIds.join(', ')}] are already assigned to this group`,
+        statusCode: 409,
+      });
     }
 
     // Create new relationships
     const newChildrenGroups = await this.dbService.db
       .insert(childrenGroupSchema)
       .values(
-        children_ids.map((childrenId) => ({
+        childrenIds.map((childrenId) => ({
           children_id: childrenId,
-          group_id: group_id,
+          group_id: groupId,
           status: true,
         }))
       )
       .returning();
 
-    return {
+    return APIResponse.success<ChildrenGroup[]>({
+      data: newChildrenGroups as unknown as ChildrenGroup[],
       message: `Successfully assigned ${newChildrenGroups.length} children to group`,
-      data: newChildrenGroups,
-    };
+      statusCode: 201,
+    });
   }
 
-  async findAll(queryDto: QueryChildrenGroupDto = {}) {
-    const { children_id, group_id, status, page = 1, limit = 10 } = queryDto;
+  async findAll(
+    queryDto: QueryChildrenGroupDto = {}
+  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
+    const page = queryDto.page ?? '1';
+    const limit =
+      queryDto.limit ?? APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString();
+    const offset = getPageOffset(page, limit);
+    const conditions: SQL<unknown>[] = [];
 
-    const offset = (page - 1) * limit;
-    const conditions: SQLWrapper[] = [];
-
-    if (children_id) {
-      conditions.push(eq(childrenGroupSchema.children_id, children_id));
+    if (queryDto.children_id !== undefined) {
+      conditions.push(
+        eq(childrenGroupSchema.children_id, Number(queryDto.children_id))
+      );
     }
 
-    if (group_id) {
-      conditions.push(eq(childrenGroupSchema.group_id, group_id));
-    }
-
-    if (status !== undefined) {
-      conditions.push(eq(childrenGroupSchema.status, status));
+    if (queryDto.group_id !== undefined) {
+      conditions.push(
+        eq(childrenGroupSchema.group_id, Number(queryDto.group_id))
+      );
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -112,6 +133,8 @@ export class ChildrenGroupService {
             id: childrenSchema.id,
             parent_first_name: childrenSchema.parent_first_name,
             parent_last_name: childrenSchema.parent_last_name,
+            first_name: userSchema.first_name,
+            last_name: userSchema.last_name,
           },
           group: {
             id: groupSchema.id,
@@ -127,27 +150,29 @@ export class ChildrenGroupService {
           eq(childrenGroupSchema.children_id, childrenSchema.id)
         )
         .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
+        .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
         .where(whereClause)
         .orderBy(desc(childrenGroupSchema.created_at))
-        .limit(limit)
-        .offset(offset),
+        .limit(Number(limit))
+        .offset(Number(offset)),
       this.dbService.db
         .select({ count: sql<number>`count(*)` })
         .from(childrenGroupSchema)
         .where(whereClause)
-        .then((result) => Number(result[0]?.count || 0)),
+        .then((result) => Number(result[0]?.count ?? 0)),
     ]);
 
-    return {
+    return APIResponse.success<ChildrenGroup[]>({
+      data: childrenGroups as unknown as ChildrenGroup[],
       message: 'Successfully fetched children-group relationships',
-      data: childrenGroups,
+      statusCode: 200,
       pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        page: Number(page),
+        limit: Number(limit),
+        count: totalCount,
+        totalPages: Math.ceil(totalCount / Number(limit)),
       },
-    };
+    });
   }
 
   async findOne(id: number) {
@@ -192,9 +217,6 @@ export class ChildrenGroupService {
   }
 
   async update(id: number, updateChildrenGroupDto: UpdateChildrenGroupDto) {
-    const { children_id, group_id, status } = updateChildrenGroupDto;
-
-    // Check if the relationship exists
     const existingRelationship = await this.dbService.db
       .select()
       .from(childrenGroupSchema)
@@ -205,20 +227,37 @@ export class ChildrenGroupService {
       throw new NotFoundException('Children-group relationship not found');
     }
 
-    // If updating children_id or group_id, check for conflicts
-    if (children_id || group_id) {
-      const currentRelationship = existingRelationship[0];
-      const newChildrenId = children_id || currentRelationship.children_id;
-      const newGroupId = group_id || currentRelationship.group_id;
+    const currentRelationship = existingRelationship[0];
 
-      // Check if the new combination already exists (excluding current record)
+    const newChildrenId =
+      updateChildrenGroupDto.children_id !== undefined
+        ? Number(updateChildrenGroupDto.children_id)
+        : (currentRelationship.children_id as number);
+
+    const newGroupId =
+      updateChildrenGroupDto.group_id !== undefined
+        ? Number(updateChildrenGroupDto.group_id)
+        : (currentRelationship.group_id as number);
+
+    if (Number.isNaN(newChildrenId)) {
+      throw new Error('Invalid children_id');
+    }
+
+    if (Number.isNaN(newGroupId)) {
+      throw new Error('Invalid group_id');
+    }
+
+    if (
+      updateChildrenGroupDto.children_id !== undefined ||
+      updateChildrenGroupDto.group_id !== undefined
+    ) {
       const conflictingRelationship = await this.dbService.db
         .select()
         .from(childrenGroupSchema)
         .where(
           and(
-            eq(childrenGroupSchema.children_id, newChildrenId as number),
-            eq(childrenGroupSchema.group_id, newGroupId as number),
+            eq(childrenGroupSchema.children_id, newChildrenId),
+            eq(childrenGroupSchema.group_id, newGroupId),
             sql`${childrenGroupSchema.id} != ${id}`
           )
         )
@@ -226,28 +265,27 @@ export class ChildrenGroupService {
 
       if (conflictingRelationship.length > 0) {
         throw new ConflictException(
-          'This children is already assigned to this group'
+          'This child is already assigned to this group'
         );
       }
 
-      // Verify that both children and group exist
-      if (children_id) {
+      if (updateChildrenGroupDto.children_id !== undefined) {
         const children = await this.dbService.db
           .select()
           .from(childrenSchema)
-          .where(eq(childrenSchema.id, children_id))
+          .where(eq(childrenSchema.id, newChildrenId))
           .limit(1);
 
         if (children.length === 0) {
-          throw new NotFoundException('Children not found');
+          throw new NotFoundException('Child not found');
         }
       }
 
-      if (group_id) {
+      if (updateChildrenGroupDto.group_id !== undefined) {
         const group = await this.dbService.db
           .select()
           .from(groupSchema)
-          .where(eq(groupSchema.id, group_id))
+          .where(eq(groupSchema.id, newGroupId))
           .limit(1);
 
         if (group.length === 0) {
@@ -256,12 +294,21 @@ export class ChildrenGroupService {
       }
     }
 
-    const updateValues = {
-      ...(children_id !== undefined && { children_id }),
-      ...(group_id !== undefined && { group_id }),
-      ...(status !== undefined && { status }),
+    const updateValues: ChildrenGroupUpdateValues = {
       updated_at: new Date(),
     };
+
+    if (updateChildrenGroupDto.children_id !== undefined) {
+      updateValues.children_id = newChildrenId;
+    }
+
+    if (updateChildrenGroupDto.group_id !== undefined) {
+      updateValues.group_id = newGroupId;
+    }
+
+    if (updateChildrenGroupDto.status !== undefined) {
+      updateValues.status = Boolean(updateChildrenGroupDto.status);
+    }
 
     const updatedChildrenGroup = await this.dbService.db
       .update(childrenGroupSchema)

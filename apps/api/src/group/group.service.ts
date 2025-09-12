@@ -14,12 +14,15 @@ import {
   coachSchema,
   userSchema,
   groupSessionSchema,
+  Group,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { FileStorageService } from '../services/file-storage.service';
 import { GroupSessionService } from './groupSession.service';
 import { CreateGroupSessionDto } from './dto/create-groupsession.dto';
+import { APIResponse } from 'src/utils/response';
+import { IGroupResponse } from './group.types';
 
 @Injectable()
 export class GroupService {
@@ -35,13 +38,14 @@ export class GroupService {
     createGroupDto: CreateGroupDto,
     photo_url?: Express.Multer.File,
     sessions?: CreateGroupSessionDto[]
-  ) {
+  ): Promise<APIResponse<Group | undefined>> {
     try {
       // Validate that min_age is less than max_age
       if (createGroupDto.min_age >= createGroupDto.max_age) {
-        throw new ConflictException(
-          'Minimum age must be less than maximum age'
-        );
+        return APIResponse.error<undefined>({
+          message: 'Minimum age must be less than maximum age',
+          statusCode: 400,
+        });
       }
 
       // Check if group with this name already exists at the same location
@@ -58,9 +62,10 @@ export class GroupService {
           .limit(1);
 
         if (existingGroup.length > 0) {
-          throw new ConflictException(
-            'Group with this name already exists at this location'
-          );
+          return APIResponse.error<undefined>({
+            message: 'Group with this name already exists at this location',
+            statusCode: 400,
+          });
         }
       }
 
@@ -86,13 +91,17 @@ export class GroupService {
 
       this.logger.log(`Group created successfully with ID: ${newGroup[0].id}`);
 
-      return {
+      return APIResponse.success<Group>({
         message: 'Group created successfully',
         data: newGroup[0],
-      };
+        statusCode: 201,
+      });
     } catch (error) {
       this.logger.error(`Failed to create group: ${(error as Error).message}`);
-      throw error;
+      return APIResponse.error<undefined>({
+        message: 'Failed to create group',
+        statusCode: 500,
+      });
     }
   }
 
@@ -109,7 +118,10 @@ export class GroupService {
   /**
    * Optimized findAll method with better query structure
    */
-  async findAll(params: { page: string; limit: string }) {
+  async findAll(params: {
+    page: string;
+    limit: string;
+  }): Promise<APIResponse<IGroupResponse[] | undefined>> {
     const {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
@@ -154,19 +166,22 @@ export class GroupService {
       .offset(offset)
       .limit(Number(limit));
 
-    // Early return if no groups found
     if (groups.length === 0) {
       const [{ count }] = await this.dbService.db
         .select({ count: sql<number>`COUNT(*)` })
         .from(groupSchema);
 
-      return {
-        message: 'Groups retrieved successfully',
+      return APIResponse.success<IGroupResponse[]>({
+        message: 'No groups found',
         data: [],
-        page,
-        limit,
-        count,
-      };
+        pagination: {
+          count: count,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(count / Number(limit)) || 1,
+        },
+        statusCode: 200,
+      });
     }
 
     // Extract group IDs for sessions query
@@ -200,9 +215,29 @@ export class GroupService {
       sessionsMap.get(session.group_id)!.push(session);
     });
 
-    // Attach sessions to their respective groups
+    // Convert photo URLs to absolute URLs and attach sessions to their respective groups
     const groupsWithSessions = groups.map((group) => ({
       ...group,
+      photo_url: group.photo_url
+        ? this.fileStorageService.getAbsoluteUrl(group.photo_url)
+        : null,
+      location: group.location
+        ? {
+            ...group.location,
+            name: group.location.name || '',
+          }
+        : null,
+      coach: group.coach
+        ? {
+            ...group.coach,
+            first_name: group.coach.first_name || '',
+            last_name: group.coach.last_name,
+            email: group.coach.email || '',
+            photo_url: group.coach.photo_url
+              ? this.fileStorageService.getAbsoluteUrl(group.coach.photo_url)
+              : null,
+          }
+        : null,
       sessions: sessionsMap.get(group.id) || [],
     }));
 
@@ -211,18 +246,23 @@ export class GroupService {
       .select({ count: sql<number>`COUNT(*)` })
       .from(groupSchema);
 
-    return {
+    return APIResponse.success<IGroupResponse[]>({
       message: 'Groups retrieved successfully',
       data: groupsWithSessions,
-      page,
-      limit,
-      count,
-    };
+      pagination: {
+        count: count,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(count / Number(limit)) || 1,
+      },
+      statusCode: 200,
+    });
   }
+
   /**
    * Optimized findOne method
    */
-  async findOne(id: number) {
+  async findOne(id: number): Promise<APIResponse<IGroupResponse | undefined>> {
     const group = await this.dbService.db
       .select({
         id: groupSchema.id,
@@ -259,20 +299,65 @@ export class GroupService {
       .limit(1);
 
     if (group.length === 0) {
-      throw new NotFoundException('Group not found');
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
     }
 
-    return {
-      message: 'Group retrieved successfully',
-      data: group[0],
+    // Get sessions for this group
+    const sessions = await this.dbService.db
+      .select({
+        id: groupSessionSchema.id,
+        group_id: groupSessionSchema.group_id,
+        day: groupSessionSchema.day,
+        start_time: groupSessionSchema.start_time,
+        end_time: groupSessionSchema.end_time,
+        created_at: groupSessionSchema.created_at,
+        updated_at: groupSessionSchema.updated_at,
+      })
+      .from(groupSessionSchema)
+      .where(eq(groupSessionSchema.group_id, id))
+      .orderBy(groupSessionSchema.day, groupSessionSchema.start_time);
+
+    // Convert photo URLs to absolute URLs and prepare the response
+    const groupWithDetails: IGroupResponse = {
+      ...group[0],
+      photo_url: group[0].photo_url
+        ? this.fileStorageService.getAbsoluteUrl(group[0].photo_url)
+        : null,
+      location: group[0].location
+        ? {
+            ...group[0].location,
+            name: group[0].location.name || '',
+          }
+        : null,
+      coach: group[0].coach
+        ? {
+            ...group[0].coach,
+            first_name: group[0].coach.first_name || '',
+            last_name: group[0].coach.last_name,
+            email: group[0].coach.email || '',
+            photo_url: group[0].coach.photo_url
+              ? this.fileStorageService.getAbsoluteUrl(group[0].coach.photo_url)
+              : null,
+          }
+        : null,
+      sessions: sessions,
     };
+
+    return APIResponse.success<IGroupResponse>({
+      message: 'Group retrieved successfully',
+      data: groupWithDetails,
+      statusCode: 200,
+    });
   }
 
   async update(
     id: number,
     updateGroupDto: UpdateGroupDto,
     photo_url?: Express.Multer.File
-  ) {
+  ): Promise<APIResponse<Group | undefined>> {
     try {
       // Check if group exists
       const existingGroup = await this.dbService.db
@@ -351,17 +436,21 @@ export class GroupService {
 
       this.logger.log(`Group updated successfully with ID: ${id}`);
 
-      return {
+      return APIResponse.success<Group>({
         message: 'Group updated successfully',
         data: updatedGroup[0],
-      };
+        statusCode: 200,
+      });
     } catch (error) {
       this.logger.error(`Failed to update group: ${(error as Error).message}`);
-      throw error;
+      return APIResponse.error<undefined>({
+        message: 'Failed to update group',
+        statusCode: 500,
+      });
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<APIResponse<Group | undefined>> {
     try {
       // Check if group exists
       const existingGroup = await this.dbService.db
@@ -386,13 +475,17 @@ export class GroupService {
 
       this.logger.log(`Group deleted successfully with ID: ${id}`);
 
-      return {
+      return APIResponse.success<Group>({
         message: 'Group deleted successfully',
         data: deletedGroup[0],
-      };
+        statusCode: 200,
+      });
     } catch (error) {
       this.logger.error(`Failed to delete group: ${(error as Error).message}`);
-      throw error;
+      return APIResponse.error<undefined>({
+        message: 'Failed to delete group',
+        statusCode: 500,
+      });
     }
   }
 

@@ -20,6 +20,15 @@ export class QueryChildrenDto {
   location_id?: number;
 
   @ApiPropertyOptional({
+    description: 'Filter by group ID',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Group ID must be an integer' })
+  @Min(1, { message: 'Group ID must be at least 1' })
+  group_id?: number;
+
+  @ApiPropertyOptional({
     description: 'Sort order',
     example: 'desc',
     enum: ['asc', 'desc'],

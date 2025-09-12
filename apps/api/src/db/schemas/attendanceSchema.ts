@@ -34,6 +34,6 @@ export type AttendanceWithGroup = Attendance & {
   group: typeof groupSchema.$inferSelect;
 };
 export type AttendanceWithChildrenAndGroup = Attendance & {
-  children: typeof childrenSchema.$inferSelect;
-  group: typeof groupSchema.$inferSelect;
+  children: typeof childrenSchema.$inferSelect | null;
+  group: typeof groupSchema.$inferSelect | null;
 };

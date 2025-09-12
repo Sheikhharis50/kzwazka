@@ -7,7 +7,9 @@ import {
   Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { CreateGroupSessionDto } from './create-groupsession.dto';
+import { BadRequestException } from '@nestjs/common';
 
 export class CreateGroupDto {
   @ApiProperty({
@@ -98,9 +100,22 @@ export class CreateGroupDto {
   photo_url?: string;
 
   @ApiPropertyOptional({
-    description: 'Group sessions',
-    type: [CreateGroupSessionDto],
+    description: 'Group sessions as JSON string',
+    type: 'string',
+    example: '[{"day":"Monday","start_time":"10:00","end_time":"11:00"}]',
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value) as CreateGroupSessionDto[];
+      } catch (error) {
+        throw new BadRequestException(
+          'Invalid sessions JSON string: ' + (error as Error).message
+        );
+      }
+    }
+    return value as CreateGroupSessionDto[];
+  })
   sessions?: CreateGroupSessionDto[];
 }

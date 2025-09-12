@@ -4,22 +4,25 @@ import Placeholder from '@/images/placeholder.jpg';
 import { IGroup } from 'api/type';
 import Button from '@/components/Button';
 import { Location } from '@/svgs';
+import { safeJoin } from 'utils/safeJoin';
+import SessionsAccordion from '@/components/ui/SessionsAccordion';
 
-interface GroupCardProps {
-  group: IGroup;
-}
-
-const GroupCard = ({ group }: GroupCardProps) => {
-  const address =
-    [group?.location?.address1, group?.location?.city, group?.location?.state]
-      .filter(Boolean)
-      .join(', ') || 'N/A';
+const GroupCard = (group: IGroup) => {
+  const address = safeJoin([
+    group?.location?.address1,
+    group?.location?.city,
+    group?.location?.state,
+  ]);
+  const coachName = safeJoin(
+    [group?.coach?.first_name, group?.coach?.last_name],
+    ' '
+  );
+  const ageCategory = safeJoin([group?.min_age, group?.max_age], ' - ');
 
   const groupInfo = [
     {
       label: 'Age Category',
-      value:
-        [group?.min_age, group?.max_age].filter(Boolean).join(' - ') || 'N/A',
+      value: ageCategory,
     },
     { label: 'Skill Level', value: `${group?.skill_level || 'N/A'}` },
     {
@@ -34,17 +37,22 @@ const GroupCard = ({ group }: GroupCardProps) => {
             src={group?.coach?.photo_url || Placeholder}
             alt="coach image"
             className="size-5 rounded-full object-cover"
+            width={50}
+            height={50}
           />
-          <p className="flex-1 truncate" title={group?.coach?.name || 'N/A'}>
-            {group?.coach?.name || 'N/A'}
+          <p className="flex-1 truncate" title={coachName}>
+            {coachName}
           </p>
         </div>
       ),
-      title: group?.coach?.name || 'N/A',
     },
     {
       label: 'Training Schedule',
-      value: `${'N/A'}`,
+      value: group?.sessions?.length ? (
+        <SessionsAccordion sessions={group.sessions} />
+      ) : (
+        'N/A'
+      ),
     },
     {
       label: 'Insurance Completion',
@@ -79,11 +87,11 @@ const GroupCard = ({ group }: GroupCardProps) => {
           {groupInfo.map((info) => (
             <div
               key={info.label}
-              className="grid grid-cols-2 gap-3 text-[12px]"
+              className="grid grid-cols-2 gap-3 text-[12px] font-semibold"
             >
               <p>{info.label}</p>
               {typeof info.value === 'string' ? (
-                <p className="truncate font-semibold" title={info.value}>
+                <p className="truncate" title={info.value}>
                   {info.value}
                 </p>
               ) : (

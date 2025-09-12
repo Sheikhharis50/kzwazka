@@ -27,3 +27,14 @@ export type IGroupResponse = {
   } | null;
   sessions: GroupSession[];
 };
+
+export type IGroupSessionResponse = {
+  id: number;
+  group_id: number;
+  group_name: string | null;
+  day: string;
+  start_time: string;
+  end_time: string;
+  location_id: number | null;
+  location_name: string | null;
+};

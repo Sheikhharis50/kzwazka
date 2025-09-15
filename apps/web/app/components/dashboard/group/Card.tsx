@@ -6,6 +6,7 @@ import Button from '@/components/Button';
 import { Location } from '@/svgs';
 import { safeJoin } from 'utils/safeJoin';
 import SessionsAccordion from '@/components/ui/SessionsAccordion';
+import Link from 'next/link';
 
 const GroupCard = (group: IGroup) => {
   const address = safeJoin([
@@ -100,10 +101,12 @@ const GroupCard = (group: IGroup) => {
             </div>
           ))}
         </div>
-        <Button
-          text="Go to Attendance"
-          className="w-full xl:w-[95%] !text-[12px] mt-5 sm:mt-0 mb-2 xl:mb-0 2xl:mb-2 xl:py-3"
-        />
+        <Link href={`/dashboard/groups/attendance?group_id=${group.id}`}>
+          <Button
+            text="Go to Attendance"
+            className="w-full xl:w-[95%] !text-[12px] mt-5 sm:mt-0 mb-2 xl:mb-0 2xl:mb-2 xl:py-3"
+          />
+        </Link>
       </div>
     </div>
   );

@@ -29,3 +29,5 @@ export * from './ListView';
 export * from './Mail';
 export * from './Book';
 export * from './Previous';
+export * from './Filter';
+export * from './DoubleTick';

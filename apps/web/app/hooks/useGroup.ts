@@ -14,12 +14,16 @@ export function useGroup(queryParams: PaginationParams = {}) {
   const getAllGroups = useQuery({
     queryKey: ['groups', queryParams],
     queryFn: async () => await api.group.getAll(queryParams),
+    staleTime: 5 * 60 * 60,
   });
 
   const getInfiniteGroups = useInfiniteQuery({
     queryKey: ['infinite-groups'],
     queryFn: async ({ pageParam = 1 }) =>
-      await api.group.getAll({ page: pageParam }),
+      await api.group.getAll({
+        page: queryParams?.page || pageParam,
+        limit: queryParams?.limit || undefined,
+      }),
     initialPageParam: 1,
     getNextPageParam: (data) => {
       const { page: currentPage, totalPages } = data.pagination;
@@ -29,6 +33,7 @@ export function useGroup(queryParams: PaginationParams = {}) {
       const { page: currentPage } = data.pagination;
       return currentPage > 1 ? currentPage - 1 : undefined;
     },
+    staleTime: 5 * 60 * 60,
   });
 
   const createGroupMutation = useMutation({

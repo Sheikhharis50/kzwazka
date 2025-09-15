@@ -1,0 +1,46 @@
+'use client';
+import React, { useRef, useState } from 'react';
+import ProfileIcon from '../ui/ProfileIcon';
+import { useUser } from '@/hooks/useUser';
+import Paragraph from '../Paragraph';
+import { Previous } from '@/svgs';
+import { safeJoin } from 'utils/safeJoin';
+import { useClickOutside } from '@/hooks/useClickOutside';
+
+const ProfileDropdown = () => {
+  const { child, user } = useUser();
+  const [isOptionsVisible, setOptionsVisibility] = useState(false);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
+
+  useClickOutside(optionsRef, () => setOptionsVisibility(false));
+
+  return (
+    <div className="relative">
+      <div
+        className="rounded-2xl border-[1.33px] border-[#BFBFBF57] bg-[#F8FAFC] flex items-center gap-2 p-1.5 pr-5 relative cursor-pointer"
+        onClick={() => setOptionsVisibility(!isOptionsVisible)}
+        id="profileDropdownButton"
+        data-dropdown-toggle="profileDropdown"
+      >
+        <ProfileIcon photo_url={child?.user.photo_url || ''} />
+        <Paragraph
+          text={safeJoin([user?.first_name, user?.last_name], ' ', 'User')}
+        />
+        <Previous className="-rotate-90 w-3" />
+      </div>
+      {isOptionsVisible && (
+        <div
+          ref={optionsRef}
+          className="absolute w-fit bg-white z-10 rounded-md shadow-md mt-2 text-sm 2xl:text-base"
+        >
+          <button className="border-b border-border p-2 text-nowrap w-full hover:bg-smoke">
+            Profile Settings
+          </button>
+          <button className="p-2 w-full hover:bg-smoke">Sign Out</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProfileDropdown;

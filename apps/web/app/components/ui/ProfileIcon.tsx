@@ -18,7 +18,7 @@ const ProfileIcon = ({ photo_url, small }: ProfileIconProps) => {
     />
   ) : (
     <div
-      className={`${small ? 'size-5' : 'size-7 md:size-10'} rounded-full bg-smoke p-1`}
+      className={`${small ? 'size-5' : 'size-7 md:size-10'} rounded-full bg-border p-1`}
     >
       <ProfileRound className="w-full h-auto" />
     </div>

@@ -71,54 +71,11 @@ export class AttendanceController {
     required: false,
     enum: ['present', 'absent', 'late'],
   })
-  @ApiQuery({ name: 'from_date', required: false, type: String })
-  @ApiQuery({ name: 'to_date', required: false, type: String })
+  @ApiQuery({ name: 'date', required: true, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, default: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
   findAll(@Query() queryDto: QueryAttendanceDto) {
-    return this.attendanceService.findAll(queryDto);
-  }
-
-  @ApiOperation({ summary: 'Get attendance records by children ID' })
-  @ApiResponse({
-    status: 200,
-    description:
-      'The children attendance records have been successfully fetched.',
-    type: PaginatedAttendanceResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 404, description: 'Children not found' })
-  @ApiBearerAuth()
-  @RequirePermission(['read_attendance'])
-  @Get('children/:id')
-  @ApiQuery({ name: 'from_date', required: false, type: String })
-  @ApiQuery({ name: 'to_date', required: false, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number, default: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
-  findByChildren(
-    @Param('id') id: string,
-    @Query() queryDto: QueryAttendanceDto
-  ) {
-    return this.attendanceService.getAttendanceByChildren(+id, queryDto);
-  }
-
-  @ApiOperation({ summary: 'Get attendance records by group ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'The group attendance records have been successfully fetched.',
-    type: PaginatedAttendanceResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 404, description: 'Group not found' })
-  @ApiBearerAuth()
-  @RequirePermission(['read_attendance'])
-  @Get('group/:id')
-  @ApiQuery({ name: 'from_date', required: false, type: String })
-  @ApiQuery({ name: 'to_date', required: false, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number, default: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
-  findByGroup(@Param('id') id: string, @Query() queryDto: QueryAttendanceDto) {
-    return this.attendanceService.getAttendanceByGroup(+id, queryDto);
+    return this.attendanceService.findAllChildrenwithAttendance(queryDto);
   }
 
   @ApiOperation({ summary: 'Get a specific attendance record by ID' })

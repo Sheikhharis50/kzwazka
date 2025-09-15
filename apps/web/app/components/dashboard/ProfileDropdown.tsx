@@ -6,11 +6,15 @@ import Paragraph from '../Paragraph';
 import { Previous } from '@/svgs';
 import { safeJoin } from 'utils/safeJoin';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const ProfileDropdown = () => {
   const { child, user } = useUser();
+  const { logout } = useAuth();
   const [isOptionsVisible, setOptionsVisibility] = useState(false);
   const optionsRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
 
   useClickOutside(optionsRef, () => setOptionsVisibility(false));
 
@@ -33,10 +37,15 @@ const ProfileDropdown = () => {
           ref={optionsRef}
           className="absolute w-fit bg-white z-10 rounded-md shadow-md mt-2 text-sm 2xl:text-base"
         >
-          <button className="border-b border-border p-2 text-nowrap w-full hover:bg-smoke">
+          <button
+            onClick={() => router.push('/dashboard/profile')}
+            className="border-b border-border p-2 text-nowrap w-full hover:bg-smoke"
+          >
             Profile Settings
           </button>
-          <button className="p-2 w-full hover:bg-smoke">Sign Out</button>
+          <button onClick={logout} className="p-2 w-full hover:bg-smoke">
+            Sign Out
+          </button>
         </div>
       )}
     </div>

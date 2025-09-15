@@ -14,184 +14,98 @@ import { QueryGroupSessionDto } from './dto/query-groupsession.dto';
 import { APIResponse } from 'src/utils/response';
 import { IGroupSessionResponse } from './group.types';
 
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
 @Injectable()
 export class GroupSessionService {
   private readonly logger = new Logger(GroupSessionService.name);
   constructor(private readonly dbService: DatabaseService) {}
 
-  async createGroupSession(
-    groupSession: CreateGroupSessionDto
-  ): Promise<APIResponse<GroupSession | undefined>> {
-    // Validate basic input
-    this.timeValidationCheck(groupSession);
-    this.dayValidationCheck(groupSession);
-
-    // Check if the group exists and get its location
-    const groupInfo = await this.getGroupWithLocation(groupSession.group_id);
-    if (!groupInfo) {
-      return APIResponse.error<undefined>({
-        message: 'Group not found',
-        statusCode: 404,
-      });
-    }
-
-    // Check for conflicts at the same location
-    await this.checkLocationConflicts(groupSession, groupInfo.location_id);
-
-    // Check for exact duplicate session for the same group
-    await this.checkDuplicateGroupSession(groupSession);
-
-    // Create the new group session
-    const newGroupSession = await this.dbService.db
-      .insert(groupSessionSchema)
-      .values(groupSession)
-      .returning();
-
-    return APIResponse.success<GroupSession>({
-      message: 'Group session created successfully',
-      data: newGroupSession[0],
-      statusCode: 201,
-    });
-  }
-
   /**
-   * Validate that start time is before end time
+   * Validates sessions BEFORE group creation (when group doesn't exist yet)
    */
-  private timeValidationCheck(groupSession: CreateGroupSessionDto) {
-    const isValidTime = groupSession.start_time < groupSession.end_time;
-    if (!isValidTime) {
-      return APIResponse.error<undefined>({
-        message: 'Start time must be before end time',
-        statusCode: 400,
-      });
-    }
-  }
-
-  /**
-   * Validate that the day is valid
-   */
-  private dayValidationCheck(groupSession: CreateGroupSessionDto) {
-    const isValidDay = Object.values(GROUP_SESSION_DAY).includes(
-      groupSession.day
-    );
-    if (!isValidDay) {
-      return APIResponse.error<undefined>({
-        message: `Invalid day. Must be one of: ${Object.values(GROUP_SESSION_DAY).join(', ')}`,
-        statusCode: 400,
-      });
-    }
-  }
-
-  /**
-   * Get group information with its location
-   */
-  private async getGroupWithLocation(groupId: number) {
-    const result = await this.dbService.db
-      .select({
-        group_id: groupSchema.id,
-        group_name: groupSchema.name,
-        location_id: groupSchema.location_id,
-        location_name: locationSchema.name,
-        location_address: locationSchema.address1,
-      })
-      .from(groupSchema)
-      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
-      .where(eq(groupSchema.id, groupId))
-      .limit(1);
-
-    return result.length > 0 ? result[0] : null;
-  }
-
-  /**
-   * Check for time conflicts at the same location
-   * This prevents overlapping sessions at the same location
-   */
-  private async checkLocationConflicts(
-    newSession: CreateGroupSessionDto,
+  async validateSessionsBeforeGroupCreation(
+    sessions: CreateGroupSessionDto[],
     locationId: number | null
-  ) {
-    if (!locationId) {
-      // If group has no location, we can't check location conflicts
-      return;
+  ): Promise<ValidationResult> {
+    // Basic validations
+    for (const session of sessions) {
+      // Check time validity
+      if (session.start_time >= session.end_time) {
+        return {
+          valid: false,
+          error: `Invalid time range for ${session.day}: start time (${session.start_time}) must be before end time (${session.end_time})`,
+        };
+      }
+
+      // Check day validity
+      if (!Object.values(GROUP_SESSION_DAY).includes(session.day)) {
+        return {
+          valid: false,
+          error: `Invalid day: ${session.day}. Must be one of: ${Object.values(GROUP_SESSION_DAY).join(', ')}`,
+        };
+      }
     }
 
-    // Find all sessions at the same location on the same day
-    const conflictingSessions = await this.dbService.db
-      .select({
-        session_id: groupSessionSchema.id,
-        group_id: groupSessionSchema.group_id,
-        group_name: groupSchema.name,
-        day: groupSessionSchema.day,
-        start_time: groupSessionSchema.start_time,
-        end_time: groupSessionSchema.end_time,
-        location_name: locationSchema.name,
-        location_address: locationSchema.address1,
-        location_city: locationSchema.city,
-        location_state: locationSchema.state,
-        location_country: locationSchema.country,
-      })
-      .from(groupSessionSchema)
-      .innerJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
-      .innerJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
-      .where(
-        and(
-          eq(groupSchema.location_id, locationId),
-          eq(groupSessionSchema.day, newSession.day),
-          // Check for time overlap: new session overlaps if it starts before existing ends AND ends after existing starts
-          sql`(${newSession.start_time} < ${groupSessionSchema.end_time} AND ${newSession.end_time} > ${groupSessionSchema.start_time})`
-        )
-      );
+    // Check for internal conflicts between sessions
+    for (let i = 0; i < sessions.length; i++) {
+      for (let j = i + 1; j < sessions.length; j++) {
+        if (sessions[i].day === sessions[j].day) {
+          const overlap =
+            sessions[i].start_time < sessions[j].end_time &&
+            sessions[i].end_time > sessions[j].start_time;
 
-    if (conflictingSessions.length > 0) {
-      const conflict = conflictingSessions[0];
-      const locationStr = [
-        conflict.location_address,
-        conflict.location_city,
-        conflict.location_state,
-        conflict.location_country,
-      ]
-        .filter(Boolean)
-        .join(', ');
-
-      return APIResponse.error<undefined>({
-        message:
-          `Time conflict at location "${conflict.location_name || 'Unnamed Location'}" (${locationStr}). ` +
-          `Another session "${conflict.group_name}" is scheduled on ${conflict.day} from ${conflict.start_time} to ${conflict.end_time}. ` +
-          `Your session (${newSession.start_time} - ${newSession.end_time}) overlaps with this existing session.`,
-        statusCode: 409,
-      });
+          if (overlap) {
+            return {
+              valid: false,
+              error: `Session conflict: ${sessions[i].day} ${sessions[i].start_time}-${sessions[i].end_time} overlaps with ${sessions[j].start_time}-${sessions[j].end_time}`,
+            };
+          }
+        }
+      }
     }
+
+    // Check location conflicts if location is provided
+    if (locationId) {
+      for (const session of sessions) {
+        const conflicts = await this.dbService.db
+          .select({
+            group_name: groupSchema.name,
+            start_time: groupSessionSchema.start_time,
+            end_time: groupSessionSchema.end_time,
+          })
+          .from(groupSessionSchema)
+          .innerJoin(
+            groupSchema,
+            eq(groupSessionSchema.group_id, groupSchema.id)
+          )
+          .where(
+            and(
+              eq(groupSchema.location_id, locationId),
+              eq(groupSessionSchema.day, session.day),
+              sql`(${session.start_time} < ${groupSessionSchema.end_time} AND ${session.end_time} > ${groupSessionSchema.start_time})`
+            )
+          )
+          .limit(1);
+
+        if (conflicts.length > 0) {
+          const conflict = conflicts[0];
+          return {
+            valid: false,
+            error: `Location conflict on ${session.day}: Another group "${conflict.group_name}" is already scheduled on this location $ from ${conflict.start_time} to ${conflict.end_time}`,
+          };
+        }
+      }
+    }
+
+    return { valid: true };
   }
 
   /**
-   * Check for exact duplicate session for the same group
-   */
-  private async checkDuplicateGroupSession(
-    groupSession: CreateGroupSessionDto
-  ) {
-    const existingGroupSession = await this.dbService.db
-      .select()
-      .from(groupSessionSchema)
-      .where(
-        and(
-          eq(groupSessionSchema.group_id, groupSession.group_id),
-          eq(groupSessionSchema.day, groupSession.day),
-          eq(groupSessionSchema.start_time, groupSession.start_time),
-          eq(groupSessionSchema.end_time, groupSession.end_time)
-        )
-      )
-      .limit(1);
-
-    if (existingGroupSession.length > 0) {
-      return APIResponse.error<undefined>({
-        message: `This exact session already exists for this group on ${groupSession.day} from ${groupSession.start_time} to ${groupSession.end_time}`,
-        statusCode: 409,
-      });
-    }
-  }
-
-  /**
-   * Create multiple group sessions with batch validation
+   * Create multiple group sessions (used after group is created)
    */
   async createMultipleGroupSessions(
     groupId: number,
@@ -204,41 +118,65 @@ export class GroupSessionService {
       });
     }
 
-    // Validate all sessions first
-    for (const session of sessions) {
-      if (session.group_id !== groupId) {
-        return APIResponse.error<undefined>({
-          message: 'All sessions must belong to the same group',
-          statusCode: 400,
-        });
-      }
-      this.timeValidationCheck(session);
-      this.dayValidationCheck(session);
-    }
+    // Get group location
+    const [group] = await this.dbService.db
+      .select({ location_id: groupSchema.location_id })
+      .from(groupSchema)
+      .where(eq(groupSchema.id, groupId))
+      .limit(1);
 
-    // Get group information
-    const groupInfo = await this.getGroupWithLocation(groupId);
-    if (!groupInfo) {
+    if (!group) {
       return APIResponse.error<undefined>({
         message: 'Group not found',
         statusCode: 404,
       });
     }
 
-    // Check for conflicts for each session
-    for (const session of sessions) {
-      await this.checkLocationConflicts(session, groupInfo.location_id);
-      await this.checkDuplicateGroupSession(session);
+    // Validate all sessions
+    const validation = await this.validateSessionsBeforeGroupCreation(
+      sessions,
+      group.location_id
+    );
+
+    if (!validation.valid) {
+      return APIResponse.error<undefined>({
+        message: validation.error || 'Invalid sessions',
+        statusCode: 400,
+      });
     }
 
-    // Check for conflicts between the new sessions themselves
-    this.checkInternalConflicts(sessions);
+    // Check for duplicates
+    for (const session of sessions) {
+      const [duplicate] = await this.dbService.db
+        .select({ id: groupSessionSchema.id })
+        .from(groupSessionSchema)
+        .where(
+          and(
+            eq(groupSessionSchema.group_id, session.group_id),
+            eq(groupSessionSchema.day, session.day),
+            eq(groupSessionSchema.start_time, session.start_time),
+            eq(groupSessionSchema.end_time, session.end_time)
+          )
+        )
+        .limit(1);
+
+      if (duplicate) {
+        return APIResponse.error<undefined>({
+          message: `Session already exists for ${session.day} from ${session.start_time} to ${session.end_time}`,
+          statusCode: 409,
+        });
+      }
+    }
 
     // Create all sessions
     const createdSessions = await this.dbService.db
       .insert(groupSessionSchema)
       .values(sessions)
       .returning();
+
+    this.logger.log(
+      `Created ${createdSessions.length} sessions for group ${groupId}`
+    );
 
     return APIResponse.success<GroupSession[]>({
       message: `Successfully created ${createdSessions.length} group sessions`,
@@ -248,86 +186,162 @@ export class GroupSessionService {
   }
 
   /**
-   * Check for conflicts between the sessions being created
+   * Create a single group session
    */
-  private checkInternalConflicts(sessions: CreateGroupSessionDto[]) {
-    for (let i = 0; i < sessions.length; i++) {
-      for (let j = i + 1; j < sessions.length; j++) {
-        const session1 = sessions[i];
-        const session2 = sessions[j];
-
-        // Check if they're on the same day and have overlapping times
-        if (session1.day === session2.day) {
-          const overlap =
-            session1.start_time < session2.end_time &&
-            session1.end_time > session2.start_time;
-
-          if (overlap) {
-            return APIResponse.error<undefined>({
-              message:
-                `Conflict between sessions: ${session1.day} ${session1.start_time}-${session1.end_time} ` +
-                `overlaps with ${session2.day} ${session2.start_time}-${session2.end_time}`,
-              statusCode: 409,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Update a group session with conflict checking
-   */
-  async updateGroupSession(
-    sessionId: number,
-    updates: Partial<CreateGroupSessionDto>
+  async createGroupSession(
+    groupSession: CreateGroupSessionDto
   ): Promise<APIResponse<GroupSession | undefined>> {
-    // Get existing session
-    const existingSession = await this.dbService.db
-      .select()
-      .from(groupSessionSchema)
-      .where(eq(groupSessionSchema.id, sessionId))
+    // Check if group exists and get location
+    const [group] = await this.dbService.db
+      .select({
+        id: groupSchema.id,
+        location_id: groupSchema.location_id,
+      })
+      .from(groupSchema)
+      .where(eq(groupSchema.id, groupSession.group_id))
       .limit(1);
 
-    if (existingSession.length === 0) {
-      return APIResponse.error<undefined>({
-        message: 'Group session not found',
-        statusCode: 404,
-      });
-    }
-
-    const current = existingSession[0];
-
-    // Merge current values with updates
-    const updatedSession: CreateGroupSessionDto = {
-      group_id: updates.group_id ?? current.group_id,
-      day: (updates.day as GROUP_SESSION_DAY) ?? current.day,
-      start_time: updates.start_time ?? current.start_time,
-      end_time: updates.end_time ?? current.end_time,
-    };
-
-    // Validate the updated session
-    this.timeValidationCheck(updatedSession);
-    this.dayValidationCheck(updatedSession);
-
-    // Get group information
-    const groupInfo = await this.getGroupWithLocation(updatedSession.group_id);
-    if (!groupInfo) {
+    if (!group) {
       return APIResponse.error<undefined>({
         message: 'Group not found',
         statusCode: 404,
       });
     }
 
-    // Check for conflicts, excluding the current session
-    await this.checkLocationConflictsForUpdate(
-      updatedSession,
-      groupInfo.location_id,
-      sessionId
+    // Validate the session
+    const validation = await this.validateSessionsBeforeGroupCreation(
+      [groupSession],
+      group.location_id
     );
 
-    // Update the session
-    const updated = await this.dbService.db
+    if (!validation.valid) {
+      return APIResponse.error<undefined>({
+        message: validation.error || 'Invalid session',
+        statusCode: 400,
+      });
+    }
+
+    // Check for duplicate
+    const [duplicate] = await this.dbService.db
+      .select({ id: groupSessionSchema.id })
+      .from(groupSessionSchema)
+      .where(
+        and(
+          eq(groupSessionSchema.group_id, groupSession.group_id),
+          eq(groupSessionSchema.day, groupSession.day),
+          eq(groupSessionSchema.start_time, groupSession.start_time),
+          eq(groupSessionSchema.end_time, groupSession.end_time)
+        )
+      )
+      .limit(1);
+
+    if (duplicate) {
+      return APIResponse.error<undefined>({
+        message: `Session already exists for ${groupSession.day} from ${groupSession.start_time} to ${groupSession.end_time}`,
+        statusCode: 409,
+      });
+    }
+
+    const [newSession] = await this.dbService.db
+      .insert(groupSessionSchema)
+      .values(groupSession)
+      .returning();
+
+    this.logger.log(
+      `Session created for group ${groupSession.group_id}: ${groupSession.day} ${groupSession.start_time}-${groupSession.end_time}`
+    );
+
+    return APIResponse.success<GroupSession>({
+      message: 'Group session created successfully',
+      data: newSession,
+      statusCode: 201,
+    });
+  }
+
+  /**
+   * Update a group session
+   */
+  async updateGroupSession(
+    sessionId: number,
+    updates: Partial<CreateGroupSessionDto>
+  ): Promise<APIResponse<GroupSession | undefined>> {
+    const [existingSession] = await this.dbService.db
+      .select()
+      .from(groupSessionSchema)
+      .where(eq(groupSessionSchema.id, sessionId))
+      .limit(1);
+
+    if (!existingSession) {
+      return APIResponse.error<undefined>({
+        message: 'Group session not found',
+        statusCode: 404,
+      });
+    }
+
+    // Merge updates with existing values
+    const updatedSession: CreateGroupSessionDto = {
+      group_id: updates.group_id ?? existingSession.group_id,
+      day: (updates.day as GROUP_SESSION_DAY) ?? existingSession.day,
+      start_time: updates.start_time ?? existingSession.start_time,
+      end_time: updates.end_time ?? existingSession.end_time,
+    };
+
+    // Get group location
+    const [group] = await this.dbService.db
+      .select({ location_id: groupSchema.location_id })
+      .from(groupSchema)
+      .where(eq(groupSchema.id, updatedSession.group_id))
+      .limit(1);
+
+    if (!group) {
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
+    }
+
+    // Validate the updated session
+    const validation = await this.validateSessionsBeforeGroupCreation(
+      [updatedSession],
+      group.location_id
+    );
+
+    if (!validation.valid) {
+      return APIResponse.error<undefined>({
+        message: validation.error || 'Invalid session update',
+        statusCode: 400,
+      });
+    }
+
+    // Check for conflicts excluding current session
+    if (group.location_id) {
+      const [conflict] = await this.dbService.db
+        .select({
+          group_name: groupSchema.name,
+          start_time: groupSessionSchema.start_time,
+          end_time: groupSessionSchema.end_time,
+        })
+        .from(groupSessionSchema)
+        .innerJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
+        .where(
+          and(
+            eq(groupSchema.location_id, group.location_id),
+            eq(groupSessionSchema.day, updatedSession.day),
+            ne(groupSessionSchema.id, sessionId),
+            sql`(${updatedSession.start_time} < ${groupSessionSchema.end_time} AND ${updatedSession.end_time} > ${groupSessionSchema.start_time})`
+          )
+        )
+        .limit(1);
+
+      if (conflict) {
+        return APIResponse.error<undefined>({
+          message: `Time conflict with group "${conflict.group_name}" from ${conflict.start_time} to ${conflict.end_time}`,
+          statusCode: 409,
+        });
+      }
+    }
+
+    const [updated] = await this.dbService.db
       .update(groupSessionSchema)
       .set({
         ...updates,
@@ -336,130 +350,32 @@ export class GroupSessionService {
       .where(eq(groupSessionSchema.id, sessionId))
       .returning();
 
+    this.logger.log(`Session ${sessionId} updated successfully`);
+
     return APIResponse.success<GroupSession>({
       message: 'Group session updated successfully',
-      data: updated[0],
+      data: updated,
       statusCode: 200,
     });
   }
 
   /**
-   * Check location conflicts for updates (excluding current session)
+   * Find all group sessions with pagination
    */
-  private async checkLocationConflictsForUpdate(
-    updatedSession: CreateGroupSessionDto,
-    locationId: number | null,
-    excludeSessionId: number
-  ) {
-    if (!locationId) return;
-
-    const conflictingSessions = await this.dbService.db
-      .select({
-        session_id: groupSessionSchema.id,
-        group_name: groupSchema.name,
-        start_time: groupSessionSchema.start_time,
-        end_time: groupSessionSchema.end_time,
-        location_name: locationSchema.name,
-      })
-      .from(groupSessionSchema)
-      .innerJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
-      .innerJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
-      .where(
-        and(
-          eq(groupSchema.location_id, locationId),
-          eq(groupSessionSchema.day, updatedSession.day),
-          ne(groupSessionSchema.id, excludeSessionId), // Exclude current session
-          sql`(${updatedSession.start_time} < ${groupSessionSchema.end_time} AND ${updatedSession.end_time} > ${groupSessionSchema.start_time})`
-        )
-      );
-
-    if (conflictingSessions.length > 0) {
-      const conflict = conflictingSessions[0];
-      return APIResponse.error<undefined>({
-        message:
-          `Time conflict with existing session "${conflict.group_name}" at "${conflict.location_name}" ` +
-          `from ${conflict.start_time} to ${conflict.end_time}`,
-        statusCode: 409,
-      });
-    }
-  }
-
   async findAllGroupSessions(
     params: QueryGroupSessionDto
   ): Promise<APIResponse<IGroupSessionResponse[] | undefined>> {
-    try {
-      const offset = getPageOffset(
-        params.page ?? '1',
-        params.limit ?? APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString()
-      );
+    const offset = getPageOffset(
+      params.page ?? '1',
+      params.limit ?? APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString()
+    );
 
-      // Build the where condition dynamically
-      const whereConditions: SQL[] = [];
-
-      // Only add group_id filter if it's provided and valid
-      if (params.group_id && !isNaN(params.group_id)) {
-        whereConditions.push(eq(groupSessionSchema.group_id, params.group_id));
-      }
-
-      const sessions = await this.dbService.db
-        .select({
-          id: groupSessionSchema.id,
-          group_id: groupSessionSchema.group_id,
-          group_name: groupSchema.name,
-          day: groupSessionSchema.day,
-          start_time: groupSessionSchema.start_time,
-          end_time: groupSessionSchema.end_time,
-          location_id: groupSchema.location_id,
-          location_name: locationSchema.name,
-        })
-        .from(groupSessionSchema)
-        .leftJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
-        .leftJoin(
-          locationSchema,
-          eq(groupSchema.location_id, locationSchema.id)
-        )
-        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-        .limit(Number(params.limit))
-        .offset(offset);
-
-      // Get total count with the same conditions
-      const totalResult = await this.dbService.db
-        .select({ count: sql<number>`count(*)` })
-        .from(groupSessionSchema)
-        .leftJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
-        .leftJoin(
-          locationSchema,
-          eq(groupSchema.location_id, locationSchema.id)
-        )
-        .where(
-          whereConditions.length > 0 ? and(...whereConditions) : undefined
-        );
-
-      const total = totalResult[0]?.count || 0;
-
-      const result = APIResponse.success<IGroupSessionResponse[]>({
-        message: 'Group sessions found successfully',
-        data: sessions,
-        pagination: {
-          count: total,
-          page: Number(params.page),
-          limit: Number(params.limit),
-          totalPages: Math.ceil(total / Number(params.limit)),
-        },
-        statusCode: 200,
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error in findAllGroupSessions:', error);
-      throw error;
+    const whereConditions: SQL[] = [];
+    if (params.group_id && !isNaN(params.group_id)) {
+      whereConditions.push(eq(groupSessionSchema.group_id, params.group_id));
     }
-  }
 
-  async findOne(
-    id: number
-  ): Promise<APIResponse<IGroupSessionResponse | undefined>> {
-    const session = await this.dbService.db
+    const sessions = await this.dbService.db
       .select({
         id: groupSessionSchema.id,
         group_id: groupSessionSchema.group_id,
@@ -471,12 +387,54 @@ export class GroupSessionService {
         location_name: locationSchema.name,
       })
       .from(groupSessionSchema)
-      .innerJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
-      .innerJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
+      .leftJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
+      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .limit(Number(params.limit))
+      .offset(offset);
+
+    const [{ count }] = await this.dbService.db
+      .select({ count: sql<number>`count(*)` })
+      .from(groupSessionSchema)
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
+    return APIResponse.success<IGroupSessionResponse[]>({
+      message: 'Group sessions retrieved successfully',
+      data: sessions,
+      pagination: {
+        count,
+        page: Number(params.page),
+        limit: Number(params.limit),
+        totalPages: Math.ceil(count / Number(params.limit)),
+      },
+      statusCode: 200,
+    });
+  }
+
+  /**
+   * Find a single group session
+   */
+  async findOne(
+    id: number
+  ): Promise<APIResponse<IGroupSessionResponse | undefined>> {
+    const [session] = await this.dbService.db
+      .select({
+        id: groupSessionSchema.id,
+        group_id: groupSessionSchema.group_id,
+        group_name: groupSchema.name,
+        day: groupSessionSchema.day,
+        start_time: groupSessionSchema.start_time,
+        end_time: groupSessionSchema.end_time,
+        location_id: groupSchema.location_id,
+        location_name: locationSchema.name,
+      })
+      .from(groupSessionSchema)
+      .leftJoin(groupSchema, eq(groupSessionSchema.group_id, groupSchema.id))
+      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
       .where(eq(groupSessionSchema.id, id))
       .limit(1);
 
-    if (session.length === 0) {
+    if (!session) {
       return APIResponse.error<undefined>({
         message: 'Group session not found',
         statusCode: 404,
@@ -484,8 +442,41 @@ export class GroupSessionService {
     }
 
     return APIResponse.success<IGroupSessionResponse>({
-      message: 'Group session found successfully',
-      data: session[0],
+      message: 'Group session retrieved successfully',
+      data: session,
+      statusCode: 200,
+    });
+  }
+
+  /**
+   * Delete a group session
+   */
+  async deleteGroupSession(
+    id: number
+  ): Promise<APIResponse<GroupSession | undefined>> {
+    const [existingSession] = await this.dbService.db
+      .select()
+      .from(groupSessionSchema)
+      .where(eq(groupSessionSchema.id, id))
+      .limit(1);
+
+    if (!existingSession) {
+      return APIResponse.error<undefined>({
+        message: 'Group session not found',
+        statusCode: 404,
+      });
+    }
+
+    const [deleted] = await this.dbService.db
+      .delete(groupSessionSchema)
+      .where(eq(groupSessionSchema.id, id))
+      .returning();
+
+    this.logger.log(`Session ${id} deleted successfully`);
+
+    return APIResponse.success<GroupSession>({
+      message: 'Group session deleted successfully',
+      data: deleted,
       statusCode: 200,
     });
   }

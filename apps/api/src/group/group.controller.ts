@@ -38,6 +38,7 @@ import { UpdateGroupSessionDto } from './dto/update-groupsession.dto';
 import { APIResponse } from '../utils/response';
 import { Group } from '../db/schemas';
 import { IGroupResponse } from './group.types';
+
 @ApiTags('Groups')
 @Controller('api/group')
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -58,8 +59,33 @@ export class GroupController {
       'Create a new training group with age requirements and skill level',
   })
   @ApiBody({
-    type: CreateGroupDto,
-    description: 'Group information',
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Advanced Wrestling Group' },
+        description: { type: 'string', example: 'Advanced level training' },
+        min_age: { type: 'number', example: 12 },
+        max_age: { type: 'number', example: 18 },
+        skill_level: { type: 'string', example: 'intermediate' },
+        max_group_size: { type: 'number', example: 15 },
+        location_id: { type: 'number', example: 1 },
+        coach_id: { type: 'number', example: 1 },
+        photo_url: {
+          type: 'string',
+          format: 'binary',
+          description: 'Group photo file',
+        },
+        sessions: {
+          type: 'string',
+          format: 'text',
+          description: 'JSON string of sessions array',
+          example:
+            '[{"day":"Monday","start_time":"10:00","end_time":"11:00"},{"day":"Wednesday","start_time":"14:00","end_time":"15:00"}]',
+        },
+      },
+      required: ['name', 'min_age', 'max_age', 'skill_level', 'max_group_size'],
+    },
+    description: 'Group information with sessions as JSON string',
   })
   @ApiResponse({
     status: 201,

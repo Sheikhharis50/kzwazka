@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <section className="flex flex-col lg:flex-row lg:p-1.5 h-dvh overflow-hidden bg-white relative">
+    <section className="flex flex-col lg:flex-row lg:p-1.5 lg:pr-0 h-dvh overflow-hidden bg-white relative">
       <Sidebar />
       <Navbar />
       <main className="flex-1 h-full overflow-hidden flex flex-col">

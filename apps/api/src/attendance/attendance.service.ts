@@ -14,12 +14,7 @@ import {
   MarkAllAsPresentDto,
 } from './dto/create-attendance.dto';
 import { QueryAttendanceDto } from './dto/query-attendance.dto';
-import {
-  APP_CONSTANTS,
-  ATTENDANCE_STATUS,
-  end_of_day_date,
-  getPageOffset,
-} from '../utils';
+import { APP_CONSTANTS, ATTENDANCE_STATUS, getPageOffset } from '../utils';
 import { APIResponse } from '../utils/response';
 import { IResponseAttendance } from './attendance.types';
 import { FileStorageService } from '../services/file-storage.service';
@@ -102,7 +97,7 @@ export class AttendanceService {
     const attendanceConditions: SQLWrapper[] = [];
     if (queryDto.date) {
       attendanceConditions.push(
-        eq(attendanceSchema.date, end_of_day_date(queryDto.date))
+        eq(attendanceSchema.date, new Date(queryDto.date))
       );
     }
     if (queryDto.status) {

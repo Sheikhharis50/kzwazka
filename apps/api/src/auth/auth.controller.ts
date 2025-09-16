@@ -432,7 +432,11 @@ export class AuthController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() photo_url?: Express.Multer.File
   ) {
-    return this.userService.update(req.user.id, updateUserDto, photo_url);
+    return this.authService.updateProfile(
+      req.user.id,
+      updateUserDto,
+      photo_url
+    );
   }
 
   @Post('google')

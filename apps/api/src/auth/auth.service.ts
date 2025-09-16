@@ -32,6 +32,7 @@ import {
   generateOTP,
   isOTPExpired,
 } from '../utils/auth.utils';
+import { UpdateUserDto } from '../user/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -373,6 +374,27 @@ export class AuthService {
         },
         children: childrenwithphotoUrl,
       },
+    };
+  }
+
+  async updateProfile(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+    photo_url?: Express.Multer.File
+  ) {
+    const user = await this.userService.update(
+      userId,
+      updateUserDto,
+      photo_url
+    );
+    if (user.photo_url) {
+      user.photo_url = this.fileStorageService.getAbsoluteUrl(user.photo_url);
+    }
+
+    return {
+      message: 'Profile updated successfully',
+      data: user,
+      statusCode: 200,
     };
   }
 

@@ -8,6 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ATTENDANCE_STATUS } from 'src/utils/constants';
 
 export class CreateAttendanceDto {
   @ApiProperty({
@@ -37,12 +38,14 @@ export class CreateAttendanceDto {
   @ApiProperty({
     description: 'Attendance status',
     example: 'present',
-    enum: ['present', 'absent', 'late'],
+    enum: Object.values(ATTENDANCE_STATUS),
   })
   @IsString({ message: 'Status must be a string' })
   @IsNotEmpty({ message: 'Status is required' })
-  @IsIn(['present', 'absent', 'late'], {
-    message: 'Status must be one of: present, absent, late',
+  @IsIn(Object.values(ATTENDANCE_STATUS), {
+    message: `Status must be one of: ${Object.values(ATTENDANCE_STATUS).join(
+      ', '
+    )}`,
   })
   status: string;
 
@@ -54,4 +57,23 @@ export class CreateAttendanceDto {
   @IsString({ message: 'Notes must be a string' })
   @IsOptional()
   notes?: string;
+}
+
+export class MarkAllAsPresentDto {
+  @ApiProperty({
+    description: 'Group ID',
+    example: 1,
+  })
+  @IsInt({ message: 'Group ID must be an integer' })
+  @Min(1, { message: 'Group ID must be at least 1' })
+  @IsNotEmpty({ message: 'Group ID is required' })
+  group_id: number;
+
+  @ApiProperty({
+    description: 'Date',
+    example: '2024-01-15',
+  })
+  @IsString({ message: 'Date must be a string' })
+  @IsNotEmpty({ message: 'Date is required' })
+  date: string;
 }

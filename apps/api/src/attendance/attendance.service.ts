@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, and, desc, SQLWrapper, sql } from 'drizzle-orm';
+import { eq, and, desc, SQLWrapper, sql, inArray } from 'drizzle-orm';
 import {
   attendanceSchema,
   Attendance,
@@ -9,10 +9,17 @@ import {
   userSchema,
   childrenGroupSchema,
 } from '../db/schemas';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import {
+  CreateAttendanceDto,
+  MarkAllAsPresentDto,
+} from './dto/create-attendance.dto';
 import { QueryAttendanceDto } from './dto/query-attendance.dto';
-import { APP_CONSTANTS, end_of_day_date, getPageOffset } from '../utils';
+import {
+  APP_CONSTANTS,
+  ATTENDANCE_STATUS,
+  end_of_day_date,
+  getPageOffset,
+} from '../utils';
 import { APIResponse } from '../utils/response';
 import { IResponseAttendance } from './attendance.types';
 import { FileStorageService } from '../services/file-storage.service';
@@ -46,6 +53,7 @@ export class AttendanceService {
         .update(attendanceSchema)
         .set({
           ...attendanceData,
+          updated_at: new Date(),
         })
         .where(eq(attendanceSchema.id, existingAttendance[0].id))
         .returning();
@@ -71,7 +79,7 @@ export class AttendanceService {
     });
   }
 
-  async findAllChildrenwithAttendance(
+  async findAll(
     queryDto: QueryAttendanceDto
   ): Promise<APIResponse<IResponseAttendance[]>> {
     const offset = getPageOffset(
@@ -189,73 +197,89 @@ export class AttendanceService {
     });
   }
 
-  async findOne(id: number): Promise<APIResponse<Attendance>> {
-    const attendance = await this.dbService.db
-      .select({
-        id: attendanceSchema.id,
-        children_id: attendanceSchema.children_id,
-        group_id: attendanceSchema.group_id,
-        date: attendanceSchema.date,
-        status: attendanceSchema.status,
-        notes: attendanceSchema.notes,
-        created_at: attendanceSchema.created_at,
-        updated_at: attendanceSchema.updated_at,
-        children: {
-          id: childrenSchema.id,
-          parent_first_name: childrenSchema.parent_first_name,
-          parent_last_name: childrenSchema.parent_last_name,
-        },
-        group: {
-          id: groupSchema.id,
-          name: groupSchema.name,
-          skill_level: groupSchema.skill_level,
-        },
-      })
-      .from(attendanceSchema)
-      .leftJoin(
-        childrenSchema,
-        eq(attendanceSchema.children_id, childrenSchema.id)
+  async markAllasPresent(
+    markAllAsPresentDto: MarkAllAsPresentDto
+  ): Promise<APIResponse<Attendance[]>> {
+    // First, get all children in the group
+    const getAllChildren = await this.dbService.db
+      .select()
+      .from(childrenSchema)
+      .innerJoin(
+        childrenGroupSchema,
+        eq(childrenSchema.id, childrenGroupSchema.children_id)
       )
-      .leftJoin(groupSchema, eq(attendanceSchema.group_id, groupSchema.id))
-      .where(eq(attendanceSchema.id, id))
-      .limit(1);
+      .where(eq(childrenGroupSchema.group_id, markAllAsPresentDto.group_id));
 
-    if (attendance.length === 0) {
-      throw new NotFoundException('Attendance record not found');
+    const childrenIds = getAllChildren.map((child) => child.children.id);
+
+    if (childrenIds.length === 0) {
+      throw new NotFoundException('No children found in the specified group');
     }
 
-    return APIResponse.success<Attendance>({
-      message: 'Successfully fetched attendance record',
-      data: attendance[0],
-      statusCode: 200,
-    });
-  }
+    // Check for existing attendance records for these children on this date
+    const existingAttendance = await this.dbService.db
+      .select()
+      .from(attendanceSchema)
+      .where(
+        and(
+          inArray(attendanceSchema.children_id, childrenIds),
+          eq(attendanceSchema.group_id, markAllAsPresentDto.group_id),
+          eq(attendanceSchema.date, new Date(markAllAsPresentDto.date))
+        )
+      );
 
-  async update(
-    id: number,
-    updateAttendanceDto: UpdateAttendanceDto
-  ): Promise<APIResponse<Attendance>> {
-    const { date, ...updateData } = updateAttendanceDto;
+    const existingChildrenIds = existingAttendance.map(
+      (record) => record.children_id
+    );
+    const newChildrenIds = childrenIds.filter(
+      (id) => !existingChildrenIds.includes(id)
+    );
 
-    const updateValues = {
-      ...updateData,
-      ...(date !== undefined && { date: new Date(date) }),
-      updated_at: new Date(),
-    };
+    const results: Attendance[] = [];
 
-    const updatedAttendance = await this.dbService.db
-      .update(attendanceSchema)
-      .set(updateValues)
-      .where(eq(attendanceSchema.id, id))
-      .returning();
+    // Update existing attendance records
+    if (existingAttendance.length > 0) {
+      const updatedAttendance = await this.dbService.db
+        .update(attendanceSchema)
+        .set({
+          status: ATTENDANCE_STATUS.PRESENT,
+          updated_at: new Date(),
+        })
+        .where(
+          and(
+            inArray(
+              attendanceSchema.children_id,
+              existingChildrenIds as number[]
+            ),
+            eq(attendanceSchema.group_id, markAllAsPresentDto.group_id),
+            eq(attendanceSchema.date, new Date(markAllAsPresentDto.date))
+          )
+        )
+        .returning();
 
-    if (updatedAttendance.length === 0) {
-      throw new NotFoundException('Attendance record not found');
+      results.push(...updatedAttendance);
     }
 
-    return APIResponse.success<Attendance>({
-      message: 'Successfully updated attendance record',
-      data: updatedAttendance[0],
+    // Insert new attendance records for children without existing records
+    if (newChildrenIds.length > 0) {
+      const newAttendance = await this.dbService.db
+        .insert(attendanceSchema)
+        .values(
+          newChildrenIds.map((childId) => ({
+            children_id: childId,
+            group_id: markAllAsPresentDto.group_id,
+            date: new Date(markAllAsPresentDto.date),
+            status: ATTENDANCE_STATUS.PRESENT,
+          }))
+        )
+        .returning();
+
+      results.push(...newAttendance);
+    }
+
+    return APIResponse.success<Attendance[]>({
+      message: `Successfully marked all ${childrenIds.length} children as present (${existingAttendance.length} updated, ${newChildrenIds.length} created)`,
+      data: results,
       statusCode: 200,
     });
   }

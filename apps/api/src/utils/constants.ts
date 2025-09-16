@@ -111,3 +111,9 @@ export enum EVENT_TYPE {
   TRAINING = 'training',
   ONE_TIME = 'one_time',
 }
+
+export enum ATTENDANCE_STATUS {
+  ABSENT = 'absent',
+  PRESENT = 'present',
+  LATE = 'late',
+}

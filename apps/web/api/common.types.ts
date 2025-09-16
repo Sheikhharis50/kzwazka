@@ -1,9 +1,13 @@
 export interface APIListResponse<T> {
   message: string;
   status: number;
-  count: number;
-  page?: number;
   data: T[];
+  pagination: {
+    count: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface APIResponse<T> {
@@ -15,4 +19,9 @@ export interface APIResponse<T> {
 export interface APIError {
   message: string;
   status: number;
+}
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
 }

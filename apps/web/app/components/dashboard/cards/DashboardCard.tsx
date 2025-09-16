@@ -10,8 +10,10 @@ interface DashboardCardProps {
 const DashboardCard = ({ title, button, children }: DashboardCardProps) => {
   return (
     <div className="rounded-2xl bg-smoke overflow-hidden w-full">
-      <div className="bg-blue h-[50px] flex justify-between items-center px-7">
-        <h3 className="text-lg 2xl:text-[20px] text-white">{title}</h3>
+      <div className="bg-blue h-[50px] flex justify-between items-center px-3 xs:px-5 md:px-7">
+        <h3 className="text-base xs:text-lg 2xl:text-[20px] text-white">
+          {title}
+        </h3>
         {button && (
           <Button
             text={button.text}

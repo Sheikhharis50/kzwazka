@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '../globals.css';
 import Sidebar from '@/components/dashboard/sidebar';
 import Navbar from '@/components/Navbar';
+import ProfileDropdown from '@/components/dashboard/ProfileDropdown';
 
 export const metadata: Metadata = {
   title: 'Kzwazka | Dashboard',
@@ -14,10 +15,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <section className="flex flex-col lg:flex-row lg:p-1.5 h-dvh overflow-hidden bg-white relative">
+    <section className="flex flex-col lg:flex-row lg:p-1.5 lg:pr-0 h-dvh overflow-hidden bg-white relative">
       <Sidebar />
       <Navbar />
       <main className="flex-1 h-full overflow-hidden flex flex-col">
+        <div className="hidden lg:flex justify-end px-1.5 pb-1.5">
+          <ProfileDropdown />
+        </div>
         <div className="flex-1 overflow-y-auto">{children}</div>
       </main>
     </section>

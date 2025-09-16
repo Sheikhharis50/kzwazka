@@ -5,11 +5,21 @@ import GroupCard from '@/components/dashboard/group/Card';
 import Heading from '@/components/Heading';
 import Paragraph from '@/components/Paragraph';
 import Modal from '@/components/ui/Modal';
-import { IGroup } from 'api/type';
 import React from 'react';
+import { useGroup } from '@/hooks/useGroup';
+import ImageCardSkeleton from '@/components/ui/ImageCardSkeleton';
 
 const Groups = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const {
+    getInfiniteGroups: {
+      data,
+      isLoading,
+      isRefetching,
+      hasNextPage,
+      fetchNextPage,
+    },
+  } = useGroup();
 
   return (
     <>
@@ -26,17 +36,32 @@ const Groups = () => {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-3 2xl:gap-5 min-[1700px]:gap-8">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <GroupCard key={index} group={{} as IGroup} />
-          ))}
+          {isLoading || isRefetching
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <ImageCardSkeleton key={index} />
+              ))
+            : data?.pages.length
+              ? data.pages.flatMap((page) =>
+                  page.data.map((group) => (
+                    <GroupCard {...group} key={group.id} />
+                  ))
+                )
+              : null}
         </div>
+        {hasNextPage && (
+          <Button
+            text="Load More"
+            className="mx-auto my-8"
+            onClick={() => fetchNextPage()}
+          />
+        )}
       </div>
       <Modal
         size="lg"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
-        <CreateGroupForm />
+        <CreateGroupForm closeModal={() => setIsModalOpen(false)} />
       </Modal>
     </>
   );

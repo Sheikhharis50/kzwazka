@@ -34,7 +34,7 @@ const ModalLayout = ({
           className={`${group ? 'rounded-lg bg-[#F0F3F9] h-24 xl:h-32 w-28 xl:w-36' : 'rounded-full bg-smoke size-24'} flex justify-center items-center relative mx-auto`}
         >
           <div
-            className={`${defaultPhoto || preview ? 'block' : 'hidden'} rounded-full overflow-hidden`}
+            className={`${defaultPhoto || preview ? 'block' : 'hidden'} ${group ? 'rounded-lg' : 'rounded-full'} size-full overflow-hidden`}
           >
             <Image
               src={preview || defaultPhoto || Placeholder}
@@ -45,7 +45,7 @@ const ModalLayout = ({
             />
             {preview ? (
               <button
-                className="bg-red text-white p-1 rounded-full absolute top-3 right-0"
+                className={`bg-red text-white p-1 rounded-full absolute ${group ? '-top-1 -right-1' : 'top-3 right-0'} `}
                 onClick={removeFile}
               >
                 <Trash className="w-3 h-auto" />

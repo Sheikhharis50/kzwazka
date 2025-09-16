@@ -1,3 +1,15 @@
+import { createGroupFormData } from '@/components/dashboard/group/create-group/schema';
+
+export type ISession = {
+  id: number;
+  group_id: number;
+  day: string;
+  start_time: string;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type IGroup = {
   id: number;
   name: string;
@@ -18,10 +30,16 @@ export type IGroup = {
     state: string;
   };
   coach: {
-    id: 1;
-    name: string;
+    id: number;
+    user_id: number;
+    first_name: string;
+    last_name: string;
     email: string;
-    phone: string;
     photo_url: string;
   };
+  sessions: ISession[];
+};
+
+export type CreateGroupPayload = createGroupFormData & {
+  photo_url: File | undefined;
 };

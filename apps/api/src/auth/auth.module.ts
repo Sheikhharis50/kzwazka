@@ -10,6 +10,7 @@ import { ChildrenModule } from '../children/children.module';
 import { EmailService, FileStorageService } from '../services';
 import { GoogleAuthService } from './google-auth.service';
 import { SharedJwtModule } from './jwt.module';
+import { UserService } from '../user/user.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SharedJwtModule } from './jwt.module';
     FileStorageService,
     JwtStrategy,
     GoogleAuthService,
+    UserService,
   ],
   exports: [AuthService],
 })

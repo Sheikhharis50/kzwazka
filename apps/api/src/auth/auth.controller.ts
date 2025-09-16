@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   UseInterceptors,
   UploadedFile,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -30,13 +31,16 @@ import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
 import { GoogleAuthService } from './google-auth.service';
+import { UserService } from '../user/user.service';
+import { UpdateUserDto } from '../user/dto/update-user.dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private googleAuthService: GoogleAuthService
+    private googleAuthService: GoogleAuthService,
+    private userService: UserService
   ) {}
 
   @Post('signup')
@@ -399,6 +403,36 @@ export class AuthController {
   })
   async getProfile(@Req() req: APIRequest) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('update-profile')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update a user profile' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        first_name: { type: 'string', example: 'John' },
+        last_name: { type: 'string', example: 'Doe' },
+        phone: { type: 'string', example: '+1-555-123-4567' },
+        photo_url: {
+          type: 'string',
+          format: 'binary',
+          description: 'Profile photo (optional)',
+        },
+      },
+    },
+    description: 'Update user profile data',
+  })
+  @UseInterceptors(createImageUploadInterceptor('photo_url'))
+  async updateProfile(
+    @Req() req: APIRequest,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() photo_url?: Express.Multer.File
+  ) {
+    return this.userService.update(req.user.id, updateUserDto, photo_url);
   }
 
   @Post('google')

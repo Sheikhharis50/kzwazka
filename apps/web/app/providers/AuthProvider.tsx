@@ -3,9 +3,10 @@ import { LoginFormData } from '@/(authentication)/login/schema';
 import { useLoginMutation } from '@/hooks/useLoginMutation';
 import { useRegisterMutation } from '@/hooks/useRegisterMutation';
 import { useResendOtpMutation } from '@/hooks/useResendOtpMutation';
+import { useUpdateProfileMutation } from '@/hooks/useUpdateProfileMutation';
 import { useVerifyEmailMutation } from '@/hooks/useVerifyEmailMutation';
 import { useQueryClient } from '@tanstack/react-query';
-import { RegisterPayload } from 'api/type';
+import { RegisterPayload, UpdateProfilePayload } from 'api/type';
 import { redirect } from 'next/navigation';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
 
@@ -18,6 +19,7 @@ export interface AuthContextType {
   register: (credentials: RegisterPayload) => void;
   verifyOtp: ({ otp }: { otp: string }) => void;
   resendOtp: () => void;
+  updateProfile: (credentials: UpdateProfilePayload) => void;
   //   forgotPassword: () => void;
 }
 
@@ -30,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const registerMutation = useRegisterMutation();
   const verifyOtpMutation = useVerifyEmailMutation();
   const loginMutation = useLoginMutation();
+  const updateMutation = useUpdateProfileMutation();
   const resendOtpMutation = useResendOtpMutation();
   const queryClient = useQueryClient();
 
@@ -53,6 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resendOtp = async () => {
     await resendOtpMutation.mutateAsync();
+  };
+
+  const updateProfile = async (credentials: UpdateProfilePayload) => {
+    await updateMutation.mutateAsync(credentials);
   };
 
   useEffect(() => {
@@ -103,7 +110,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading:
           registerMutation.isPending ||
           verifyOtpMutation.isPending ||
-          loginMutation.isPending,
+          loginMutation.isPending ||
+          updateMutation.isPending,
         token,
         hasToken: !!token,
         register,
@@ -111,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         resendOtp,
+        updateProfile,
       }}
     >
       {children}

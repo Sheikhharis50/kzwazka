@@ -42,7 +42,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     <UserContext.Provider
       value={{
         user: data?.user ?? null,
-        child: data?.child ?? null,
+        child: data?.children ?? null,
         isLoading: isLoading.current,
         isError,
         refetch,

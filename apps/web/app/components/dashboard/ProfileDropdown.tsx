@@ -29,13 +29,14 @@ const ProfileDropdown = () => {
         <ProfileIcon photo_url={child?.user.photo_url || ''} />
         <Paragraph
           text={safeJoin([user?.first_name, user?.last_name], ' ', 'User')}
+          className="max-w-[100px] truncate"
         />
         <Previous className="-rotate-90 w-3" />
       </div>
       {isOptionsVisible && (
         <div
           ref={optionsRef}
-          className="absolute w-fit bg-white z-10 rounded-md shadow-md mt-2 text-sm 2xl:text-base"
+          className="absolute w-full min-w-fit bg-white z-10 rounded-md shadow-md mt-2 text-sm 2xl:text-base"
         >
           <button
             onClick={() => router.push('/dashboard/profile')}

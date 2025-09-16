@@ -31,7 +31,6 @@ import { VerifyOtpDto } from './dto/otp.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
 import { GoogleAuthService } from './google-auth.service';
-import { UserService } from '../user/user.service';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 
 @ApiTags('Authentication')
@@ -39,8 +38,7 @@ import { UpdateUserDto } from '../user/dto/update-user.dto';
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private googleAuthService: GoogleAuthService,
-    private userService: UserService
+    private googleAuthService: GoogleAuthService
   ) {}
 
   @Post('signup')

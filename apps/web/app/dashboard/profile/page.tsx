@@ -13,6 +13,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import Image from 'next/image';
 import ErrorField from '@/components/ui/ErrorField';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 const Profile = () => {
   const { user, child } = useUser();
@@ -21,11 +22,12 @@ const Profile = () => {
     useFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileVisible = preview || child?.user.photo_url;
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
   } = useForm<updateProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -123,11 +125,23 @@ const Profile = () => {
             error={errors.phone?.message}
           />
         </div>
-        <Button
-          isLoading={isLoading}
-          text="Save"
-          className="min-w-[168px] md:min-w-[226px]"
-        />
+        <div className="flex gap-3 md:gap-5">
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            disabled={!isDirty || isLoading}
+            text="Save"
+            className={`min-w-[100px] xs:min-w-[168px] md:min-w-[226px] ${!isDirty ? '!bg-red/20 !text-black' : ''}`}
+          />
+          <Button
+            type="button"
+            text="Change Password"
+            className="xs:min-w-[168px] md:min-w-[226px]"
+            onClick={() =>
+              router.push(`/change-password?next=${location.pathname}`)
+            }
+          />
+        </div>
       </form>
     </div>
   );

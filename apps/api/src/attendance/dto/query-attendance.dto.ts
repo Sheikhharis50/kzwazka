@@ -1,11 +1,11 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsOptional,
   IsInt,
   Min,
-  IsDateString,
   IsIn,
   IsString,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class QueryAttendanceDto {
@@ -38,21 +38,13 @@ export class QueryAttendanceDto {
   })
   status?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Filter attendance from this date',
-    example: '2024-01-01T00:00:00Z',
+    example: '2024-01-01',
   })
-  @IsOptional()
-  @IsDateString({}, { message: 'From date must be a valid date string' })
-  from_date?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter attendance until this date',
-    example: '2024-12-31T23:59:59Z',
-  })
-  @IsOptional()
-  @IsDateString({}, { message: 'To date must be a valid date string' })
-  to_date?: string;
+  @IsNotEmpty({ message: 'Date is required' })
+  @IsString({ message: 'Date must be a string' })
+  date: string;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

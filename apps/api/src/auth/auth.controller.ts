@@ -314,6 +314,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Change password',
     description: 'Change user password',

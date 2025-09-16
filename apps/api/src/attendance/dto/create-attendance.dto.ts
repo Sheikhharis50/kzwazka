@@ -3,7 +3,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsInt,
-  IsDateString,
   IsIn,
   Min,
 } from 'class-validator';
@@ -29,9 +28,9 @@ export class CreateAttendanceDto {
 
   @ApiProperty({
     description: 'Attendance date',
-    example: '2024-01-15T09:00:00Z',
+    example: '2025-09-15',
   })
-  @IsDateString({}, { message: 'Date must be a valid date string' })
+  @IsString({ message: 'Date must be a string' })
   @IsNotEmpty({ message: 'Date is required' })
   date: string;
 
@@ -71,7 +70,7 @@ export class MarkAllAsPresentDto {
 
   @ApiProperty({
     description: 'Date',
-    example: '2024-01-15',
+    example: '2025-09-15',
   })
   @IsString({ message: 'Date must be a string' })
   @IsNotEmpty({ message: 'Date is required' })

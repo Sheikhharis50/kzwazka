@@ -643,11 +643,17 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new BadRequestException('Invalid old password');
+      throw new BadRequestException('Incorrect password');
     }
 
     if (changePasswordDto.new_password !== changePasswordDto.confirm_password) {
       throw new BadRequestException('Passwords do not match');
+    }
+
+    if (changePasswordDto.new_password === changePasswordDto.old_password) {
+      throw new BadRequestException(
+        'New password cannot be the same as the old password'
+      );
     }
 
     const hashedPassword = await this.userService.hashPassword(

@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({
@@ -7,6 +8,8 @@ export class UpdateUserDto {
     minLength: 2,
     maxLength: 50,
   })
+  @IsString({ message: 'First name must be a string' })
+  @IsOptional()
   first_name?: string;
 
   @ApiPropertyOptional({
@@ -15,6 +18,8 @@ export class UpdateUserDto {
     minLength: 2,
     maxLength: 50,
   })
+  @IsString({ message: 'Last name must be a string' })
+  @IsOptional()
   last_name?: string;
 
   @ApiPropertyOptional({
@@ -23,6 +28,8 @@ export class UpdateUserDto {
     maxLength: 20,
     pattern: '^\\+?[\\d\\s\\-\\(\\)]+$',
   })
+  @IsString({ message: 'Phone number must be a string' })
+  @IsOptional()
   phone?: string;
 
   @ApiPropertyOptional({
@@ -30,5 +37,7 @@ export class UpdateUserDto {
     example: 'https://example.com/photos/user.jpg',
     maxLength: 500,
   })
+  @IsString({ message: 'Photo URL must be a string' })
+  @IsOptional()
   photo_url?: string;
 }

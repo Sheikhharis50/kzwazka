@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, and, desc, SQLWrapper, sql, inArray } from 'drizzle-orm';
 import {
@@ -30,6 +34,10 @@ export class AttendanceService {
     createAttendanceDto: CreateAttendanceDto
   ): Promise<APIResponse<Attendance>> {
     const { date, ...attendanceData } = createAttendanceDto;
+
+    if (new Date(date) > new Date()) {
+      throw new BadRequestException('Date cannot be in the future');
+    }
 
     const existingAttendance = await this.dbService.db
       .select()

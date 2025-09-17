@@ -28,8 +28,15 @@ export class AttendanceService {
 
   async create(
     createAttendanceDto: CreateAttendanceDto
-  ): Promise<APIResponse<Attendance>> {
+  ): Promise<APIResponse<Attendance | undefined>> {
     const { date, ...attendanceData } = createAttendanceDto;
+
+    if (new Date(date) > new Date()) {
+      return APIResponse.error<undefined>({
+        message: 'Date cannot be in the future',
+        statusCode: 400,
+      });
+    }
 
     const existingAttendance = await this.dbService.db
       .select()
@@ -77,36 +84,57 @@ export class AttendanceService {
   async findAll(
     queryDto: QueryAttendanceDto
   ): Promise<APIResponse<IResponseAttendance[]>> {
+    if (!queryDto.group_id) {
+      return APIResponse.success<IResponseAttendance[]>({
+        message: 'Group ID is required',
+        data: [],
+        pagination: {
+          page: Number(queryDto.page || '1'),
+          limit: Number(
+            queryDto.limit || APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString()
+          ),
+          count: 0,
+          totalPages: 0,
+        },
+        statusCode: 200,
+      });
+    }
+
+    const page = Number(queryDto.page || '1');
+    const limit = Number(
+      queryDto.limit || APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString()
+    );
     const offset = getPageOffset(
       queryDto.page || '1',
       queryDto.limit || APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString()
     );
 
-    const conditions: SQLWrapper[] = [];
+    const baseConditions: SQLWrapper[] = [
+      eq(childrenGroupSchema.group_id, queryDto.group_id), // Required condition
+    ];
 
     if (queryDto.children_id) {
-      conditions.push(eq(childrenSchema.id, queryDto.children_id));
+      baseConditions.push(eq(childrenSchema.id, queryDto.children_id));
     }
 
-    if (queryDto.group_id) {
-      conditions.push(eq(childrenGroupSchema.group_id, queryDto.group_id));
-    }
+    const attendanceConditions: SQLWrapper[] = [
+      eq(childrenSchema.id, attendanceSchema.children_id),
+    ];
 
-    // For attendance-related filters, we need to handle them differently
-    // since we're using leftJoin and want to include children without attendance
-    const attendanceConditions: SQLWrapper[] = [];
     if (queryDto.date) {
       attendanceConditions.push(
         eq(attendanceSchema.date, new Date(queryDto.date))
       );
     }
+
     if (queryDto.status) {
       attendanceConditions.push(eq(attendanceSchema.status, queryDto.status));
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const baseWhereClause = and(...baseConditions);
+    const attendanceJoinCondition = and(...attendanceConditions);
 
-    const childrenwithAttendance = await this.dbService.db
+    const results = await this.dbService.db
       .select({
         id: childrenSchema.id,
         first_name: userSchema.first_name,
@@ -126,67 +154,52 @@ export class AttendanceService {
           created_at: attendanceSchema.created_at,
           updated_at: attendanceSchema.updated_at,
         },
+        total_count: sql<number>`COUNT(*) OVER()`,
       })
       .from(childrenSchema)
-      .leftJoin(
-        attendanceSchema,
-        and(
-          eq(childrenSchema.id, attendanceSchema.children_id),
-          ...(attendanceConditions.length > 0 ? attendanceConditions : [])
-        )
+      .innerJoin(
+        childrenGroupSchema,
+        eq(childrenSchema.id, childrenGroupSchema.children_id)
       )
+      .innerJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
-      .where(whereClause)
+      // Left join for optional attendance
+      .leftJoin(attendanceSchema, attendanceJoinCondition)
+      .where(baseWhereClause)
       .orderBy(desc(attendanceSchema.date))
-      .limit(Number(queryDto.limit))
+      .limit(limit)
       .offset(offset);
-    const attendanceChildrenwithAbsolutePhoto = childrenwithAttendance.map(
-      (children) => {
-        if (children.photo_url) {
-          children.photo_url = this.fileStorageService.getAbsoluteUrl(
-            children.photo_url
-          );
-        }
-        if (children.group && children.group.photo_url) {
-          children.group.photo_url = this.fileStorageService.getAbsoluteUrl(
-            children.group.photo_url
-          );
-        }
-        return children;
-      }
-    );
 
-    const count = await this.dbService.db
-      .select({ count: sql<number>`count(*)` })
-      .from(childrenSchema)
-      .leftJoin(
-        attendanceSchema,
-        and(
-          eq(childrenSchema.id, attendanceSchema.children_id),
-          ...(attendanceConditions.length > 0 ? attendanceConditions : [])
-        )
-      )
-      .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
-      .where(whereClause)
-      .then((result) => Number(result[0]?.count || 0));
+    const attendanceChildrenWithAbsolutePhoto = results.map((child) => {
+      const processedChild = { ...child };
+
+      delete (processedChild as { total_count: unknown }).total_count;
+
+      if (processedChild.photo_url) {
+        processedChild.photo_url = this.fileStorageService.getAbsoluteUrl(
+          processedChild.photo_url
+        );
+      }
+
+      if (processedChild.group?.photo_url) {
+        processedChild.group.photo_url = this.fileStorageService.getAbsoluteUrl(
+          processedChild.group.photo_url
+        );
+      }
+
+      return processedChild;
+    });
+
+    const totalCount = results.length > 0 ? results[0].total_count : 0;
+
     return APIResponse.success<IResponseAttendance[]>({
       message: 'Successfully fetched children with attendance',
-      data: attendanceChildrenwithAbsolutePhoto,
+      data: attendanceChildrenWithAbsolutePhoto,
       pagination: {
-        page: Number(queryDto.page),
-        limit: Number(queryDto.limit),
-        count: count,
-        totalPages: Math.ceil(count / Number(queryDto.limit)),
+        page,
+        limit,
+        count: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
       },
       statusCode: 200,
     });

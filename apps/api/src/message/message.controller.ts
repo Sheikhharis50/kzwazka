@@ -66,24 +66,8 @@ export class MessageController {
   @ApiConsumes('multipart/form-data')
   create(
     @Body() createMessageDto: CreateMessageDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file?: Express.Multer.File
   ) {
-    // Log the received data for debugging
-    console.log('Create message request:', {
-      dto: createMessageDto,
-      hasFile: !!file,
-      fileInfo: file
-        ? {
-            fieldname: file.fieldname,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-            hasBuffer: !!file.buffer,
-            bufferLength: file.buffer?.length,
-          }
-        : null,
-    });
-
     return this.messageService.create(createMessageDto, file);
   }
 

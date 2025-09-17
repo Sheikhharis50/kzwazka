@@ -1,0 +1,28 @@
+[
+    {
+        "name": "Przasnyska 18a",
+        "address1": "Przasnyska 18a",
+        "address2": "",
+        "city": "Warsaw",
+        "state": "Mazowieckie",
+        "country": "Poland",
+        "opening_time": "09:00:00",
+        "closing_time": "18:00:00",
+        "description": "Location 1",
+        "amount": 100,
+        "is_active": true
+    },
+    {
+        "name": "Obozowa 60",
+        "address1": "Obozowa 60",
+        "address2": "",
+        "city": "Warsaw",
+        "state": "Mazowieckie",
+        "country": "Poland",
+        "opening_time": "09:00:00",
+        "closing_time": "18:00:00",
+        "description": "Location 2",
+        "amount": 100,
+        "is_active": true
+    }
+]

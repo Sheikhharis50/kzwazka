@@ -5,14 +5,14 @@ export const attendanceTableHeaders = [
   'Attendance',
 ];
 
-export const attendanceEnum = {
-  PRESENT: 'present',
-  ABSENT: 'absent',
-  LATE: 'late',
-};
+export enum attendanceEnum {
+  PRESENT = 'present',
+  ABSENT = 'absent',
+  LATE = 'late',
+}
 
 export const attendanceOptions = [
   { label: 'Present', value: attendanceEnum.PRESENT },
-  { label: 'Absent', value: attendanceEnum.LATE },
+  { label: 'Absent', value: attendanceEnum.ABSENT },
   { label: 'Late', value: attendanceEnum.LATE },
 ];

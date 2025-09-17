@@ -1,11 +1,11 @@
 import React, { ChangeEvent, useRef } from 'react';
 import { Calendar } from '@/svgs';
 
-interface DatePickerProps {
-  onChange: (e: ChangeEvent) => void;
+interface DatePickerProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-const DatePicker = ({ onChange }: DatePickerProps) => {
+const DatePicker = ({ onChange, ...rest }: DatePickerProps) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="relative size-6 md:size-7">
@@ -14,6 +14,7 @@ const DatePicker = ({ onChange }: DatePickerProps) => {
         type="date"
         className="absolute size-full left-0 top-0 opacity-0"
         onChange={onChange}
+        {...rest}
       />
       <button
         className="relative"

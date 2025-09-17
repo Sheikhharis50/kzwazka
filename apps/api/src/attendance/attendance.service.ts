@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, and, desc, SQLWrapper, sql, inArray } from 'drizzle-orm';
 import {
@@ -32,11 +28,14 @@ export class AttendanceService {
 
   async create(
     createAttendanceDto: CreateAttendanceDto
-  ): Promise<APIResponse<Attendance>> {
+  ): Promise<APIResponse<Attendance | undefined>> {
     const { date, ...attendanceData } = createAttendanceDto;
 
     if (new Date(date) > new Date()) {
-      throw new BadRequestException('Date cannot be in the future');
+      return APIResponse.error<undefined>({
+        message: 'Date cannot be in the future',
+        statusCode: 400,
+      });
     }
 
     const existingAttendance = await this.dbService.db

@@ -1,0 +1,22 @@
+[
+    {
+        "first_name": "Szymon",
+        "last_name": "Domański",
+        "email": "szymon.domanski@gmail.com",
+        "phone": "600600600",
+        "photo_url": "https://example.com/photo.jpg",
+        "password": "123456",
+        "role_id": "coach",
+        "location_name": "Przasnyska 18a"
+    },
+    {
+        "first_name": "Jakub",
+        "last_name": "Antoszewski",
+        "email": "jakub.antoszewski@gmail.com",
+        "phone": "600600600",
+        "photo_url": "https://example.com/photo.jpg",
+        "password": "123456",
+        "role_id": "coach",
+        "location_name": "Obozowa 60"
+    }
+]

@@ -1,0 +1,62 @@
+[
+    {
+        "group_name": "Group A",
+        "day": "Friday",
+        "start_time": "18:00:00",
+        "end_time": "19:00:00"
+    },
+    {
+        "group_name": "Group B",
+        "day": "Tuesday",
+        "start_time": "18:00:00",
+        "end_time": "19:00:00"
+    },
+    {
+        "group_name": "Group B",
+        "day": "Thursday",
+        "start_time": "18:00:00",
+        "end_time": "19:00:00"
+    },
+    {
+        "group_name": "Group C",
+        "day": "Tuesday",
+        "start_time": "19:00:00",
+        "end_time": "20:00:00"
+    },
+    {
+        "group_name": "Group C",
+        "day": "Thursday",
+        "start_time": "19:00:00",
+        "end_time": "20:00:00"
+    },
+    {
+        "group_name": "Group D",
+        "day": "Friday",
+        "start_time": "15:00:00",
+        "end_time": "16:00:00"
+    },
+    {
+        "group_name": "Group E",
+        "day": "Tuesday",
+        "start_time": "15:00:00",
+        "end_time": "16:00:00"
+    },
+    {
+        "group_name": "Group E",
+        "day": "Thursday",
+        "start_time": "15:00:00",
+        "end_time": "16:00:00"
+    },
+    {
+        "group_name": "Group F",
+        "day": "Tuesday",
+        "start_time": "15:00:00",
+        "end_time": "16:00:00"
+    },
+    {
+        "group_name": "Group F",
+        "day": "Thursday",
+        "start_time": "15:00:00",
+        "end_time": "16:00:00"
+    }
+]

@@ -15,7 +15,10 @@ import { SidebarLink } from '@/types';
 
 const Sidebar = () => {
   const { isSidebarVisible, hideSidebar } = useSettingsContext();
-  const pathname = usePathname().split('/').pop();
+  const pathArr = usePathname()
+    .split('/')
+    .filter((path) => path);
+  const pathname = pathArr.length > 1 ? pathArr[1] : pathArr[0];
   const { logout } = useAuth();
 
   return (

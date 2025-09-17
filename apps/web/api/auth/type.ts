@@ -10,6 +10,13 @@ export type RegisterPayload = {
   phone: string;
 };
 
+export type UpdateProfilePayload = {
+  first_name: string;
+  last_name: string;
+  photo_url?: File | undefined;
+  phone: string;
+};
+
 export type IUser = {
   id: number;
   email: string;
@@ -53,5 +60,9 @@ export type ILoginResponse = {
 };
 
 export type IVerifyOtpResponse = {
+  user: IUser;
+};
+
+export type IUpdateProfileResponse = {
   user: IUser;
 };

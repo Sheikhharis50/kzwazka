@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ModalLayout from '../../kids-and-coaches/ModalLayout';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import Input from '@/components/Input';
@@ -7,15 +7,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createGroupFormData, createGroupSchema } from './schema';
 import Select from '@/components/Select';
 import { useCoach } from '@/hooks/useCoach';
-import { ICoach, ILocation } from 'api/type';
 import { useLocation } from '@/hooks/useLocation';
 import { skillLevels } from '@/constants/skill-level';
 import Button from '@/components/Button';
 import { weekdays } from '@/constants/weekdays';
 import { Cross } from '@/svgs';
 import ErrorField from '@/components/ui/ErrorField';
+import { useGroup } from '@/hooks/useGroup';
 
-const CreateGroupForm = () => {
+interface CreateGroupFormProps {
+  closeModal: () => void;
+}
+
+const CreateGroupForm = ({ closeModal }: CreateGroupFormProps) => {
   const {
     register,
     control,
@@ -27,37 +31,38 @@ const CreateGroupForm = () => {
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: {
-      group_sessions: [{ day: '', time_from: '', time_to: '' }],
+      sessions: [{ day: '', time_from: '', time_to: '' }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: 'group_sessions',
+    name: 'sessions',
   });
 
-  const { error, file, handleFileChange, preview, removeFile } =
+  const { error, handleFileChange, preview, removeFile, file } =
     useFileUpload();
-  const { getAllCoaches } = useCoach();
-  const { getAllLocations } = useLocation();
-
-  const coachOptions =
-    getAllCoaches.data?.data?.map((coach: ICoach) => ({
-      value: coach?.id,
-      label: `${coach?.user?.first_name} ${coach?.user?.last_name}`,
-    })) || [];
-
-  const locationOptions =
-    getAllLocations.data?.data?.map((location: ILocation) => ({
-      value: location?.id,
-      label: [location?.address1, location?.address2, location?.city]
-        .filter(Boolean)
-        .join(', '),
-    })) || [];
+  const { coachOptions } = useCoach();
+  const { locationOptions } = useLocation();
+  const {
+    createGroupMutation: {
+      mutateAsync: createGroup,
+      isError,
+      isPending,
+      isSuccess,
+    },
+  } = useGroup();
 
   const onSubmit = (data: createGroupFormData) => {
-    console.log(data);
+    createGroup({ ...data, photo_url: file || undefined });
   };
+
+  useEffect(() => {
+    if (isError || isSuccess) {
+      if (isSuccess) reset();
+      closeModal();
+    }
+  }, [isError, isSuccess, closeModal, reset]);
 
   return (
     <ModalLayout
@@ -138,8 +143,8 @@ const CreateGroupForm = () => {
                 <Select
                   placeholder="Select Day"
                   label={isFirstSession ? 'Training Schedule' : undefined}
-                  {...register(`group_sessions.${index}.day`)}
-                  error={errors?.group_sessions?.[index]?.day?.message}
+                  {...register(`sessions.${index}.day`)}
+                  error={errors?.sessions?.[index]?.day?.message}
                   options={weekdays}
                 />
                 <div>
@@ -147,12 +152,12 @@ const CreateGroupForm = () => {
                     <Input
                       label={isFirstSession ? 'From' : undefined}
                       type="time"
-                      {...register(`group_sessions.${index}.time_from`)}
+                      {...register(`sessions.${index}.time_from`)}
                     />
                     <Input
                       label={isFirstSession ? 'To' : undefined}
                       type="time"
-                      {...register(`group_sessions.${index}.time_to`)}
+                      {...register(`sessions.${index}.time_to`)}
                     />
                     {index > 0 && (
                       <button
@@ -164,12 +169,12 @@ const CreateGroupForm = () => {
                       </button>
                     )}
                   </div>
-                  {(errors?.group_sessions?.[index]?.time_from ||
-                    errors?.group_sessions?.[index]?.time_to) && (
+                  {(errors?.sessions?.[index]?.time_from ||
+                    errors?.sessions?.[index]?.time_to) && (
                     <ErrorField
                       text={
-                        errors?.group_sessions?.[index]?.time_from?.message ||
-                        errors?.group_sessions?.[index]?.time_to?.message
+                        errors?.sessions?.[index]?.time_from?.message ||
+                        errors?.sessions?.[index]?.time_to?.message
                       }
                     />
                   )}
@@ -178,8 +183,8 @@ const CreateGroupForm = () => {
             );
           })}
         </div>
-        {errors?.group_sessions?.root?.message && (
-          <ErrorField text={errors?.group_sessions?.root?.message} />
+        {errors?.sessions?.root?.message && (
+          <ErrorField text={errors?.sessions?.root?.message} />
         )}
         <button
           type="button"
@@ -188,7 +193,12 @@ const CreateGroupForm = () => {
         >
           + Add More
         </button>
-        <Button type="submit" text="Create Group" className="w-1/2 mx-auto" />
+        <Button
+          isLoading={isPending}
+          type="submit"
+          text="Create Group"
+          className="w-1/2 mx-auto"
+        />
       </form>
     </ModalLayout>
   );

@@ -3,3 +3,6 @@ export * from './user';
 export * from './children';
 export * from './coach';
 export * from './location';
+export * from './event';
+export * from './group';
+export * from './attendance';

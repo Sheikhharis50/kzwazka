@@ -4,3 +4,4 @@ export * from './user/type';
 export * from './coach/type';
 export * from './group/type';
 export * from './location/type';
+export * from './attendance/type';

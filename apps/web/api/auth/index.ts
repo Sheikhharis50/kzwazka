@@ -4,6 +4,8 @@ import {
   IRegisterResponse,
   ILoginResponse,
   IVerifyOtpResponse,
+  UpdateProfilePayload,
+  IUpdateProfileResponse,
 } from './type';
 import { handleApiError } from 'utils/apiErrorHandler';
 import { APIResponse } from 'api/type';
@@ -55,6 +57,18 @@ export const auth = {
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to resend OTP, please try again later');
+    }
+  },
+
+  updateProfile: async (
+    payload: UpdateProfilePayload
+  ): Promise<APIResponse<IUpdateProfileResponse>> => {
+    try {
+      const form = toFormData(payload);
+      const response = await apiClient.patch(`/auth/update-profile`, form);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to update profile, please try again later');
     }
   },
 };

@@ -28,6 +28,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       id,
       type,
       icon = undefined,
+      required,
       ...rest
     },
     ref
@@ -48,6 +49,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             htmlFor={inputId}
             text={label}
             className={classes.label || ''}
+            required={required}
             {...labelProps}
           />
         )}

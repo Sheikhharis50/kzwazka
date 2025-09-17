@@ -28,9 +28,7 @@ export const createGroupSchema = z
       .min(1, 'Group size cannot be zero'),
     coach_id: z.number().min(1, 'Please select a coach'),
     location_id: z.number().min(1, 'Please select the training address'),
-    group_sessions: z
-      .array(sessionSchema)
-      .min(1, 'At least one session is required'),
+    sessions: z.array(sessionSchema).min(1, 'At least one session is required'),
   })
   .refine((data) => data.min_age < data.max_age, {
     message: 'Min age must be smaller than max age',
@@ -38,10 +36,10 @@ export const createGroupSchema = z
   })
   .refine(
     (data) => {
-      for (let i = 0; i < data.group_sessions.length; i++) {
-        for (let j = i + 1; j < data.group_sessions.length; j++) {
-          const a = data.group_sessions[i];
-          const b = data.group_sessions[j];
+      for (let i = 0; i < data.sessions.length; i++) {
+        for (let j = i + 1; j < data.sessions.length; j++) {
+          const a = data.sessions[i];
+          const b = data.sessions[j];
 
           if (a === undefined || b === undefined) continue;
           if (a.day === b.day) {
@@ -55,7 +53,7 @@ export const createGroupSchema = z
     },
     {
       message: 'Overlapping sessions are not allowed on the same day',
-      path: ['group_sessions'],
+      path: ['sessions'],
     }
   );
 

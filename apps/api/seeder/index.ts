@@ -22,7 +22,6 @@ type LocationJsonData = {
   opening_time?: string;
   closing_time?: string;
   description?: string;
-  amount?: string;
   is_active?: boolean;
 };
 
@@ -47,6 +46,7 @@ type GroupJsonData = {
   location_name: string;
   photo_url?: string;
   coach_email: string;
+  amount?: number;
 };
 
 type SessionJsonData = {
@@ -230,7 +230,6 @@ async function seedLocations(databaseService: DatabaseService) {
       opening_time: loc.opening_time || null,
       closing_time: loc.closing_time || null,
       description: loc.description || null,
-      amount: loc.amount || null,
       is_active: loc.is_active ?? true,
     }));
 
@@ -357,6 +356,7 @@ async function seedGroups(databaseService: DatabaseService) {
         location_id: locationId,
         photo_url: group.photo_url,
         coach_id: coachId,
+        amount: group.amount || null,
       };
     });
 
@@ -438,7 +438,7 @@ process.on('uncaughtException', (error) => {
 
 main()
   .then(() => {
-    console.log('\n🎉 Seeding completed successfully!');
+    console.log('\n✅ Seeding completed successfully!');
     process.exit(0);
   })
   .catch((error) => {

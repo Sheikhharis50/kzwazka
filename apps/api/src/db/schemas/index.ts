@@ -7,7 +7,6 @@ export * from './locationSchema';
 export * from './eventSchema';
 export * from './coachSchema';
 export * from './groupSchema';
-export * from './childrenGroupSchema';
 export * from './childrenInvoiceSchema';
 export * from './insuranceSchema';
 export * from './messageSchema';

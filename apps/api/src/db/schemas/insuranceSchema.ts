@@ -4,7 +4,9 @@ import { childrenSchema } from './childrenSchema';
 
 export const insuranceSchema = pgTable('insurance', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  children_id: integer('children_id').references(() => childrenSchema.id),
+  children_id: integer('children_id').references(() => childrenSchema.id, {
+    onDelete: 'cascade',
+  }),
   name: text('name').notNull(),
   policy_id: text('policy_id').notNull(),
   start_date: timestamp('start_date').notNull(),

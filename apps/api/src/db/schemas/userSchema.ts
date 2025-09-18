@@ -10,7 +10,6 @@ import { relations } from 'drizzle-orm';
 import { Role, roleSchema } from './roleSchema';
 import { coachSchema } from './coachSchema';
 import { childrenSchema } from './childrenSchema';
-import { eventSchema } from './eventSchema';
 
 export const userSchema = pgTable('user', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -21,7 +20,9 @@ export const userSchema = pgTable('user', {
   password: varchar('password', { length: 255 }),
   role_id: text('role_id')
     .notNull()
-    .references(() => roleSchema.id),
+    .references(() => roleSchema.id, {
+      onDelete: 'cascade',
+    }),
   photo_url: text('photo_url'),
   is_active: boolean('is_active').default(true).notNull(),
   is_verified: boolean('is_verified').default(false).notNull(),
@@ -38,9 +39,11 @@ export const userRelations = relations(userSchema, ({ one, many }) => ({
     fields: [userSchema.role_id],
     references: [roleSchema.id],
   }),
-  coach: many(coachSchema),
+  coach: one(coachSchema, {
+    fields: [userSchema.id],
+    references: [coachSchema.user_id],
+  }),
   children: many(childrenSchema),
-  events: many(eventSchema),
 }));
 
 export type User = typeof userSchema.$inferSelect;

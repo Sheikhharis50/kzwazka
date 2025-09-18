@@ -9,7 +9,6 @@
         "opening_time": "09:00:00",
         "closing_time": "18:00:00",
         "description": "Location 1",
-        "amount": 100,
         "is_active": true
     },
     {
@@ -22,7 +21,6 @@
         "opening_time": "09:00:00",
         "closing_time": "18:00:00",
         "description": "Location 2",
-        "amount": 100,
         "is_active": true
     }
 ]

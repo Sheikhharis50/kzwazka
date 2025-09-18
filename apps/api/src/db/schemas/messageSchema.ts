@@ -6,7 +6,9 @@ export const messageSchema = pgTable('message', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   content: text('content').notNull(),
   content_type: text('content_type').notNull(),
-  group_id: integer('group_id').references(() => groupSchema.id),
+  group_id: integer('group_id').references(() => groupSchema.id, {
+    onDelete: 'cascade',
+  }),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
 });

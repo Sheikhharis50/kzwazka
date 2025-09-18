@@ -1,10 +1,10 @@
 import React from 'react';
-import Heading from '@/components/ui/Heading';
-import Paragraph from '@/components/ui/Paragraph';
+import Heading from 'components/ui/Heading';
+import Paragraph from 'components/ui/Paragraph';
 import LoginForm from './Form';
-import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import AuthenticationLayout from 'components/layouts/AuthenticationLayout';
 import LoginImage from '@/images/login.png';
-import GoogleSignIn from '@/components/ui/GoogleSignIn';
+import GoogleSignIn from 'components/ui/GoogleSignIn';
 
 const LoginPage = () => {
   return (

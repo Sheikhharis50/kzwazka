@@ -1,4 +1,4 @@
-import { createGroupFormData } from '@/components/dashboard/group/create-group/schema';
+import { createGroupFormData } from 'components/dashboard/group/create-group/schema';
 
 export type ISession = {
   id: number;

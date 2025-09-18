@@ -1,6 +1,6 @@
-import TrainingLocationsCard from '@/components/dashboard/cards/TrainingLocationsCard';
-import UpcomingEventsCard from '@/components/dashboard/cards/UpcomingEventsCard';
-import Heading from '@/components/ui/Heading';
+import TrainingLocationsCard from 'components/dashboard/cards/TrainingLocationsCard';
+import UpcomingEventsCard from 'components/dashboard/cards/UpcomingEventsCard';
+import Heading from 'components/ui/Heading';
 import React from 'react';
 
 const Dashboard = () => {

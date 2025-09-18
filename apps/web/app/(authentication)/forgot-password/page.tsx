@@ -1,8 +1,8 @@
-import Button from '@/components/ui/Button';
-import Heading from '@/components/ui/Heading';
-import Input from '@/components/ui/Input';
-import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
-import Paragraph from '@/components/ui/Paragraph';
+import Button from 'components/ui/Button';
+import Heading from 'components/ui/Heading';
+import Input from 'components/ui/Input';
+import AuthenticationLayout from 'components/layouts/AuthenticationLayout';
+import Paragraph from 'components/ui/Paragraph';
 import React from 'react';
 import ForgotPasswordImage from '@/images/forgot-password.png';
 

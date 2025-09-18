@@ -1,4 +1,4 @@
-import { createGroupFormData } from '@/components/dashboard/group/create-group/schema';
+import { createGroupFormData } from 'components/dashboard/group/create-group/schema';
 import { apiClient } from 'api/client';
 import {
   APIListResponse,

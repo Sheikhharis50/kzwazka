@@ -12,6 +12,7 @@ export const insuranceSchema = pgTable('insurance', {
   status: text('status').notNull(),
   coverage_type: text('coverage_type'),
   content: text('content'),
+  coverage_amount: integer('coverage_amount'),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
 });

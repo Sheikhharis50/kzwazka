@@ -1,0 +1,1 @@
+ALTER TABLE "insurance" ADD COLUMN "coverage_amount" integer;

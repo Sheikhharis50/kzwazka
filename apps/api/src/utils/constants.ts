@@ -117,3 +117,15 @@ export enum ATTENDANCE_STATUS {
   PRESENT = 'present',
   LATE = 'late',
 }
+
+export enum INSURANCE_STATUS {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING = 'pending',
+  EXPIRED = 'expired',
+  REJECTED = 'rejected',
+}
+
+export enum INSURANCE_COVERAGE_TYPE {
+  TRAINING_AND_TOURNAMENT = 'training_and_tournament',
+}

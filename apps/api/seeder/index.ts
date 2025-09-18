@@ -46,6 +46,7 @@ type GroupJsonData = {
   max_group_size: number;
   location_name: string;
   photo_url?: string;
+  coach_email: string;
 };
 
 type SessionJsonData = {
@@ -337,9 +338,13 @@ async function seedGroups(databaseService: DatabaseService) {
   if (groupsToCreate.length > 0) {
     const groupRecords = groupsToCreate.map((group) => {
       const locationId = idMappings.locations.get(group.location_name);
+      const coachId = idMappings.coaches.get(group.coach_email);
 
       if (!locationId) {
         throw new Error(`Location not found for name: ${group.location_name}`);
+      }
+      if (!coachId) {
+        throw new Error(`Coach not found for email: ${group.coach_email}`);
       }
 
       return {
@@ -351,6 +356,7 @@ async function seedGroups(databaseService: DatabaseService) {
         max_group_size: group.max_group_size,
         location_id: locationId,
         photo_url: group.photo_url,
+        coach_id: coachId,
       };
     });
 

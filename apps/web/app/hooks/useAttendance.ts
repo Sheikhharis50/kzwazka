@@ -6,6 +6,7 @@ import {
   MarkAllPresentPayload,
   MarkAttendancePayload,
 } from 'api/type';
+import { ApiError } from 'next/dist/server/api-utils';
 import { toast } from 'react-toastify';
 
 export function useAttendance(queryParams: AttendanceQueryParams) {
@@ -31,9 +32,8 @@ export function useAttendance(queryParams: AttendanceQueryParams) {
     mutationFn: async (payload: MarkAllPresentPayload) =>
       await api.attendance.markAllPresent(payload),
     onSuccess: () => queryClient.refetchQueries({ queryKey: ['attendance'] }),
-    onError: () => {
-      queryClient.refetchQueries({ queryKey: ['attendance'] });
-      toast('Failed to mark all as present, try again later.', {
+    onError: (error: ApiError) => {
+      toast(error.message, {
         type: 'error',
       });
     },

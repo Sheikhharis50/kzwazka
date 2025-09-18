@@ -12,7 +12,7 @@
     },
     {
         "name": "Group B",
-        "description": "Group BidMappings description",
+        "description": "Group B description",
         "min_age": 7,
         "max_age": 10,
         "skill_level": "intermediate",

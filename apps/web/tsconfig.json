@@ -11,7 +11,7 @@
       "@/components/*": ["app/components/*"],
       "@/icons/*": ["public/icons/*"],
       "@/images/*": ["public/images/*"],
-      "@/providers/*": ["app/providers/*"],
+      "@/providers/*": ["providers/*"],
       "@/hooks/*": ["hooks/*"],
       "@/*": ["app/*"],
       "@config": ["config"],

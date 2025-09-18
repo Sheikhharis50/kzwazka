@@ -1,4 +1,4 @@
-import { UserContext, UserContextType } from '@/providers/UserProvider';
+import { UserContext, UserContextType } from 'providers/UserProvider';
 import { useContext } from 'react';
 
 export const useUser = (): UserContextType => {

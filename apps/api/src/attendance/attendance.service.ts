@@ -207,8 +207,13 @@ export class AttendanceService {
 
   async markAllasPresent(
     markAllAsPresentDto: MarkAllAsPresentDto
-  ): Promise<APIResponse<Attendance[]>> {
-    // First, get all children in the group
+  ): Promise<APIResponse<Attendance[] | undefined>> {
+    if (new Date(markAllAsPresentDto.date) > new Date()) {
+      return APIResponse.error<undefined>({
+        message: 'Date cannot be in the future',
+        statusCode: 400,
+      });
+    }
     const getAllChildren = await this.dbService.db
       .select()
       .from(childrenSchema)

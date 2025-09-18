@@ -3,7 +3,7 @@ import Container from './Container';
 import TrainImage from '@/images/train-with-us.png';
 import Image from 'next/image';
 import Title from '../ui/Title';
-import Paragraph from '../Paragraph';
+import Paragraph from '../ui/Paragraph';
 import HomeButton from './Button';
 import Link from 'next/link';
 import { phoneNumberLink } from 'constants/contact';

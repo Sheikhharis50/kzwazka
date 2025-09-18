@@ -2,7 +2,7 @@ import React from 'react';
 import Accordion from './Accordion';
 import Container from '../Container';
 import Title from '@/components/ui/Title';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import Image from 'next/image';
 import RedRibbon from '@/images/red-ribbon.png';
 import { faqs } from 'constants/faqs';

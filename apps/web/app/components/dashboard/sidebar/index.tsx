@@ -8,7 +8,7 @@ import Button from './Button';
 import { Profile, Logout } from 'svgs';
 import Ribbon from '@/images/sidebar-ribbon.png';
 import { useSettingsContext } from 'hooks/useSettingsContext';
-import Logo from '@/components/Logo';
+import Logo from '@/components/ui/Logo';
 import { useAuth } from 'hooks/useAuth';
 import PermissionGuard from '@/components/guard/PermissionGuard';
 import { SidebarLink } from 'types';

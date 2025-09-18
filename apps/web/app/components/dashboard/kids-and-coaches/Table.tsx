@@ -2,13 +2,13 @@ import React from 'react';
 import Image from 'next/image';
 import { kidsTableHeader, paymentStatusOptions } from 'constants/kids';
 import { coachesTableHeader } from 'constants/coaches';
-import Select from '@/components/Select';
+import Select from '@/components/ui/Select';
 import { Edit, ProfileRound, Trash } from 'svgs';
-import Loader from '@/components/Loader';
+import Loader from '@/components/ui/Loader';
 import calculateAge from 'utils/calculateAge';
 import formatDate from 'utils/formatDate';
 import { IChild, ICoach } from 'api/type';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 
 interface TableProps {
   data: IChild[] | ICoach[] | undefined;

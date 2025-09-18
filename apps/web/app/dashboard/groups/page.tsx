@@ -1,9 +1,9 @@
 'use client';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import CreateGroupForm from '@/components/dashboard/group/create-group';
 import GroupCard from '@/components/dashboard/group/Card';
-import Heading from '@/components/Heading';
-import Paragraph from '@/components/Paragraph';
+import Heading from '@/components/ui/Heading';
+import Paragraph from '@/components/ui/Paragraph';
 import Modal from '@/components/ui/Modal';
 import React from 'react';
 import { useGroup } from 'hooks/useGroup';

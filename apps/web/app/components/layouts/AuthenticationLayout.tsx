@@ -3,10 +3,10 @@
 import React from 'react';
 import Image, { StaticImageData } from 'next/image';
 import Ribbon from '@/images/login-ribbon.png';
-import Logo from '@/components/Logo';
-import LogoMobile from '@/components/LogoMobile';
+import Logo from '@/components/ui/Logo';
+import LogoMobile from '@/components/ui/LogoMobile';
 import { usePreviousPath } from 'hooks/usePreviousPath';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import Link from 'next/link';
 import { Arrow } from 'svgs';
 

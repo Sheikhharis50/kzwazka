@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import '../globals.css';
 import Sidebar from '@/components/dashboard/sidebar';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/ui/Navbar';
 import ProfileDropdown from '@/components/dashboard/ProfileDropdown';
 
 export const metadata: Metadata = {

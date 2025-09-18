@@ -1,5 +1,5 @@
 import React from 'react';
-import Button, { ButtonProps } from '@/components/Button';
+import Button, { ButtonProps } from '@/components/ui/Button';
 
 const HomeButton = ({
   text,

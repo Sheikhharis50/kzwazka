@@ -3,7 +3,7 @@ import heroBG from '@/images/hero-bg.png';
 import heroBGMob from '@/images/hero-bg-mob.png';
 import heroKids from '@/images/hero-kids.png';
 import Image from 'next/image';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import HomeButton from '@/components/home/Button';
 import { Phone } from 'svgs';
 import Title from '@/components/ui/Title';

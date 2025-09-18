@@ -3,7 +3,7 @@ import Container from './Container';
 import Logo from '@/icons/logo-footer.png';
 import Image from 'next/image';
 import { address } from 'constants/footer-links';
-import Paragraph from '../Paragraph';
+import Paragraph from '../ui/Paragraph';
 import Link from 'next/link';
 // import Heading from '../Heading';
 import HomeButton from './Button';

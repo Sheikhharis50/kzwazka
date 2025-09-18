@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import ModalLayout from '../../kids-and-coaches/ModalLayout';
 import { useFileUpload } from 'hooks/useFileUpload';
-import Input from '@/components/Input';
+import Input from '@/components/ui/Input';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createGroupFormData, createGroupSchema } from './schema';
-import Select from '@/components/Select';
+import Select from '@/components/ui/Select';
 import { useCoach } from 'hooks/useCoach';
 import { useLocation } from 'hooks/useLocation';
 import { skillLevels } from 'constants/skill-level';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import { weekdays } from 'constants/weekdays';
 import { Cross } from 'svgs';
 import ErrorField from '@/components/ui/ErrorField';

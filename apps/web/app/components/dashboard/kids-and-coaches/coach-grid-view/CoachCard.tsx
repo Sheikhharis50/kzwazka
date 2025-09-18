@@ -1,5 +1,5 @@
-import Paragraph from '@/components/Paragraph';
-import Select from '@/components/Select';
+import Paragraph from '@/components/ui/Paragraph';
+import Select from '@/components/ui/Select';
 import { ICoach } from 'api/type';
 import Image from 'next/image';
 import React from 'react';

@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import ProfileIcon from '../ui/ProfileIcon';
 import { useUser } from 'hooks/useUser';
-import Paragraph from '../Paragraph';
+import Paragraph from '../ui/Paragraph';
 import { Previous } from 'svgs';
 import { safeJoin } from 'utils/safeJoin';
 import { useClickOutside } from 'hooks/useClickOutside';

@@ -2,11 +2,11 @@
 
 import { useAuth } from 'hooks/useAuth';
 import React from 'react';
-import Heading from './Heading';
-import Button from './Button';
+import Heading from '../ui/Heading';
+import Button from '../ui/Button';
 import { useRouter, usePathname } from 'next/navigation';
 import { publicRoutes } from 'constants/public-routes';
-import Loader from './Loader';
+import Loader from '../ui/Loader';
 import { useUser } from 'hooks/useUser';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

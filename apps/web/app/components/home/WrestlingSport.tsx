@@ -3,7 +3,7 @@ import Container from './Container';
 import Image from 'next/image';
 import Image1 from '@/images/wrestling-sport1.png';
 import Image2 from '@/images/wrestling-sport2.png';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import Title from '@/components/ui/Title';
 
 const WrestlingSport = () => {

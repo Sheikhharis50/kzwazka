@@ -1,9 +1,9 @@
 import React from 'react';
-import Input from '@/components/Input';
-import Heading from '@/components/Heading';
+import Input from '@/components/ui/Input';
+import Heading from '@/components/ui/Heading';
 import HomeButton from '@/components/home/Button';
 import { useCoach } from 'hooks/useCoach';
-import Select from '@/components/Select';
+import Select from '@/components/ui/Select';
 import { useLocation } from 'hooks/useLocation';
 import { useGroup } from 'hooks/useGroup';
 

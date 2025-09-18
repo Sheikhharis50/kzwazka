@@ -1,8 +1,8 @@
 'use client';
-import Button from '@/components/Button';
-import Heading from '@/components/Heading';
-import Input from '@/components/Input';
-import Paragraph from '@/components/Paragraph';
+import Button from '@/components/ui/Button';
+import Heading from '@/components/ui/Heading';
+import Input from '@/components/ui/Input';
+import Paragraph from '@/components/ui/Paragraph';
 import { Camera, Edit, Trash } from 'svgs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useRef } from 'react';

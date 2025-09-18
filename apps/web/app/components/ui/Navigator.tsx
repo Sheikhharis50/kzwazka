@@ -1,6 +1,6 @@
 import { Previous } from 'svgs';
 import React from 'react';
-import Paragraph from '../Paragraph';
+import Paragraph from './Paragraph';
 
 interface NavigatorProps {
   handlePrevious: () => void;

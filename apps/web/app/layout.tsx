@@ -4,7 +4,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { AppContextsProvider } from 'providers';
 import { ToastContainer } from 'react-toastify';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/guard/ProtectedRoute';
 
 export const metadata: Metadata = {
   title: 'Kzwazka',

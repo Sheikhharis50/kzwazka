@@ -1,8 +1,8 @@
 import React from 'react';
 import Container from './Container';
 import Title from '../ui/Title';
-import Heading from '../Heading';
-import Paragraph from '../Paragraph';
+import Heading from '../ui/Heading';
+import Paragraph from '../ui/Paragraph';
 import { ageGroupsData } from 'constants/age-group';
 import HomeButton from './Button';
 import AgeGroupImage from '@/images/age-group.png';

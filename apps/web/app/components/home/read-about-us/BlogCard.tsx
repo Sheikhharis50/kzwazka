@@ -1,7 +1,7 @@
 import React from 'react';
 import Image, { StaticImageData } from 'next/image';
-import Paragraph from '@/components/Paragraph';
-import Heading from '@/components/Heading';
+import Paragraph from '@/components/ui/Paragraph';
+import Heading from '@/components/ui/Heading';
 
 interface BlogCardProps {
   imageSrc: string | StaticImageData;

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePermission } from 'hooks/usePermisson';
-import Heading from '../Heading';
+import Heading from '../ui/Heading';
 
 interface PermissionGuardProps {
   children: React.ReactNode;

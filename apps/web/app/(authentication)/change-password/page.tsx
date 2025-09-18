@@ -1,12 +1,12 @@
 'use client';
-import Heading from '@/components/Heading';
-import Input from '@/components/Input';
-import Paragraph from '@/components/Paragraph';
+import Heading from '@/components/ui/Heading';
+import Input from '@/components/ui/Input';
+import Paragraph from '@/components/ui/Paragraph';
 import Image from 'next/image';
 import React from 'react';
 import CheckIcon from '@/icons/check.png';
 import { passwordRules } from 'constants/password-rules';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
 import ChangePasswordImage from '@/images/change-password.png';
 import { useForm } from 'react-hook-form';

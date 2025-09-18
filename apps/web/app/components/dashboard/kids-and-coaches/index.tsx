@@ -1,12 +1,12 @@
 'use client';
 import React from 'react';
-import Select from '@/components/Select';
+import Select from '@/components/ui/Select';
 import { sortByOptions } from 'constants/kids';
 import { sortByOptions as coachSortByOpt } from 'constants/coaches';
-import Heading from '@/components/Heading';
-import Input from '@/components/Input';
+import Heading from '@/components/ui/Heading';
+import Input from '@/components/ui/Input';
 import { Search } from 'svgs/Search';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import Table from './Table';
 import AddKidForm from './add-kid';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 import { APIError, ICoach } from 'api/type';
 import AddCoachForm from './add-coach';
 import { Dashboard, ListView } from 'svgs';
-import Loader from '@/components/Loader';
+import Loader from '@/components/ui/Loader';
 import CoachGridView from './coach-grid-view';
 import EditCoachForm from './edit-coach';
 

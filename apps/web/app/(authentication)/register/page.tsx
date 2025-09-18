@@ -1,7 +1,7 @@
 'use client';
 
-import Heading from '@/components/Heading';
-import Paragraph from '@/components/Paragraph';
+import Heading from '@/components/ui/Heading';
+import Paragraph from '@/components/ui/Paragraph';
 import React from 'react';
 import RegisterForm from './Form';
 import { Arrow } from 'svgs';

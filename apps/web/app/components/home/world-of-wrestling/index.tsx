@@ -5,7 +5,7 @@ import Title from '@/components/ui/Title';
 import Logo from '@/images/world-wresling-logo.png';
 import Trophy from '@/images/trophy.png';
 import Image from 'next/image';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import { worldWrestlingData } from 'constants/world-of-wrestling';
 import CarousalCard from './CarousalCard';
 import { Swiper, SwiperRef, SwiperSlide } from 'swiper/react';

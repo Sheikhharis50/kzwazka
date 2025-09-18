@@ -1,4 +1,4 @@
-import Heading from '@/components/Heading';
+import Heading from '@/components/ui/Heading';
 import React from 'react';
 import Image from 'next/image';
 import { Camera, Edit, Trash } from 'svgs';

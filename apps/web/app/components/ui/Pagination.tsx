@@ -2,7 +2,7 @@
 import { Arrow } from 'svgs';
 import React from 'react';
 import PaginationReact from 'react-paginate';
-import Paragraph from '../Paragraph';
+import Paragraph from './Paragraph';
 import { useRouter } from 'next/navigation';
 import { useQueryString } from 'hooks/useQueryString';
 

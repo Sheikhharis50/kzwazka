@@ -1,6 +1,6 @@
-import Loader from '@/components/Loader';
-import Paragraph from '@/components/Paragraph';
-import Select from '@/components/Select';
+import Loader from '@/components/ui/Loader';
+import Paragraph from '@/components/ui/Paragraph';
+import Select from '@/components/ui/Select';
 import ProfileIcon from '@/components/ui/ProfileIcon';
 import {
   attendanceOptions,

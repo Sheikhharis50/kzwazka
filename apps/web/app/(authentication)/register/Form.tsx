@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import Button from '@/components/Button';
-import Input from '@/components/Input';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Image from 'next/image';
 import Link from 'next/link';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import {
   FirstStepCleanData,
   FirstStepFormData,

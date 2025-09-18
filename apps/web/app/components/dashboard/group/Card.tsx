@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import Placeholder from '@/images/placeholder.jpg';
 import { IGroup } from 'api/type';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import { Location } from 'svgs';
 import { safeJoin } from 'utils/safeJoin';
 import SessionsAccordion from '@/components/ui/SessionsAccordion';

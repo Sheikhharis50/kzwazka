@@ -1,9 +1,9 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
-import Paragraph from '@/components/Paragraph';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import Paragraph from '@/components/ui/Paragraph';
 import { LoginFormData, loginSchema } from './schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';

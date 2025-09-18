@@ -1,9 +1,9 @@
 'use client';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 import AttendanceTable from '@/components/dashboard/attendance/Table';
-import Heading from '@/components/Heading';
-import Loader from '@/components/Loader';
-import Paragraph from '@/components/Paragraph';
+import Heading from '@/components/ui/Heading';
+import Loader from '@/components/ui/Loader';
+import Paragraph from '@/components/ui/Paragraph';
 import DatePicker from '@/components/ui/DatePicker';
 import Navigator from '@/components/ui/Navigator';
 import Pagination from '@/components/ui/Pagination';

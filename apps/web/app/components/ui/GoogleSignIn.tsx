@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useGoogleLogin } from '@react-oauth/google';
-import { API_URL } from '../../config';
+import { API_URL } from '../../../config';
 import GoogleIcon from '@/icons/google.svg';
 import Paragraph from './Paragraph';
 

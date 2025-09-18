@@ -1,9 +1,9 @@
 import React from 'react';
 import { modalZIndex } from 'constants/z-index';
 import { Cross } from 'svgs';
-import Heading from '../Heading';
-import Paragraph from '../Paragraph';
-import Button from '../Button';
+import Heading from './Heading';
+import Paragraph from './Paragraph';
+import Button from './Button';
 
 interface ModalProps {
   isOpen: boolean;

@@ -4,13 +4,13 @@ import { EditCoachFormData, editCoachSchema } from './schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFileUpload } from 'hooks/useFileUpload';
 import ModalLayout from '../ModalLayout';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as api from 'api';
 import { EditCoachPayload, APIError } from 'api/type';
 import { toast } from 'react-toastify';
-import Loader from '@/components/Loader';
+import Loader from '@/components/ui/Loader';
 
 const EditCoachForm = ({
   setIsModalOpen,

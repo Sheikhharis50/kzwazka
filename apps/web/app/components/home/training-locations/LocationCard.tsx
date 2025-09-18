@@ -1,7 +1,7 @@
 import Image, { StaticImageData } from 'next/image';
 import React from 'react';
 import { Check, GoogleLocation, Location } from 'svgs';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from '@/components/ui/Paragraph';
 import HomeButton from '../Button';
 import Link from 'next/link';
 import { phoneNumberLink } from 'constants/contact';

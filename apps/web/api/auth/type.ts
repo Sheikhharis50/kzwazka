@@ -17,6 +17,12 @@ export type UpdateProfilePayload = {
   phone: string;
 };
 
+export type ChangePasswordPayload = {
+  old_password: string;
+  new_password: string;
+  confirm_password: string;
+};
+
 export type IUser = {
   id: number;
   email: string;

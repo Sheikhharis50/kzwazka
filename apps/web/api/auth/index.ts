@@ -6,6 +6,7 @@ import {
   IVerifyOtpResponse,
   UpdateProfilePayload,
   IUpdateProfileResponse,
+  ChangePasswordPayload,
 } from './type';
 import { handleApiError } from 'utils/apiErrorHandler';
 import { APIResponse } from 'api/type';
@@ -69,6 +70,20 @@ export const auth = {
       return response.data;
     } catch (error) {
       handleApiError(error, 'Failed to update profile, please try again later');
+    }
+  },
+
+  changePassword: async (
+    payload: ChangePasswordPayload
+  ): Promise<APIResponse<null>> => {
+    try {
+      const response = await apiClient.post(`/auth/change-password`, payload);
+      return response.data;
+    } catch (error) {
+      handleApiError(
+        error,
+        'Failed to update password, please try again later'
+      );
     }
   },
 };

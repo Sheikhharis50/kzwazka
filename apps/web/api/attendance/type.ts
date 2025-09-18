@@ -1,17 +1,54 @@
-import { IChild } from 'api/type';
-
+import { attendanceEnum } from '@/constants/attendance';
 export type IAttendance = {
-  // childId: number;
-  // childName: string;
-  // dob: string;
-  // photo_url: string;
-  // group: { id: number; name: string };
-  children: IChild;
-  status: 'present' | 'absent' | 'late' | null;
+  id: number;
+  first_name: string;
+  last_name: string;
+  photo_url: string;
+  dob: string;
+  group: {
+    id: number;
+    name: string;
+    skill_level: string;
+    photo_url: string;
+  };
+  attendance: {
+    id: number;
+    date: string;
+    status: attendanceEnum;
+    created_at: string;
+    updated_at: string;
+  } | null;
 };
 
-export type IAttendanceResponse = {
-  group_id: number | null;
+export type AttendanceQueryParams = {
+  children_id?: string;
+  group_id?: string;
+  status?: attendanceEnum;
   date: string;
-  attendance: IAttendance[];
+  page?: number;
+  limit?: number;
+};
+
+export type MarkAttendancePayload = {
+  children_id: number;
+  group_id: number;
+  date: string;
+  status: string;
+  notes?: string;
+};
+
+export type IMarkAttendanceResponse = {
+  id: number;
+  children_id: number;
+  group_id: number;
+  date: string;
+  status: attendanceEnum;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MarkAllPresentPayload = {
+  group_id: number;
+  date: string;
 };

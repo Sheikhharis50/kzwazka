@@ -5,10 +5,16 @@ import { useRegisterMutation } from '@/hooks/useRegisterMutation';
 import { useResendOtpMutation } from '@/hooks/useResendOtpMutation';
 import { useUpdateProfileMutation } from '@/hooks/useUpdateProfileMutation';
 import { useVerifyEmailMutation } from '@/hooks/useVerifyEmailMutation';
-import { useQueryClient } from '@tanstack/react-query';
-import { RegisterPayload, UpdateProfilePayload } from 'api/type';
-import { redirect } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  ChangePasswordPayload,
+  RegisterPayload,
+  UpdateProfilePayload,
+} from 'api/type';
+import { redirect, useRouter, useSearchParams } from 'next/navigation';
+import * as api from 'api';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 export interface AuthContextType {
   isLoading: boolean;
@@ -20,6 +26,7 @@ export interface AuthContextType {
   verifyOtp: ({ otp }: { otp: string }) => void;
   resendOtp: () => void;
   updateProfile: (credentials: UpdateProfilePayload) => void;
+  changePassword: (credentials: ChangePasswordPayload) => void;
   //   forgotPassword: () => void;
 }
 
@@ -35,6 +42,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateMutation = useUpdateProfileMutation();
   const resendOtpMutation = useResendOtpMutation();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next') || '/dashboard';
+  const router = useRouter();
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (credentials: ChangePasswordPayload) =>
+      api.auth.changePassword(credentials),
+    onSuccess: (data) => {
+      toast(data.message, { type: 'success' });
+      router.push(nextUrl);
+    },
+    onError: (data) => {
+      toast(data.message, { type: 'error' });
+    },
+  });
+
+  const changePassword = async (credentials: ChangePasswordPayload) => {
+    await changePasswordMutation.mutateAsync(credentials);
+  };
 
   const register = async (credentials: RegisterPayload) => {
     await registerMutation.mutateAsync(credentials);
@@ -111,7 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           registerMutation.isPending ||
           verifyOtpMutation.isPending ||
           loginMutation.isPending ||
-          updateMutation.isPending,
+          updateMutation.isPending ||
+          changePasswordMutation.isPending,
         token,
         hasToken: !!token,
         register,
@@ -120,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         resendOtp,
         updateProfile,
+        changePassword,
       }}
     >
       {children}

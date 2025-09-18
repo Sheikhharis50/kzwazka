@@ -25,9 +25,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { data, isError, refetch } = useQuery({
     queryKey: ['me', token],
     queryFn: async () => {
-      const res = await api.user.me();
-      isLoading.current = false;
-      return res.data;
+      try {
+        const res = await api.user.me();
+        isLoading.current = false;
+        return res.data;
+      } catch {
+        isLoading.current = false;
+        return null;
+      } finally {
+        isLoading.current = false;
+      }
     },
     retry: (failureCount, error: AxiosError) => {
       // Don't retry on 401 errors (unauthorized)

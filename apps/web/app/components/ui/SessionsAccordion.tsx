@@ -1,5 +1,5 @@
 'use client';
-import { Previous } from '@/svgs';
+import { Previous } from 'svgs';
 import { ISession } from 'api/type';
 import React, { useState } from 'react';
 import { formatTo12Hour } from 'utils/formatDate';

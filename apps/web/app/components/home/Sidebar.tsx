@@ -4,7 +4,7 @@ import Logo from '@/icons/logo-home.png';
 import Image from 'next/image';
 import Link from 'next/link';
 import HomeButton from '@/components/home/Button';
-import { ProfileRound } from '@/svgs';
+import { ProfileRound } from 'svgs';
 
 interface HomeSidebarProps {
   isOpen: boolean;

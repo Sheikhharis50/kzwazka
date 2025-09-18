@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import ProfileIcon from '../ui/ProfileIcon';
 import { useUser } from '@/hooks/useUser';
 import Paragraph from '../Paragraph';
-import { Previous } from '@/svgs';
+import { Previous } from 'svgs';
 import { safeJoin } from 'utils/safeJoin';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useRouter } from 'next/navigation';

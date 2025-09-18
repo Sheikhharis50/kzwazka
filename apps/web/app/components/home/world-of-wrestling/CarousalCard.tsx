@@ -1,6 +1,6 @@
 import React from 'react';
 import Heading from '@/components/Heading';
-import { Arrow, Quotation, Youtube } from '@/svgs';
+import { Arrow, Quotation, Youtube } from 'svgs';
 import Image, { StaticImageData } from 'next/image';
 import Link from 'next/link';
 

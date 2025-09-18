@@ -1,6 +1,6 @@
 import React from 'react';
 import Image, { StaticImageData } from 'next/image';
-import { Location, ViewOnMap, Trash, Share, Edit, Group, Clock } from '@/svgs';
+import { Location, ViewOnMap, Trash, Share, Edit, Group, Clock } from 'svgs';
 import Button from '../../Button';
 
 interface LocationCardProps {

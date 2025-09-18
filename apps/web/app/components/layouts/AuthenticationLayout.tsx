@@ -8,7 +8,7 @@ import LogoMobile from '@/components/LogoMobile';
 import { usePreviousPath } from 'app/hooks/usePreviousPath';
 import Paragraph from '@/components/Paragraph';
 import Link from 'next/link';
-import { Arrow } from '@/svgs';
+import { Arrow } from 'svgs';
 
 interface AuthenticationLayoutProps {
   children: React.ReactNode;

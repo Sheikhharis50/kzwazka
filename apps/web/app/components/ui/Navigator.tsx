@@ -1,4 +1,4 @@
-import { Previous } from '@/svgs';
+import { Previous } from 'svgs';
 import React from 'react';
 import Paragraph from '../Paragraph';
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
-import { SidebarLink } from 'app/types';
+import { SidebarLink } from 'types';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   link: SidebarLink;

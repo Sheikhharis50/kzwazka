@@ -4,7 +4,7 @@ import { ICoach } from 'api/type';
 import Image from 'next/image';
 import React from 'react';
 import Placeholder from '@/images/placeholder.jpg';
-import { Edit, Mail, Phone, Trash, Users } from '@/svgs';
+import { Edit, Mail, Phone, Trash, Users } from 'svgs';
 
 interface ICoachProps extends ICoach {
   onEdit: (id: number) => void;

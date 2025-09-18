@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useRef } from 'react';
-import { Calendar } from '@/svgs';
+import { Calendar } from 'svgs';
 
 interface DatePickerProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;

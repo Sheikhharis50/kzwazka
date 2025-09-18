@@ -1,0 +1,56 @@
+import { SvgProp } from 'types';
+import React from 'react';
+
+export const Calendar = ({ className = '' }: SvgProp) => {
+  return (
+    <svg
+      width="25"
+      height="25"
+      viewBox="0 0 25 25"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M8.08789 2.50073V5.50073"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16.0879 2.50073V5.50073"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.08789 13.5007H15.0879"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.08789 17.5007H12.0879"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16.0879 4.00073C19.4179 4.18073 21.0879 5.45073 21.0879 10.1507V16.3307C21.0879 20.4507 20.0879 22.5107 15.0879 22.5107H9.08789C4.08789 22.5107 3.08789 20.4507 3.08789 16.3307V10.1507C3.08789 5.45073 4.75789 4.19073 8.08789 4.00073H16.0879Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeMiterlimit="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};

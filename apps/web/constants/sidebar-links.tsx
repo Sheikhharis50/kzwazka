@@ -8,8 +8,8 @@ import {
   Users,
   Group,
   Book,
-} from '@/svgs';
-import { SidebarLink } from '@/types';
+} from 'svgs';
+import { SidebarLink } from 'types';
 
 export const sidebarLinks: SidebarLink[] = [
   {

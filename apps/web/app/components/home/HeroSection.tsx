@@ -5,7 +5,7 @@ import heroKids from '@/images/hero-kids.png';
 import Image from 'next/image';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '@/components/home/Button';
-import { Phone } from '@/svgs';
+import { Phone } from 'svgs';
 import Title from '@/components/ui/Title';
 import Link from 'next/link';
 import { phoneNumberLink } from 'constants/contact';

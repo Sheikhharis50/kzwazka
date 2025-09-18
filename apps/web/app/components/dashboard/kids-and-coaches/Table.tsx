@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { kidsTableHeader, paymentStatusOptions } from 'constants/kids';
 import { coachesTableHeader } from 'constants/coaches';
 import Select from '@/components/Select';
-import { Edit, ProfileRound, Trash } from '@/svgs';
+import { Edit, ProfileRound, Trash } from 'svgs';
 import Loader from '@/components/Loader';
 import calculateAge from 'utils/calculateAge';
 import formatDate from 'utils/formatDate';

@@ -1,5 +1,5 @@
 'use client';
-import { Arrow } from '@/svgs';
+import { Arrow } from 'svgs';
 import React from 'react';
 import PaginationReact from 'react-paginate';
 import Paragraph from '../Paragraph';

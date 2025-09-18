@@ -11,7 +11,7 @@ import { useLocation } from '@/hooks/useLocation';
 import { skillLevels } from 'constants/skill-level';
 import Button from '@/components/Button';
 import { weekdays } from 'constants/weekdays';
-import { Cross } from '@/svgs';
+import { Cross } from 'svgs';
 import ErrorField from '@/components/ui/ErrorField';
 import { useGroup } from '@/hooks/useGroup';
 

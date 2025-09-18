@@ -4,7 +4,7 @@ import Image from 'next/image';
 // import { navLinks } from '@/constants/nav-links';
 import Link from 'next/link';
 import HomeButton from '@/components/home/Button';
-import { ProfileRound, Hamburger } from '@/svgs';
+import { ProfileRound, Hamburger } from 'svgs';
 import HomeSidebar from '@/components/home/Sidebar';
 import Container from '@/components/home/Container';
 

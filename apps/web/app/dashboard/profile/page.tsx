@@ -3,7 +3,7 @@ import Button from '@/components/Button';
 import Heading from '@/components/Heading';
 import Input from '@/components/Input';
 import Paragraph from '@/components/Paragraph';
-import { Camera, Edit, Trash } from '@/svgs';
+import { Camera, Edit, Trash } from 'svgs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';

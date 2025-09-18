@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { ProfileRound } from '@/svgs';
+import { ProfileRound } from 'svgs';
 
 interface ProfileIconProps {
   photo_url: string | null;

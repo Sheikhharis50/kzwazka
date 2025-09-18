@@ -1,7 +1,7 @@
 import Heading from '@/components/Heading';
 import React from 'react';
 import Image from 'next/image';
-import { Camera, Edit, Trash } from '@/svgs';
+import { Camera, Edit, Trash } from 'svgs';
 import Placeholder from '@/images/placeholder.jpg';
 
 interface ModalLayoutProps {

@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 import Label from './Label';
-import { Option } from 'app/types';
+import { Option } from 'types';
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;

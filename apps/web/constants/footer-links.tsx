@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Youtube } from '@/svgs';
+import { Facebook, Instagram, Youtube } from 'svgs';
 
 export const address = [
   'KLUB ZAPAŚNICZY WAŻKA WARSZAWA',

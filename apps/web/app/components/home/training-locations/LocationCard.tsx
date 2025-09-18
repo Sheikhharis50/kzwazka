@@ -1,6 +1,6 @@
 import Image, { StaticImageData } from 'next/image';
 import React from 'react';
-import { Check, GoogleLocation, Location } from '@/svgs';
+import { Check, GoogleLocation, Location } from 'svgs';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '../Button';
 import Link from 'next/link';

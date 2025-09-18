@@ -9,7 +9,7 @@ import Navigator from '@/components/ui/Navigator';
 import Pagination from '@/components/ui/Pagination';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useGroup } from '@/hooks/useGroup';
-import { DoubleTick, Previous } from '@/svgs';
+import { DoubleTick, Previous } from 'svgs';
 import { formatDate } from '@fullcalendar/core/index.js';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';

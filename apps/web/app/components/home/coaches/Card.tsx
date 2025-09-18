@@ -2,7 +2,7 @@ import React from 'react';
 import Image, { StaticImageData } from 'next/image';
 import Heading from '@/components/Heading';
 import HomeButton from '../Button';
-import { Phone } from '@/svgs';
+import { Phone } from 'svgs';
 import Link from 'next/link';
 
 interface CoachCardProps {

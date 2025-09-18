@@ -1,18 +1,18 @@
 'use client';
-import Heading from '@/components/Heading';
-import Input from '@/components/Input';
-import Paragraph from '@/components/Paragraph';
+import Heading from 'components/ui/Heading';
+import Input from 'components/ui/Input';
+import Paragraph from 'components/ui/Paragraph';
 import Image from 'next/image';
 import React from 'react';
 import CheckIcon from '@/icons/check.png';
-import { passwordRules } from 'app/constants/password-rules';
-import Button from '@/components/Button';
-import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import { passwordRules } from 'constants/password-rules';
+import Button from 'components/ui/Button';
+import AuthenticationLayout from 'components/layouts/AuthenticationLayout';
 import ChangePasswordImage from '@/images/change-password.png';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChangePasswordFormData, changePasswordSchema } from './schema';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 const ChangePasswordPage = () => {
   const { changePassword, isLoading } = useAuth();

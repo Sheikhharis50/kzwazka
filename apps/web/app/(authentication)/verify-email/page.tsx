@@ -1,15 +1,15 @@
 'use client';
 
-import Heading from '@/components/Heading';
-import Paragraph from '@/components/Paragraph';
+import Heading from 'components/ui/Heading';
+import Paragraph from 'components/ui/Paragraph';
 import React from 'react';
 import EditIcon from '@/icons/edit.svg';
 import Image from 'next/image';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
-import { useAuth } from '@/hooks/useAuth';
-import { useUser } from '@/hooks/useUser';
-import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
+import Input from 'components/ui/Input';
+import Button from 'components/ui/Button';
+import { useAuth } from 'hooks/useAuth';
+import { useUser } from 'hooks/useUser';
+import AuthenticationLayout from 'components/layouts/AuthenticationLayout';
 import VerifyEmailImage from '@/images/verify-email.png';
 
 const VerifyEmailPage = () => {

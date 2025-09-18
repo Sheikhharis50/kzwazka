@@ -1,8 +1,8 @@
-import Button from '@/components/Button';
-import LocationCard from '@/components/dashboard/cards/LocationCard';
-import Heading from '@/components/Heading';
-import Paragraph from '@/components/Paragraph';
-import { trainingLocations } from '@/constants/training-locations';
+import Button from 'components/ui/Button';
+import LocationCard from 'components/dashboard/cards/LocationCard';
+import Heading from 'components/ui/Heading';
+import Paragraph from 'components/ui/Paragraph';
+import { trainingLocations } from 'constants/training-locations';
 import React from 'react';
 
 const TrainingLocationsPage = () => {

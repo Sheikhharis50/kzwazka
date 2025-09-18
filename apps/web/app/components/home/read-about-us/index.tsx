@@ -4,7 +4,7 @@ import BlogCard from './BlogCard';
 import Image from 'next/image';
 import WrestlingImage from '@/images/read-about-us3.png';
 import Heading from '@/components/Heading';
-import { blogCardData } from '@/constants/blog-card';
+import { blogCardData } from 'constants/blog-card';
 
 const ReadAboutUs = () => {
   return (

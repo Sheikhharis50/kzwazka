@@ -8,7 +8,7 @@ import HomeButton from '@/components/home/Button';
 import { Phone } from '@/svgs';
 import Title from '@/components/ui/Title';
 import Link from 'next/link';
-import { phoneNumberLink } from '@/constants/contact';
+import { phoneNumberLink } from 'constants/contact';
 import { scrollIntoView } from 'utils/scrollIntoView';
 
 const HeroSection = () => {

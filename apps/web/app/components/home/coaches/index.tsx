@@ -1,7 +1,7 @@
 import React from 'react';
 import Title from '@/components/ui/Title';
 import CoachCard from './Card';
-import { coachesData } from '@/constants/coaches';
+import { coachesData } from 'constants/coaches';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import Container from '../Container';

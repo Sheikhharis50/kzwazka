@@ -4,7 +4,7 @@ import { Check, GoogleLocation, Location } from '@/svgs';
 import Paragraph from '@/components/Paragraph';
 import HomeButton from '../Button';
 import Link from 'next/link';
-import { phoneNumberLink } from '@/constants/contact';
+import { phoneNumberLink } from 'constants/contact';
 
 interface LocationCardProps {
   imageSrc: string | StaticImageData;

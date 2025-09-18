@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { sidebarLinks } from 'app/constants/sidebar-links';
+import { sidebarLinks } from 'constants/sidebar-links';
 import { usePathname } from 'next/navigation';
 import Button from './Button';
 import { Profile, Logout } from '@/svgs';

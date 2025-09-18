@@ -5,7 +5,7 @@ import React from 'react';
 import Heading from './Heading';
 import Button from './Button';
 import { useRouter, usePathname } from 'next/navigation';
-import { publicRoutes } from '@/constants/public-routes';
+import { publicRoutes } from 'constants/public-routes';
 import Loader from './Loader';
 import { useUser } from '@/hooks/useUser';
 

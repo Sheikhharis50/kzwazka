@@ -1,7 +1,7 @@
 import React from 'react';
 import Container from './Container';
 import Title from '../ui/Title';
-import { galleryCol1, galleryCol2, galleryCol3 } from '@/constants/gallery';
+import { galleryCol1, galleryCol2, galleryCol3 } from 'constants/gallery';
 import Image, { StaticImageData } from 'next/image';
 import BgImg from '@/images/gallery-bg.png';
 // import Button from '../Button';

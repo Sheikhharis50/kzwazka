@@ -1,5 +1,5 @@
 import React from 'react';
-import { modalZIndex } from '@/constants/z-index';
+import { modalZIndex } from 'constants/z-index';
 import { Cross } from '@/svgs';
 import Heading from '../Heading';
 import Paragraph from '../Paragraph';

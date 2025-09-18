@@ -2,13 +2,13 @@ import React from 'react';
 import Container from './Container';
 import Logo from '@/icons/logo-footer.png';
 import Image from 'next/image';
-import { address } from '@/constants/footer-links';
+import { address } from 'constants/footer-links';
 import Paragraph from '../Paragraph';
 import Link from 'next/link';
 // import Heading from '../Heading';
 import HomeButton from './Button';
 // import { navLinks } from '@/constants/nav-links';
-import { phoneNumberLink } from '@/constants/contact';
+import { phoneNumberLink } from 'constants/contact';
 import { scrollIntoView } from 'utils/scrollIntoView';
 
 const Footer = () => {

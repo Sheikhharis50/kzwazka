@@ -3,7 +3,7 @@
 import React from 'react';
 import Title from '../../ui/Title';
 import LocationCard from './LocationCard';
-import { trainingLocationsHome } from '@/constants/training-locations';
+import { trainingLocationsHome } from 'constants/training-locations';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import Ribbon from '@/images/red-ribbon.png';

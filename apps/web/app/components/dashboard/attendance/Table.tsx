@@ -5,7 +5,7 @@ import ProfileIcon from '@/components/ui/ProfileIcon';
 import {
   attendanceOptions,
   attendanceTableHeaders,
-} from '@/constants/attendance';
+} from 'constants/attendance';
 import { IAttendance } from 'api/type';
 import React, { useState, useCallback, useMemo } from 'react';
 import calculateAge from 'utils/calculateAge';

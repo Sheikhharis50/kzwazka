@@ -5,7 +5,7 @@ import Paragraph from '../Paragraph';
 import HomeButton from './Button';
 import Image from 'next/image';
 import Ribbon from '@/images/login-ribbon.png';
-import { contactDetail, phoneNumberLink } from '@/constants/contact';
+import { contactDetail, phoneNumberLink } from 'constants/contact';
 import Link from 'next/link';
 
 const Contact = () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
-import { kidsTableHeader, paymentStatusOptions } from '@/constants/kids';
-import { coachesTableHeader } from '@/constants/coaches';
+import { kidsTableHeader, paymentStatusOptions } from 'constants/kids';
+import { coachesTableHeader } from 'constants/coaches';
 import Select from '@/components/Select';
 import { Edit, ProfileRound, Trash } from '@/svgs';
 import Loader from '@/components/Loader';

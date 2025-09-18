@@ -3,7 +3,7 @@
 import React from 'react';
 import DashboardCard from './DashboardCard';
 import LocationCard from './LocationCard';
-import { trainingLocations } from '@/constants/training-locations';
+import { trainingLocations } from 'constants/training-locations';
 
 const TrainingLocationsCard = () => {
   const handleNewLocation = () => {

@@ -5,7 +5,7 @@ import Title from '@/components/ui/Title';
 import Paragraph from '@/components/Paragraph';
 import Image from 'next/image';
 import RedRibbon from '@/images/red-ribbon.png';
-import { faqs } from '@/constants/faqs';
+import { faqs } from 'constants/faqs';
 
 const FAQ = () => {
   return (

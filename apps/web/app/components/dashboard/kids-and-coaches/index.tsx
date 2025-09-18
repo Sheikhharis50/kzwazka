@@ -1,8 +1,8 @@
 'use client';
 import React from 'react';
 import Select from '@/components/Select';
-import { sortByOptions } from '@/constants/kids';
-import { sortByOptions as coachSortByOpt } from '@/constants/coaches';
+import { sortByOptions } from 'constants/kids';
+import { sortByOptions as coachSortByOpt } from 'constants/coaches';
 import Heading from '@/components/Heading';
 import Input from '@/components/Input';
 import { Search } from '@/svgs/Search';

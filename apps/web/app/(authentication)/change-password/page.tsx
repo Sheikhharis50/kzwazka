@@ -5,7 +5,7 @@ import Paragraph from '@/components/Paragraph';
 import Image from 'next/image';
 import React from 'react';
 import CheckIcon from '@/icons/check.png';
-import { passwordRules } from 'app/constants/password-rules';
+import { passwordRules } from 'constants/password-rules';
 import Button from '@/components/Button';
 import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
 import ChangePasswordImage from '@/images/change-password.png';

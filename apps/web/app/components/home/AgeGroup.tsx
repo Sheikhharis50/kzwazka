@@ -3,12 +3,12 @@ import Container from './Container';
 import Title from '../ui/Title';
 import Heading from '../Heading';
 import Paragraph from '../Paragraph';
-import { ageGroupsData } from '@/constants/age-group';
+import { ageGroupsData } from 'constants/age-group';
 import HomeButton from './Button';
 import AgeGroupImage from '@/images/age-group.png';
 import Image from 'next/image';
 import Link from 'next/link';
-import { phoneNumberLink } from '@/constants/contact';
+import { phoneNumberLink } from 'constants/contact';
 
 const AgeGroup = () => {
   return (

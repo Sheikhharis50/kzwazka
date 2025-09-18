@@ -6,7 +6,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import Heading from '@/components/Heading';
 import Button from '@/components/Button';
 import Paragraph from '@/components/Paragraph';
-import { months } from '@/constants/weekdays';
+import { months } from 'constants/weekdays';
 import { Previous, Calendar as CalendarIcon } from '@/svgs';
 import { useCalendarApi } from '@/hooks/useCalendar';
 import { useEvent } from '@/hooks/useEvent';

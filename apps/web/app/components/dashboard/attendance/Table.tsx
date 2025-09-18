@@ -41,7 +41,7 @@ const AttendanceTable = ({
   >({});
 
   const getStatusClasses = useCallback((status: string) => {
-    const baseClasses = 'max-w-[130px] !py-1 !rounded-full outline-none';
+    const baseClasses = 'min-w-26 max-w-26 !py-1 !rounded-full outline-none';
 
     switch (status) {
       case 'present':

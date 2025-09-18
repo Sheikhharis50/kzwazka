@@ -6,6 +6,7 @@ import Loader from '@/components/Loader';
 import Paragraph from '@/components/Paragraph';
 import DatePicker from '@/components/ui/DatePicker';
 import Navigator from '@/components/ui/Navigator';
+import Pagination from '@/components/ui/Pagination';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useGroup } from '@/hooks/useGroup';
 import { DoubleTick, Previous } from '@/svgs';
@@ -22,6 +23,7 @@ const Attendance = () => {
 
   const searchParams = useSearchParams();
   const groupId = searchParams.get('group_id');
+  const page = searchParams.get('page');
   const router = useRouter();
 
   const {
@@ -44,6 +46,7 @@ const Attendance = () => {
   } = useAttendance({
     date,
     group_id: groupId || undefined,
+    page: parseInt(page || '') || undefined,
   });
 
   const removeTimestamp = (date: Date) => date.toISOString().split('T')[0];
@@ -113,7 +116,7 @@ const Attendance = () => {
               </>
             )}
           </div>
-          <div className="flex gap-3 items-center justify-between md:justify-end w-full ps-2 xl:ps-5">
+          <div className="flex gap-3 items-center justify-end w-full ps-2 xl:ps-5">
             {/* <button className="text-xs md:text-sm lg:text-base 2xl:text-lg">
               Clear All
             </button> */}
@@ -149,6 +152,7 @@ const Attendance = () => {
           )
         }
       />
+      <Pagination pageCount={attendanceData?.pagination.totalPages || 0} />
     </>
   );
 };

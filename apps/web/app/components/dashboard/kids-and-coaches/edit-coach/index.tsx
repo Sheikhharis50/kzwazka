@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { EditCoachFormData, editCoachSchema } from './schema';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useFileUpload } from 'hooks/useFileUpload';
 import ModalLayout from '../ModalLayout';
 import Input from '@/components/Input';
 import Button from '@/components/Button';

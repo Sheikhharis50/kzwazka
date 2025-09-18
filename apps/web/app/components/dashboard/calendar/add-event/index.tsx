@@ -2,10 +2,10 @@ import React from 'react';
 import Input from '@/components/Input';
 import Heading from '@/components/Heading';
 import HomeButton from '@/components/home/Button';
-import { useCoach } from '@/hooks/useCoach';
+import { useCoach } from 'hooks/useCoach';
 import Select from '@/components/Select';
-import { useLocation } from '@/hooks/useLocation';
-import { useGroup } from '@/hooks/useGroup';
+import { useLocation } from 'hooks/useLocation';
+import { useGroup } from 'hooks/useGroup';
 
 const AddEventForm = () => {
   const [isTrainingType, setIsTrainingType] = React.useState<boolean>(true);

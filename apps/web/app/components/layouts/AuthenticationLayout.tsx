@@ -5,7 +5,7 @@ import Image, { StaticImageData } from 'next/image';
 import Ribbon from '@/images/login-ribbon.png';
 import Logo from '@/components/Logo';
 import LogoMobile from '@/components/LogoMobile';
-import { usePreviousPath } from 'app/hooks/usePreviousPath';
+import { usePreviousPath } from 'hooks/usePreviousPath';
 import Paragraph from '@/components/Paragraph';
 import Link from 'next/link';
 import { Arrow } from 'svgs';

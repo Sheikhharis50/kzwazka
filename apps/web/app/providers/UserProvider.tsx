@@ -4,7 +4,7 @@ import React, { createContext, ReactNode } from 'react';
 import * as api from 'api';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 export interface UserContextType {
   user: IUserWithPermissions | null | undefined;

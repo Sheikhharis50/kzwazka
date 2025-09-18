@@ -8,11 +8,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { profileSchema, updateProfileFormData } from './schema';
-import { useUser } from '@/hooks/useUser';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useUser } from 'hooks/useUser';
+import { useFileUpload } from 'hooks/useFileUpload';
 import Image from 'next/image';
 import ErrorField from '@/components/ui/ErrorField';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 const Profile = () => {

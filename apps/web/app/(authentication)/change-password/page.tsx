@@ -12,7 +12,7 @@ import ChangePasswordImage from '@/images/change-password.png';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChangePasswordFormData, changePasswordSchema } from './schema';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 const ChangePasswordPage = () => {
   const { changePassword, isLoading } = useAuth();

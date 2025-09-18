@@ -7,7 +7,7 @@ import Paragraph from '@/components/Paragraph';
 import { LoginFormData, loginSchema } from './schema';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 const LoginForm = () => {
   const {

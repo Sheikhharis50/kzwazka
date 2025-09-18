@@ -1,13 +1,13 @@
 'use client';
 import React, { useRef, useState } from 'react';
 import ProfileIcon from '../ui/ProfileIcon';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from 'hooks/useUser';
 import Paragraph from '../Paragraph';
 import { Previous } from 'svgs';
 import { safeJoin } from 'utils/safeJoin';
-import { useClickOutside } from '@/hooks/useClickOutside';
+import { useClickOutside } from 'hooks/useClickOutside';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 
 const ProfileDropdown = () => {
   const { child, user } = useUser();

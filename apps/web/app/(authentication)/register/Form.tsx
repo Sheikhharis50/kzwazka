@@ -16,9 +16,9 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterPayload } from 'api/auth/type';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 import { Trash } from 'svgs';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useFileUpload } from 'hooks/useFileUpload';
 
 interface RegisterFormProps {
   setStep: React.Dispatch<React.SetStateAction<number>>;

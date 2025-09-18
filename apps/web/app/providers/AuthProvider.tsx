@@ -1,10 +1,10 @@
 'use client';
 import { LoginFormData } from '@/(authentication)/login/schema';
-import { useLoginMutation } from '@/hooks/useLoginMutation';
-import { useRegisterMutation } from '@/hooks/useRegisterMutation';
-import { useResendOtpMutation } from '@/hooks/useResendOtpMutation';
-import { useUpdateProfileMutation } from '@/hooks/useUpdateProfileMutation';
-import { useVerifyEmailMutation } from '@/hooks/useVerifyEmailMutation';
+import { useLoginMutation } from 'hooks/useLoginMutation';
+import { useRegisterMutation } from 'hooks/useRegisterMutation';
+import { useResendOtpMutation } from 'hooks/useResendOtpMutation';
+import { useUpdateProfileMutation } from 'hooks/useUpdateProfileMutation';
+import { useVerifyEmailMutation } from 'hooks/useVerifyEmailMutation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChangePasswordPayload,

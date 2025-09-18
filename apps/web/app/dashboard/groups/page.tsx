@@ -6,7 +6,7 @@ import Heading from '@/components/Heading';
 import Paragraph from '@/components/Paragraph';
 import Modal from '@/components/ui/Modal';
 import React from 'react';
-import { useGroup } from '@/hooks/useGroup';
+import { useGroup } from 'hooks/useGroup';
 import ImageCardSkeleton from '@/components/ui/ImageCardSkeleton';
 
 const Groups = () => {

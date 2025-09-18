@@ -7,8 +7,8 @@ import EditIcon from '@/icons/edit.svg';
 import Image from 'next/image';
 import Input from '@/components/Input';
 import Button from '@/components/Button';
-import { useAuth } from '@/hooks/useAuth';
-import { useUser } from '@/hooks/useUser';
+import { useAuth } from 'hooks/useAuth';
+import { useUser } from 'hooks/useUser';
 import AuthenticationLayout from '@/components/layouts/AuthenticationLayout';
 import VerifyEmailImage from '@/images/verify-email.png';
 

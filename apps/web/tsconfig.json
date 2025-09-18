@@ -12,7 +12,7 @@
       "@/icons/*": ["public/icons/*"],
       "@/images/*": ["public/images/*"],
       "@/providers/*": ["app/providers/*"],
-      "@/hooks/*": ["app/hooks/*"],
+      "@/hooks/*": ["hooks/*"],
       "@/*": ["app/*"],
       "@config": ["config"],
     },

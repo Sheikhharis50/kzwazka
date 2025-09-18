@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import React from 'react';
 import MenuIcon from '@/icons/menu.svg';
-import { useSettingsContext } from '@/hooks/useSettingsContext';
+import { useSettingsContext } from 'hooks/useSettingsContext';
 import LogoMobile from './LogoMobile';
 
 const Navbar = () => {

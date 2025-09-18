@@ -7,9 +7,9 @@ import { usePathname } from 'next/navigation';
 import Button from './Button';
 import { Profile, Logout } from 'svgs';
 import Ribbon from '@/images/sidebar-ribbon.png';
-import { useSettingsContext } from '@/hooks/useSettingsContext';
+import { useSettingsContext } from 'hooks/useSettingsContext';
 import Logo from '@/components/Logo';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from 'hooks/useAuth';
 import PermissionGuard from '@/components/guard/PermissionGuard';
 import { SidebarLink } from 'types';
 

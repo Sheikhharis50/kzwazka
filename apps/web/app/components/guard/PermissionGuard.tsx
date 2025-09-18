@@ -1,6 +1,6 @@
 'use client';
 
-import { usePermission } from '@/hooks/usePermisson';
+import { usePermission } from 'hooks/usePermisson';
 import Heading from '../Heading';
 
 interface PermissionGuardProps {

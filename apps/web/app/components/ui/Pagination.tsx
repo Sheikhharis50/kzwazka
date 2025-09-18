@@ -4,7 +4,7 @@ import React from 'react';
 import PaginationReact from 'react-paginate';
 import Paragraph from '../Paragraph';
 import { useRouter } from 'next/navigation';
-import { useQueryString } from '@/hooks/useQueryString';
+import { useQueryString } from 'hooks/useQueryString';
 
 interface PaginationProps {
   pageCount: number;

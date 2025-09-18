@@ -3,7 +3,7 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Select from '@/components/Select';
 
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useFileUpload } from 'hooks/useFileUpload';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { AddKidFormData, addKidSchema } from './schema';

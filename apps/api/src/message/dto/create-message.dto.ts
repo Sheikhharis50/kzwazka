@@ -5,6 +5,7 @@ import {
   IsOptional,
   MaxLength,
   IsEnum,
+  Allow,
 } from 'class-validator';
 import { MESSAGE_CONTENT_TYPE } from '../../utils/constants';
 
@@ -38,4 +39,7 @@ export class CreateMessageDto {
   })
   @IsOptional()
   group_id?: number;
+
+  @Allow()
+  file?: any;
 }

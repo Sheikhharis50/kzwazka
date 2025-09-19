@@ -178,30 +178,9 @@ export class MessageService {
 
       const totalCount = Number(countRows[0]?.count ?? 0);
 
-      // Group messages by date
-      const groupedMessages = results.reduce(
-        (acc, message) => {
-          const date = new Date(message.created_at).toISOString().split('T')[0];
-
-          const existingDateGroup = acc.find((group) => group.date === date);
-
-          if (existingDateGroup) {
-            existingDateGroup.messages.push(message);
-          } else {
-            acc.push({
-              date,
-              messages: [message],
-            });
-          }
-
-          return acc;
-        },
-        [] as Array<{ date: string; messages: typeof results }>
-      );
-
       return {
         message: 'Messages retrieved successfully',
-        data: groupedMessages,
+        data: results,
         page: Number(page),
         limit: Number(limit),
         count: totalCount,

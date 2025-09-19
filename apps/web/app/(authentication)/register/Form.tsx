@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import Button from '@/components/Button';
-import Input from '@/components/Input';
+import Button from 'components/ui/Button';
+import Input from 'components/ui/Input';
 import Image from 'next/image';
 import Link from 'next/link';
-import Paragraph from '@/components/Paragraph';
+import Paragraph from 'components/ui/Paragraph';
 import {
   FirstStepCleanData,
   FirstStepFormData,
@@ -16,9 +16,9 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterPayload } from 'api/auth/type';
-import { useAuth } from '@/hooks/useAuth';
-import { Trash } from '@/svgs';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useAuth } from 'hooks/useAuth';
+import { Trash } from 'svgs';
+import { useFileUpload } from 'hooks/useFileUpload';
 
 interface RegisterFormProps {
   setStep: React.Dispatch<React.SetStateAction<number>>;

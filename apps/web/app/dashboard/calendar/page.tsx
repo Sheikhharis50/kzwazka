@@ -3,15 +3,15 @@ import React from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import Heading from '@/components/Heading';
-import Button from '@/components/Button';
-import Paragraph from '@/components/Paragraph';
-import { months } from '@/constants/weekdays';
-import { Previous, Calendar as CalendarIcon } from '@/svgs';
-import { useCalendarApi } from '@/hooks/useCalendar';
-import { useEvent } from '@/hooks/useEvent';
-import Modal from '@/components/ui/Modal';
-import AddEventForm from '@/components/dashboard/calendar/add-event';
+import Heading from 'components/ui/Heading';
+import Button from 'components/ui/Button';
+import Paragraph from 'components/ui/Paragraph';
+import { months } from 'constants/weekdays';
+import { Previous, Calendar as CalendarIcon } from 'svgs';
+import { useCalendarApi } from 'hooks/useCalendar';
+import { useEvent } from 'hooks/useEvent';
+import Modal from 'components/ui/Modal';
+import AddEventForm from 'components/dashboard/calendar/add-event';
 
 const Calendar = () => {
   const [isModalVisible, setModalVisibility] = React.useState(false);

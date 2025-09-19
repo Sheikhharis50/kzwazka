@@ -1,4 +1,4 @@
-import { attendanceEnum } from '@/constants/attendance';
+import { attendanceEnum } from 'constants/attendance';
 export type IAttendance = {
   id: number;
   first_name: string;

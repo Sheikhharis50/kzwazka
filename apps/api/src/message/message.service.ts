@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, type SQL, asc } from 'drizzle-orm';
+import { eq, sql, and, or, type SQL, asc, isNull } from 'drizzle-orm';
 import {
   messageSchema,
   groupSchema,
@@ -147,7 +147,13 @@ export class MessageService {
             statusCode: 400,
           });
         }
-        whereClauses.push(eq(messageSchema.group_id, gid));
+        // Include messages for the specific group OR broadcast messages (group_id is null)
+        whereClauses.push(
+          or(eq(messageSchema.group_id, gid), isNull(messageSchema.group_id))!
+        );
+      } else {
+        // When no group_id is provided, show only broadcast messages (group_id is null)
+        whereClauses.push(isNull(messageSchema.group_id));
       }
 
       const baseQuery = this.dbService.db
@@ -191,6 +197,14 @@ export class MessageService {
         content:
           this.getContentUrl(message.content, message.content_type) ||
           message.content,
+        created_by: {
+          ...message.created_by,
+          photo_url: message.created_by?.photo_url
+            ? this.fileStorageService.getAbsoluteUrl(
+                message.created_by.photo_url
+              )
+            : null,
+        },
       }));
 
       const groupedMessages = processedResults.reduce(
@@ -490,7 +504,7 @@ export class MessageService {
     content: string | null,
     contentType: string
   ): string | null {
-    if (!content || contentType === MESSAGE_CONTENT_TYPE.TEXT) {
+    if (!content || contentType === 'text') {
       return null;
     }
 

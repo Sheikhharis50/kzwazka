@@ -5,6 +5,7 @@ export type IChildrenResponse = {
   parent_last_name: string | null;
   created_at: Date;
   updated_at: Date | null;
+  external_id: string | null;
   user: {
     id: number;
     first_name: string;
@@ -13,31 +14,8 @@ export type IChildrenResponse = {
     email: string;
     phone?: string | null;
   };
-  location: {
-    id: number;
-    name?: string | null;
-    address1?: string | null;
-    address2?: string | null;
-    city?: string | null;
-    state?: string | null;
-  } | null;
   group: {
     id: number;
     name?: string | null;
   } | null;
 };
-export interface ChildrenGroupUpdateValues {
-  children_id?: number;
-  group_id?: number;
-  status?: boolean;
-  updated_at: Date;
-}
-
-export interface ChildrenGroup {
-  id: number;
-  children_id: number;
-  group_id: number;
-  status: boolean;
-  created_at: Date;
-  updated_at: Date;
-}

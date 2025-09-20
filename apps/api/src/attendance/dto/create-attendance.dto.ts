@@ -19,14 +19,6 @@ export class CreateAttendanceDto {
   children_id: number;
 
   @ApiProperty({
-    description: 'Group ID',
-    example: 1,
-  })
-  @IsInt({ message: 'Group ID must be an integer' })
-  @Min(1, { message: 'Group ID must be at least 1' })
-  group_id: number;
-
-  @ApiProperty({
     description: 'Attendance date',
     example: '2025-09-15',
   })

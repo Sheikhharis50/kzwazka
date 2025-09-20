@@ -10,6 +10,7 @@ import { relations } from 'drizzle-orm';
 import { Role, roleSchema } from './roleSchema';
 import { coachSchema } from './coachSchema';
 import { childrenSchema } from './childrenSchema';
+import { messageSchema } from './messageSchema';
 
 export const userSchema = pgTable('user', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -44,6 +45,7 @@ export const userRelations = relations(userSchema, ({ one, many }) => ({
     references: [coachSchema.user_id],
   }),
   children: many(childrenSchema),
+  messages: many(messageSchema),
 }));
 
 export type User = typeof userSchema.$inferSelect;

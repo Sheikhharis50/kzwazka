@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, desc, sql, and, type SQL } from 'drizzle-orm';
+import { eq, sql, and, type SQL, asc } from 'drizzle-orm';
 import {
   messageSchema,
   groupSchema,
@@ -24,7 +24,11 @@ export class MessageService {
     private readonly fileStorageService: FileStorageService
   ) {}
 
-  async create(createMessageDto: CreateMessageDto, file?: Express.Multer.File) {
+  async create(
+    createMessageDto: CreateMessageDto,
+    file?: Express.Multer.File,
+    created_by?: number
+  ) {
     try {
       const validationResponse = this.validateMessageContent(
         createMessageDto,
@@ -41,6 +45,7 @@ export class MessageService {
           content,
           content_type: createMessageDto.content_type,
           group_id: createMessageDto.group_id,
+          created_by,
         };
 
         const createdMessage = await this.dbService.db
@@ -62,17 +67,7 @@ export class MessageService {
         });
       }
 
-      const groups = await this.dbService.db.select().from(groupSchema);
-
-      if (groups.length === 0) {
-        return APIResponse.error({
-          message: 'No groups found',
-          statusCode: 404,
-        });
-      }
-
-      const group_ids = groups.map((group) => group.id);
-      return this.createMany(createMessageDto, group_ids, file);
+      return this.createForAll(createMessageDto, file, created_by);
     } catch (error) {
       this.logger.error(
         `Failed to create message: ${(error as Error).message}`
@@ -84,10 +79,10 @@ export class MessageService {
     }
   }
 
-  async createMany(
+  async createForAll(
     createMessageDto: CreateMessageDto,
-    group_ids: number[],
-    file?: Express.Multer.File
+    file?: Express.Multer.File,
+    created_by?: number
   ) {
     try {
       const validationResponse = this.validateMessageContent(
@@ -99,11 +94,12 @@ export class MessageService {
       }
 
       const content = createMessageDto.content || '';
-      const messages = group_ids.map((group_id) => ({
+      const messages = {
         content,
         content_type: createMessageDto.content_type,
-        group_id,
-      }));
+        group_id: null,
+        created_by,
+      };
 
       const createdMessages = await this.dbService.db
         .insert(messageSchema)
@@ -162,9 +158,16 @@ export class MessageService {
           group_id: messageSchema.group_id,
           created_at: messageSchema.created_at,
           updated_at: messageSchema.updated_at,
+          created_by: {
+            id: userSchema.id,
+            first_name: userSchema.first_name,
+            last_name: userSchema.last_name,
+            photo_url: userSchema.photo_url,
+          },
         })
         .from(messageSchema)
-        .orderBy(desc(messageSchema.created_at))
+        .leftJoin(userSchema, eq(messageSchema.created_by, userSchema.id))
+        .orderBy(asc(messageSchema.created_at))
         .offset(offset)
         .limit(Number(limit));
 

@@ -19,7 +19,7 @@ const Groups = () => {
       hasNextPage,
       fetchNextPage,
     },
-  } = useGroup();
+  } = useGroup({ limit: 1 });
 
   return (
     <>

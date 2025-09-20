@@ -18,4 +18,14 @@ type SvgProp = {
   className?: string;
 };
 
-export type { SidebarLink, Option, SvgProp };
+enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
+enum SortBy {
+  CREATED_AT = 'created_at',
+  DOB = 'dob',
+}
+
+export type { SidebarLink, Option, SvgProp, SortOrder, SortBy };

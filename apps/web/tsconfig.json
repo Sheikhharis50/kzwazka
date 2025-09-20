@@ -8,13 +8,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/components/*": ["components/*"],
       "@/icons/*": ["public/icons/*"],
       "@/images/*": ["public/images/*"],
-      "@/providers/*": ["providers/*"],
-      "@/hooks/*": ["hooks/*"],
-      "@/*": ["app/*"],
-      "@config": ["config"],
     },
   },
   "include": [

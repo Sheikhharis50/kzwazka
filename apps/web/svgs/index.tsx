@@ -31,3 +31,5 @@ export * from './Book';
 export * from './Previous';
 export * from './Filter';
 export * from './DoubleTick';
+export * from './Send';
+export * from './Attachment';

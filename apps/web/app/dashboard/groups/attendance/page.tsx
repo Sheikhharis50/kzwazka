@@ -2,19 +2,16 @@
 import Button from 'components/ui/Button';
 import AttendanceTable from 'components/dashboard/attendance/Table';
 import Heading from 'components/ui/Heading';
-import Loader from 'components/ui/Loader';
-import Paragraph from 'components/ui/Paragraph';
 import DatePicker from 'components/ui/DatePicker';
 import Navigator from 'components/ui/Navigator';
 import Pagination from 'components/ui/Pagination';
 import { useAttendance } from 'hooks/useAttendance';
-import { useGroup } from 'hooks/useGroup';
-import { DoubleTick, Previous } from 'svgs';
+import { DoubleTick } from 'svgs';
 import { formatDate } from '@fullcalendar/core/index.js';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { scrollIntoView } from 'utils/scrollIntoView';
+import GroupPills from 'components/ui/GroupPills';
 
 const Attendance = () => {
   const [date, setDate] = useState<string>(
@@ -24,20 +21,6 @@ const Attendance = () => {
   const searchParams = useSearchParams();
   const groupId = searchParams.get('group_id');
   const page = searchParams.get('page');
-  const router = useRouter();
-
-  const {
-    getInfiniteGroups: {
-      data,
-      isLoading,
-      isRefetching,
-      hasNextPage,
-      fetchNextPage,
-      isFetchingNextPage,
-    },
-  } = useGroup();
-
-  const groups = data?.pages?.flatMap((page) => page?.data);
 
   const {
     getAttendance: { data: attendanceData, isLoading: isAttendanceLoading },
@@ -85,37 +68,7 @@ const Attendance = () => {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[60%_40%] gap-3 md:gap-0 justify-between items-center">
-          <div className="flex gap-2 overflow-x-auto items-center scrollbar-hidden">
-            {isLoading || isRefetching ? (
-              <Loader black className="!m-0" />
-            ) : !groups?.length ? (
-              <Paragraph text="No group available" />
-            ) : (
-              <>
-                {groups.map((group) => (
-                  <Button
-                    id={`attendance-group-filter-${group.id}`}
-                    text={group.name}
-                    key={group.id}
-                    className={`text-nowrap ${groupId === group.id.toString() ? '' : '!bg-red/20 !text-black'}`}
-                    onClick={() => {
-                      router.push(
-                        `/dashboard/groups/attendance?group_id=${group.id}`
-                      );
-                      scrollIntoView(`attendance-group-filter-${group.id}`);
-                    }}
-                  />
-                ))}
-                {isFetchingNextPage ? (
-                  <Loader black className="!m-0" />
-                ) : hasNextPage ? (
-                  <button onClick={() => fetchNextPage()}>
-                    <Previous className="-scale-x-100" />
-                  </button>
-                ) : null}
-              </>
-            )}
-          </div>
+          <GroupPills />
           <div className="flex gap-3 items-center justify-end w-full ps-2 xl:ps-5">
             {/* <button className="text-xs md:text-sm lg:text-base 2xl:text-lg">
               Clear All

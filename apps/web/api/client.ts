@@ -1,4 +1,4 @@
-import { API_URL } from '@config';
+import { API_URL } from 'config';
 import axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 import { APIResponse } from './type';
 import { publicRoutes } from 'constants/public-routes';

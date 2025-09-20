@@ -8,7 +8,8 @@
         "max_group_size": 10,
         "location_name": "Przasnyska 18a",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "szymon.domanski@gmail.com"
+        "coach_email": "szymon.domanski@gmail.com",
+        "amount": 150
     },
     {
         "name": "Group B",
@@ -19,7 +20,8 @@
         "max_group_size": 10,
         "location_name": "Przasnyska 18a",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "szymon.domanski@gmail.com"
+        "coach_email": "szymon.domanski@gmail.com",
+        "amount": 220
     },
     {
         "name": "Group C",
@@ -30,7 +32,8 @@
         "max_group_size": 10,
         "location_name": "Przasnyska 18a",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "szymon.domanski@gmail.com"
+        "coach_email": "szymon.domanski@gmail.com",
+        "amount": 220
     },
     {
         "name": "Group D",
@@ -41,7 +44,8 @@
         "max_group_size": 10,
         "location_name": "Obozowa 60",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "jakub.antoszewski@gmail.com"
+        "coach_email": "jakub.antoszewski@gmail.com",
+        "amount": 150
     },
     {
         "name": "Group E",
@@ -52,7 +56,8 @@
         "max_group_size": 10,
         "location_name": "Obozowa 60",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "jakub.antoszewski@gmail.com"
+        "coach_email": "jakub.antoszewski@gmail.com",
+        "amount": 220
     },
     {
         "name": "Group F",
@@ -63,6 +68,7 @@
         "max_group_size": 10,
         "location_name": "Obozowa 60",
         "photo_url": "https://example.com/photo.jpg",
-        "coach_email": "jakub.antoszewski@gmail.com"
+        "coach_email": "jakub.antoszewski@gmail.com",
+        "amount": 220
     }
 ]

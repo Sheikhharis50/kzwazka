@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,6 +32,7 @@ import {
   RequirePermission,
 } from '../auth/guards/permission.guard';
 import { createGeneralFileUploadInterceptor } from '../utils/file-interceptor.utils';
+import { APIRequest } from '../interfaces/request';
 
 @ApiTags('messages')
 @Controller('api/message')
@@ -66,9 +68,10 @@ export class MessageController {
   @ApiConsumes('multipart/form-data')
   create(
     @Body() createMessageDto: CreateMessageDto,
+    @Request() req: APIRequest,
     @UploadedFile() file?: Express.Multer.File
   ) {
-    return this.messageService.create(createMessageDto, file);
+    return this.messageService.create(createMessageDto, file, req.user.id);
   }
 
   @Get()

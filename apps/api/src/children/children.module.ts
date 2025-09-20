@@ -1,23 +1,23 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { PaymentModule } from '../payment/payment.module';
 import { ChildrenService } from './children.service';
 import { ChildrenController } from './children.controller';
-import { ChildrenGroupService } from './children-group.service';
 import { DbModule } from '../db/db.module';
 import { EmailService, FileStorageService } from '../services';
 import { SharedJwtModule } from '../auth/jwt.module';
 import { UserService } from '../user/user.service';
-import { GroupModule } from '../group/group.module';
+import { ChildrenInvoiceService } from './children-invoice.service';
 
 @Module({
-  imports: [DbModule, SharedJwtModule, GroupModule],
+  imports: [DbModule, SharedJwtModule, forwardRef(() => PaymentModule)],
   controllers: [ChildrenController],
   providers: [
     ChildrenService,
-    ChildrenGroupService,
+    ChildrenInvoiceService,
     EmailService,
     FileStorageService,
     UserService,
   ],
-  exports: [ChildrenService, ChildrenGroupService],
+  exports: [ChildrenService, ChildrenInvoiceService],
 })
 export class ChildrenModule {}

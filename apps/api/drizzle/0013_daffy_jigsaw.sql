@@ -1,0 +1,2 @@
+ALTER TABLE "message" ADD COLUMN "created_by" integer;--> statement-breakpoint
+ALTER TABLE "message" ADD CONSTRAINT "message_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;

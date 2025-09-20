@@ -7,7 +7,6 @@ import {
   childrenSchema,
   groupSchema,
   userSchema,
-  childrenGroupSchema,
 } from '../db/schemas';
 import {
   CreateAttendanceDto,
@@ -44,7 +43,6 @@ export class AttendanceService {
       .where(
         and(
           eq(attendanceSchema.children_id, createAttendanceDto.children_id),
-          eq(attendanceSchema.group_id, createAttendanceDto.group_id),
           eq(attendanceSchema.date, new Date(date))
         )
       )
@@ -110,7 +108,7 @@ export class AttendanceService {
     );
 
     const baseConditions: SQLWrapper[] = [
-      eq(childrenGroupSchema.group_id, queryDto.group_id), // Required condition
+      eq(childrenSchema.group_id, queryDto.group_id),
     ];
 
     if (queryDto.children_id) {
@@ -157,13 +155,8 @@ export class AttendanceService {
         total_count: sql<number>`COUNT(*) OVER()`,
       })
       .from(childrenSchema)
-      .innerJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .innerJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
+      .innerJoin(groupSchema, eq(childrenSchema.group_id, groupSchema.id))
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      // Left join for optional attendance
       .leftJoin(attendanceSchema, attendanceJoinCondition)
       .where(baseWhereClause)
       .orderBy(desc(attendanceSchema.date))
@@ -217,13 +210,9 @@ export class AttendanceService {
     const getAllChildren = await this.dbService.db
       .select()
       .from(childrenSchema)
-      .innerJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .where(eq(childrenGroupSchema.group_id, markAllAsPresentDto.group_id));
+      .where(eq(childrenSchema.group_id, markAllAsPresentDto.group_id));
 
-    const childrenIds = getAllChildren.map((child) => child.children.id);
+    const childrenIds = getAllChildren.map((child) => child.id);
 
     if (childrenIds.length === 0) {
       throw new NotFoundException('No children found in the specified group');
@@ -236,7 +225,7 @@ export class AttendanceService {
       .where(
         and(
           inArray(attendanceSchema.children_id, childrenIds),
-          eq(attendanceSchema.group_id, markAllAsPresentDto.group_id),
+          eq(childrenSchema.group_id, markAllAsPresentDto.group_id),
           eq(attendanceSchema.date, new Date(markAllAsPresentDto.date))
         )
       );
@@ -264,7 +253,7 @@ export class AttendanceService {
               attendanceSchema.children_id,
               existingChildrenIds as number[]
             ),
-            eq(attendanceSchema.group_id, markAllAsPresentDto.group_id),
+            eq(childrenSchema.group_id, markAllAsPresentDto.group_id),
             eq(attendanceSchema.date, new Date(markAllAsPresentDto.date))
           )
         )
@@ -280,7 +269,6 @@ export class AttendanceService {
         .values(
           newChildrenIds.map((childId) => ({
             children_id: childId,
-            group_id: markAllAsPresentDto.group_id,
             date: new Date(markAllAsPresentDto.date),
             status: ATTENDANCE_STATUS.PRESENT,
           }))

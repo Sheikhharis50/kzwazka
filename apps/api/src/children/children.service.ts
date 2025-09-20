@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import {
   CreateChildrenDto,
@@ -12,13 +14,7 @@ import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql, and, or, ilike, desc, asc, SQL } from 'drizzle-orm';
-import {
-  childrenSchema,
-  userSchema,
-  locationSchema,
-  childrenGroupSchema,
-  groupSchema,
-} from '../db/schemas';
+import { childrenSchema, userSchema, groupSchema } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import * as bcrypt from 'bcryptjs';
@@ -29,6 +25,7 @@ import { FileStorageService } from '../services';
 import { UserService } from '../user/user.service';
 import { APIResponse } from 'src/utils/response';
 import { IChildrenResponse } from './children.types';
+import { PaymentService } from '../payment/payment.service';
 
 @Injectable()
 export class ChildrenService {
@@ -39,7 +36,9 @@ export class ChildrenService {
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly fileStorageService: FileStorageService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    @Inject(forwardRef(() => PaymentService))
+    private readonly stripeService: PaymentService
   ) {}
 
   async create(body: CreateChildrenDto) {
@@ -80,7 +79,17 @@ export class ChildrenService {
           })
           .returning();
 
-        // Create children record
+        const customer = await this.stripeService.createCustomer(
+          body.email,
+          `${body.first_name} ${body.last_name}`,
+          body.phone,
+          {
+            user_id: newUser.id.toString(),
+            dob: body.dob,
+            google_social_id: body.google_social_id || '',
+          }
+        );
+        console.log(customer);
         const [newChildren] = await tx
           .insert(childrenSchema)
           .values({
@@ -88,7 +97,7 @@ export class ChildrenService {
             dob: new Date(body.dob).toISOString(),
             parent_first_name: body.parent_first_name || '',
             parent_last_name: body.parent_last_name || '',
-            location_id: body.location_id || null,
+            external_id: customer.id,
           })
           .returning();
 
@@ -98,7 +107,6 @@ export class ChildrenService {
         };
       });
     } catch (error) {
-      // If transaction fails, throw a more specific error
       if (error instanceof ConflictException) {
         throw error;
       }
@@ -112,11 +120,9 @@ export class ChildrenService {
     body: CreateChildrenDtoByAdmin,
     photo_url?: Express.Multer.File
   ) {
-    const { group_id, ...rest } = body;
+    const { ...rest } = body;
     const first_name = rest.name;
     const parent_first_name = rest.parent_name;
-
-    // Handle photo upload if provided
 
     const children = await this.create({
       ...rest,
@@ -125,10 +131,6 @@ export class ChildrenService {
     });
     if (photo_url) {
       await this.userService.updatePhotoUrl(children.user.id, photo_url);
-    }
-
-    if (group_id) {
-      await this.assignGroup(children.children.id, group_id);
     }
 
     const accessToken = generateToken(this.jwtService, children.user.id);
@@ -251,7 +253,6 @@ export class ChildrenService {
       page = '1',
       limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
       search,
-      location_id,
       group_id,
       sort_by = 'created_at',
       sort_order = 'desc',
@@ -266,6 +267,7 @@ export class ChildrenService {
         dob: childrenSchema.dob,
         parent_first_name: childrenSchema.parent_first_name,
         parent_last_name: childrenSchema.parent_last_name,
+        external_id: childrenSchema.external_id,
         created_at: childrenSchema.created_at,
         updated_at: childrenSchema.updated_at,
         user: {
@@ -276,13 +278,6 @@ export class ChildrenService {
           photo_url: userSchema.photo_url,
           phone: userSchema.phone,
         },
-        location: {
-          id: locationSchema.id,
-          name: locationSchema.name,
-          address1: locationSchema.address1,
-          city: locationSchema.city,
-          state: locationSchema.state,
-        },
         group: {
           id: groupSchema.id,
           name: groupSchema.name,
@@ -290,25 +285,14 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
-      .leftJoin(
-        locationSchema,
-        eq(childrenSchema.location_id, locationSchema.id)
-      );
+      .leftJoin(groupSchema, eq(childrenSchema.group_id, groupSchema.id));
 
     // Build optimized count query
     const countQuery = this.dbService.db
       .select({ count: sql<number>`COUNT(*)` })
       .from(childrenSchema)
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        locationSchema,
-        eq(childrenSchema.location_id, locationSchema.id)
-      );
+      .leftJoin(groupSchema, eq(childrenSchema.group_id, groupSchema.id));
 
     // Build where conditions array
     const whereConditions: SQL[] = [];
@@ -323,15 +307,7 @@ export class ChildrenService {
 
     // Apply group filter
     if (group_id) {
-      whereConditions.push(
-        eq(childrenGroupSchema.children_id, childrenSchema.id)
-      );
-      whereConditions.push(eq(childrenGroupSchema.group_id, group_id));
-    }
-
-    // Apply location filter
-    if (location_id) {
-      whereConditions.push(eq(childrenSchema.location_id, location_id));
+      whereConditions.push(eq(childrenSchema.group_id, group_id));
     }
 
     // Apply all where conditions
@@ -409,19 +385,13 @@ export class ChildrenService {
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
         updated_at: childrenSchema.updated_at,
+        external_id: childrenSchema.external_id,
         user: {
           id: userSchema.id,
           first_name: userSchema.first_name,
           last_name: userSchema.last_name,
           email: userSchema.email,
           photo_url: userSchema.photo_url,
-        },
-        location: {
-          id: locationSchema.id,
-          name: locationSchema.name,
-          address1: locationSchema.address1,
-          city: locationSchema.city,
-          state: locationSchema.state,
         },
         group: {
           id: groupSchema.id,
@@ -430,15 +400,7 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .innerJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        locationSchema,
-        eq(childrenSchema.location_id, locationSchema.id)
-      )
-      .leftJoin(
-        childrenGroupSchema,
-        eq(childrenSchema.id, childrenGroupSchema.children_id)
-      )
-      .leftJoin(groupSchema, eq(childrenGroupSchema.group_id, groupSchema.id))
+      .leftJoin(groupSchema, eq(childrenSchema.group_id, groupSchema.id))
       .where(eq(childrenSchema.id, id))
       .limit(1);
 
@@ -479,20 +441,13 @@ export class ChildrenService {
           email: userSchema.email,
           photo_url: userSchema.photo_url,
         },
-        location: {
-          id: locationSchema.id,
-          name: locationSchema.name,
-          address1: locationSchema.address1,
-          city: locationSchema.city,
-          state: locationSchema.state,
+        group: {
+          id: groupSchema.id,
+          name: groupSchema.name,
         },
       })
       .from(childrenSchema)
       .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
-      .leftJoin(
-        locationSchema,
-        eq(childrenSchema.location_id, locationSchema.id)
-      )
       .where(eq(childrenSchema.user_id, userId));
   }
 
@@ -571,39 +526,14 @@ export class ChildrenService {
     });
   }
 
-  async assignGroup(childrenId: number, groupId: number) {
-    const updatedChildren = await this.dbService.db
-      .insert(childrenGroupSchema)
-      .values({
-        children_id: childrenId,
-        group_id: groupId,
-      })
-      .returning();
-
-    if (updatedChildren.length === 0) {
+  async calculateChildrenAge(id: number) {
+    const children = await this.findOne(id);
+    if (!children.data) {
       throw new NotFoundException('Children not found');
     }
-
-    return updatedChildren[0];
-  }
-
-  async assignLocation(childrenId: number, locationId: number) {
-    const updatedChildren = await this.dbService.db
-      .update(childrenSchema)
-      .set({
-        location_id: locationId,
-        updated_at: new Date(),
-      })
-      .where(eq(childrenSchema.id, childrenId))
-      .returning();
-
-    if (updatedChildren.length === 0) {
-      throw new NotFoundException('Children not found');
-    }
-
-    return {
-      message: 'Location assigned successfully',
-      data: updatedChildren[0],
-    };
+    const dob = new Date(children.data.dob);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    return age;
   }
 }

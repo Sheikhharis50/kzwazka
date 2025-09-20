@@ -316,6 +316,7 @@ export class AuthService {
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
         role_name: roleSchema.name,
+        photo_url: userSchema.photo_url,
         permission_ids: rolePermissionSchema.permission_id,
       })
       .from(userSchema)
@@ -340,21 +341,6 @@ export class AuthService {
     // Get children data for this user
     const children = await this.childrenService.findByUserId(userId);
 
-    const childrenwithphotoUrl =
-      children.length > 0
-        ? {
-            ...children[0],
-            user: {
-              ...children[0].user,
-              photo_url: children[0].user?.photo_url
-                ? this.fileStorageService.getAbsoluteUrl(
-                    children[0].user.photo_url
-                  )
-                : children[0].user?.photo_url,
-            },
-          }
-        : null;
-
     // Return consistent structure with user object, permissions, and related data
     return {
       message: 'Profile fetched successfully',
@@ -372,7 +358,7 @@ export class AuthService {
           updated_at: userData.updated_at,
           permissions: permissionIds,
         },
-        children: childrenwithphotoUrl,
+        children: children,
       },
     };
   }

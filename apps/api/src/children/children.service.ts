@@ -392,6 +392,7 @@ export class ChildrenService {
           last_name: userSchema.last_name,
           email: userSchema.email,
           photo_url: userSchema.photo_url,
+          phone: userSchema.phone,
         },
         group: {
           id: groupSchema.id,
@@ -434,8 +435,13 @@ export class ChildrenService {
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
         updated_at: childrenSchema.updated_at,
-        external_id: childrenSchema.external_id,
-        user_id: childrenSchema.user_id,
+        user: {
+          id: userSchema.id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+          email: userSchema.email,
+          photo_url: userSchema.photo_url,
+        },
         group: {
           id: groupSchema.id,
           name: groupSchema.name,

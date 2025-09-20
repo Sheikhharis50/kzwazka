@@ -181,7 +181,16 @@ export class MessageService {
       ]);
 
       const totalCount = Number(countRows[0]?.count ?? 0);
-      const groupedMessages = results.reduce(
+
+      // Process messages to convert file paths to absolute URLs
+      const processedResults = results.map((message) => ({
+        ...message,
+        content:
+          this.getContentUrl(message.content, message.content_type) ||
+          message.content,
+      }));
+
+      const groupedMessages = processedResults.reduce(
         (acc, message) => {
           const date = new Date(message.created_at).toISOString().split('T')[0];
 
@@ -198,7 +207,7 @@ export class MessageService {
 
           return acc;
         },
-        [] as Array<{ date: string; messages: typeof results }>
+        [] as Array<{ date: string; messages: typeof processedResults }>
       );
 
       return APIResponse.success({
@@ -265,10 +274,18 @@ export class MessageService {
         });
       }
 
+      const message = rows[0];
+      const processedMessage = {
+        ...message,
+        content:
+          this.getContentUrl(message.content, message.content_type) ||
+          message.content,
+      };
+
       return APIResponse.success({
         message: 'Message retrieved successfully',
         statusCode: 200,
-        data: rows[0],
+        data: processedMessage,
       });
     } catch (error) {
       this.logger.error(
@@ -458,5 +475,35 @@ export class MessageService {
       statusCode: 200,
       data: true,
     });
+  }
+
+  /**
+   * Get the appropriate URL for message content
+   * @param content - The message content (file path or text)
+   * @param contentType - The type of content
+   * @returns The absolute URL for media files or null for text content
+   */
+  private getContentUrl(
+    content: string | null,
+    contentType: string
+  ): string | null {
+    if (!content || contentType === MESSAGE_CONTENT_TYPE.TEXT) {
+      return null;
+    }
+
+    // Check if content is a file path (starts with /)
+    if (content && content.startsWith('/')) {
+      try {
+        return this.fileStorageService.getAbsoluteUrl(content);
+      } catch (error) {
+        this.logger.error(
+          `Failed to get absolute URL for content: ${content}`,
+          error
+        );
+        return null;
+      }
+    }
+
+    return null;
   }
 }

@@ -6,8 +6,12 @@ import { groupSchema } from './groupSchema';
 
 export const coachSchema = pgTable('coach', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  user_id: integer('user_id').references(() => userSchema.id),
-  location_id: integer('location_id').references(() => locationSchema.id),
+  user_id: integer('user_id').references(() => userSchema.id, {
+    onDelete: 'cascade',
+  }),
+  location_id: integer('location_id').references(() => locationSchema.id, {
+    onDelete: 'cascade',
+  }),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
 });

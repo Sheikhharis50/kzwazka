@@ -158,15 +158,6 @@ export class CreateChildrenDto {
   })
   @MaxLength(50, { message: 'Parent last name cannot exceed 50 characters' })
   parent_last_name?: string;
-
-  @ApiPropertyOptional({
-    description: 'Location ID where the child trains',
-    example: 1,
-    type: 'integer',
-  })
-  @IsNumber({}, { message: 'Location ID must be a number' })
-  @IsOptional()
-  location_id?: number;
 }
 
 export class CreateChildrenDtoByAdmin {
@@ -280,15 +271,6 @@ export class CreateChildrenDtoByAdmin {
   })
   @MaxLength(50, { message: 'Parent name cannot exceed 50 characters' })
   parent_name?: string;
-
-  @ApiPropertyOptional({
-    description: 'Location ID where the child trains',
-    example: 1,
-    type: 'integer',
-  })
-  @IsNumber({}, { message: 'Location ID must be a number' })
-  @IsOptional()
-  location_id?: number;
 
   @ApiProperty({
     description: 'Group ID where the child belongs to',

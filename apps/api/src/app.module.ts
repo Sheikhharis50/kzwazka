@@ -14,6 +14,7 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AttendanceModule } from './attendance/attendance.module';
 import { InsuranceModule } from './insurance/insurance.module';
+import { PaymentModule } from './payment/payment.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -34,6 +35,7 @@ import { InsuranceModule } from './insurance/insurance.module';
     MessageModule,
     AttendanceModule,
     InsuranceModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

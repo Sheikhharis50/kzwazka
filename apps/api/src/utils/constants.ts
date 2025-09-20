@@ -129,3 +129,15 @@ export enum INSURANCE_STATUS {
 export enum INSURANCE_COVERAGE_TYPE {
   TRAINING_AND_TOURNAMENT = 'training_and_tournament',
 }
+
+export enum ChildrenInvoiceStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
+  ACTIVE = 'active',
+  CANCELED = 'canceled',
+  FINALIZED = 'finalized',
+  ACTION_REQUIRED = 'action_required',
+  PAUSED = 'paused',
+  COMPLETED = 'completed',
+}

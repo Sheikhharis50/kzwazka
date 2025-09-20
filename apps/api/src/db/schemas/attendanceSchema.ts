@@ -1,14 +1,14 @@
 import { pgTable, timestamp, integer, text } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { childrenSchema } from './childrenSchema';
-import { groupSchema } from './groupSchema';
 
 export const attendanceSchema = pgTable('attendance', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  children_id: integer('children_id').references(() => childrenSchema.id),
-  group_id: integer('group_id').references(() => groupSchema.id),
+  children_id: integer('children_id').references(() => childrenSchema.id, {
+    onDelete: 'cascade',
+  }),
   date: timestamp('date').notNull(),
-  status: text('status').notNull(), // 'present', 'absent', 'late'
+  status: text('status').notNull(),
   notes: text('notes'),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
@@ -19,21 +19,10 @@ export const attendanceRelations = relations(attendanceSchema, ({ one }) => ({
     fields: [attendanceSchema.children_id],
     references: [childrenSchema.id],
   }),
-  group: one(groupSchema, {
-    fields: [attendanceSchema.group_id],
-    references: [groupSchema.id],
-  }),
 }));
 
 export type Attendance = typeof attendanceSchema.$inferSelect;
 export type NewAttendance = typeof attendanceSchema.$inferInsert;
 export type AttendanceWithChildren = Attendance & {
   children: typeof childrenSchema.$inferSelect;
-};
-export type AttendanceWithGroup = Attendance & {
-  group: typeof groupSchema.$inferSelect;
-};
-export type AttendanceWithChildrenAndGroup = Attendance & {
-  children: typeof childrenSchema.$inferSelect | null;
-  group: typeof groupSchema.$inferSelect | null;
 };

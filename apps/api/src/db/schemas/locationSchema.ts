@@ -5,15 +5,12 @@ import {
   timestamp,
   boolean,
   time,
-  numeric,
   integer,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { childrenSchema } from './childrenSchema';
 import { eventSchema } from './eventSchema';
 import { coachSchema } from './coachSchema';
 import { groupSchema } from './groupSchema';
-import { childrenInvoiceSchema } from './childrenInvoiceSchema';
 
 export const locationSchema = pgTable('locations', {
   id: integer('id').primaryKey().notNull().generatedAlwaysAsIdentity(),
@@ -26,19 +23,15 @@ export const locationSchema = pgTable('locations', {
   opening_time: time('opening_time'),
   closing_time: time('closing_time'),
   description: text('description'),
-  amount: numeric('amount'),
-  external_id: varchar('external_id', { length: 200 }),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at'),
   is_active: boolean('is_active').default(true).notNull(),
 });
 
 export const locationRelations = relations(locationSchema, ({ many }) => ({
-  children: many(childrenSchema),
   events: many(eventSchema),
   coaches: many(coachSchema),
   groups: many(groupSchema),
-  invoices: many(childrenInvoiceSchema),
 }));
 
 export type Location = typeof locationSchema.$inferSelect;

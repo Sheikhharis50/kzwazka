@@ -1,9 +1,16 @@
-import { pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { locationSchema } from './locationSchema';
 import { coachSchema } from './coachSchema';
-import { childrenGroupSchema } from './childrenGroupSchema';
 import { messageSchema } from './messageSchema';
+import { childrenSchema } from './childrenSchema';
+import { childrenInvoiceSchema } from './childrenInvoiceSchema';
 import { groupSessionSchema } from './groupSessionSchema';
 import { eventSchema } from './eventSchema';
 
@@ -15,8 +22,14 @@ export const groupSchema = pgTable('group', {
   max_age: integer('max_age').notNull(),
   skill_level: text('skill_level').notNull(),
   max_group_size: integer('max_group_size').notNull(),
-  location_id: integer('location_id').references(() => locationSchema.id),
-  coach_id: integer('coach_id').references(() => coachSchema.id),
+  location_id: integer('location_id').references(() => locationSchema.id, {
+    onDelete: 'cascade',
+  }),
+  coach_id: integer('coach_id').references(() => coachSchema.id, {
+    onDelete: 'cascade',
+  }),
+  external_id: varchar('external_id', { length: 255 }),
+  amount: integer('amount'),
   photo_url: text('photo_url'),
   created_at: timestamp('created_at').notNull().defaultNow(),
   updated_at: timestamp('updated_at').notNull().defaultNow(),
@@ -31,8 +44,9 @@ export const groupRelations = relations(groupSchema, ({ one, many }) => ({
     fields: [groupSchema.coach_id],
     references: [coachSchema.id],
   }),
-  childrenGroups: many(childrenGroupSchema),
   messages: many(messageSchema),
+  children: many(childrenSchema),
+  invoices: many(childrenInvoiceSchema),
   sessions: many(groupSessionSchema),
   events: many(eventSchema),
 }));
@@ -45,7 +59,8 @@ export type GroupWithLocation = Group & {
 export type GroupWithCoach = Group & {
   coach: typeof coachSchema.$inferSelect;
 };
-export type GroupWithLocationAndCoach = Group & {
+export type GroupWithLocationAndCoachAndChildren = Group & {
   location: typeof locationSchema.$inferSelect;
   coach: typeof coachSchema.$inferSelect;
+  children: typeof childrenSchema.$inferSelect;
 };

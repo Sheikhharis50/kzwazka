@@ -11,6 +11,8 @@ export type IGroupResponse = {
   created_at: Date;
   updated_at: Date;
   photo_url: string | null;
+  external_id: string | null;
+  amount: number;
   location: {
     id: number;
     name: string;

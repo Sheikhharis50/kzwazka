@@ -119,7 +119,6 @@ export class GroupService {
       }
     }
 
-    // Handle photo upload
     if (photo_url) {
       await this.updatePhotoUrl(newGroup.id, photo_url);
     }
@@ -170,6 +169,8 @@ export class GroupService {
         created_at: groupSchema.created_at,
         updated_at: groupSchema.updated_at,
         photo_url: groupSchema.photo_url,
+        external_id: groupSchema.external_id,
+        amount: groupSchema.amount,
         location: {
           id: locationSchema.id,
           name: locationSchema.name,
@@ -256,6 +257,7 @@ export class GroupService {
           }
         : null,
       sessions: sessionsMap.get(group.id) || [],
+      amount: group.amount || 0,
     }));
 
     // Get total count
@@ -292,6 +294,8 @@ export class GroupService {
         created_at: groupSchema.created_at,
         updated_at: groupSchema.updated_at,
         photo_url: groupSchema.photo_url,
+        external_id: groupSchema.external_id,
+        amount: groupSchema.amount,
         location: {
           id: locationSchema.id,
           name: locationSchema.name,
@@ -361,6 +365,7 @@ export class GroupService {
           }
         : null,
       sessions: sessions,
+      amount: group[0].amount || 0,
     };
 
     return APIResponse.success<IGroupResponse>({

@@ -32,17 +32,12 @@ import {
   PermissionGuard,
   RequirePermission,
 } from 'src/auth/guards/permission.guard';
-import { ChildrenGroupService } from './children-group.service';
-import { CreateChildrenGroupDto } from './dto/create-children-group.dto';
-import { QueryChildrenGroupDto } from './dto/query-children-group.dto';
-import { UpdateChildrenGroupDto } from './dto/update-children-group.dto';
-import {
-  ChildrenGroupResponseDto,
-  PaginatedChildrenGroupResponseDto,
-  ChildrenGroupWithChildrenAndGroupDto,
-} from './dto/children-group-response.dto';
 import { APIResponse } from 'src/utils/response';
-import { ChildrenGroup, IChildrenResponse } from './children.types';
+import { IChildrenResponse } from './children.types';
+import { ChildrenInvoiceService } from './children-invoice.service';
+import { CreateChildrenInvoiceDto } from './dto/create-children-invoice.dto';
+import { ChildrenInvoice } from 'src/db/schemas';
+import { UpdateChildrenInvoiceDto } from './dto/update-children-invoice.dto';
 
 @ApiTags('Children')
 @Controller('api/children')
@@ -51,7 +46,7 @@ import { ChildrenGroup, IChildrenResponse } from './children.types';
 export class ChildrenController {
   constructor(
     private readonly childrenService: ChildrenService,
-    private readonly childrenGroupService: ChildrenGroupService
+    private readonly childrenInvoiceService: ChildrenInvoiceService
   ) {}
 
   @Post()
@@ -246,30 +241,6 @@ export class ChildrenController {
     @Query() query: QueryChildrenDto
   ): Promise<APIResponse<IChildrenResponse[]>> {
     return this.childrenService.findAll(query);
-  }
-
-  @ApiOperation({
-    summary:
-      'Get all children-group relationships with filtering and pagination',
-  })
-  @ApiResponse({
-    status: 200,
-    description:
-      'The children-group relationships have been successfully fetched.',
-    type: PaginatedChildrenGroupResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiBearerAuth()
-  @RequirePermission(['read_children_group'])
-  @Get('group')
-  @ApiQuery({ name: 'children_id', required: false, type: Number })
-  @ApiQuery({ name: 'group_id', required: false, type: Number })
-  @ApiQuery({ name: 'page', required: false, type: Number, default: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
-  findAllChildrenGroup(
-    @Query() queryDto: QueryChildrenGroupDto
-  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
-    return this.childrenGroupService.findAll(queryDto);
   }
 
   @Get('user/:userId')
@@ -475,86 +446,129 @@ export class ChildrenController {
     return this.childrenService.remove(id);
   }
 
-  @ApiOperation({ summary: 'Assign multiple children to a group' })
-  @ApiResponse({
-    status: 201,
-    description: 'The children have been successfully assigned to the group.',
-    type: [ChildrenGroupResponseDto],
+  @Post(':id/invoice')
+  @RequirePermission(['create_children_invoice'])
+  @ApiOperation({
+    summary: 'Create a new children invoice',
+    description: 'Create a new children invoice',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({
-    status: 409,
-    description: 'Some children are already assigned to this group',
+  @ApiParam({
+    name: 'id',
+    description: 'Children ID',
+    type: 'number',
+    example: 1,
   })
-  @ApiBearerAuth()
-  @RequirePermission(['create_children_group'])
-  @Post('group')
-  createChildrenGroup(
-    @Body() createChildrenGroupDto: CreateChildrenGroupDto
-  ): Promise<APIResponse<ChildrenGroup[] | undefined>> {
-    return this.childrenGroupService.create(createChildrenGroupDto);
+  @ApiBody({
+    type: CreateChildrenInvoiceDto,
+    description: 'Create children invoice',
+  })
+  createInvoice(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: CreateChildrenInvoiceDto
+  ): Promise<APIResponse<ChildrenInvoice | undefined>> {
+    return this.childrenInvoiceService.createChildrenInvoice({
+      ...body,
+      children_id: id,
+    });
   }
 
-  @ApiOperation({ summary: 'Get a specific children-group relationship by ID' })
+  @Get(':id/invoice')
+  @RequirePermission(['read_children_invoice'])
+  @ApiOperation({
+    summary: 'Get a children invoice',
+    description: 'Get a children invoice',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Children ID',
+    type: 'number',
+    example: 1,
+  })
   @ApiResponse({
     status: 200,
-    description:
-      'The children-group relationship has been successfully fetched.',
-    type: ChildrenGroupWithChildrenAndGroupDto,
+    description: 'Children invoice retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 1 },
+        children_id: { type: 'number', example: 1 },
+        amount: { type: 'number', example: 100 },
+        status: { type: 'string', example: 'pending' },
+        created_at: { type: 'string', format: 'date-time' },
+        updated_at: { type: 'string', format: 'date-time' },
+      },
+    },
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid children ID',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid JWT token',
+  })
   @ApiResponse({
     status: 404,
-    description: 'Children-group relationship not found',
+    description: 'Children invoice not found',
   })
-  @ApiBearerAuth()
-  @RequirePermission(['read_children_group'])
-  @Get('group/:id')
-  findOneChildrenGroup(@Param('id') id: string) {
-    return this.childrenGroupService.findOne(+id);
+  findInvoice(@Param('id', ParseIntPipe) id: number) {
+    return this.childrenInvoiceService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Update a children-group relationship by ID' })
-  @ApiResponse({
-    status: 200,
-    description:
-      'The children-group relationship has been successfully updated.',
-    type: ChildrenGroupResponseDto,
+  @Patch(':id/invoice')
+  @RequirePermission(['update_children_invoice'])
+  @ApiOperation({
+    summary: 'Update a children invoice',
+    description: 'Update a children invoice',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({
-    status: 404,
-    description: 'Children-group relationship not found',
+  @ApiParam({
+    name: 'id',
+    description: 'Children ID',
+    type: 'number',
+    example: 1,
   })
-  @ApiResponse({
-    status: 409,
-    description: 'Child is already assigned to this group',
+  @ApiBody({
+    type: UpdateChildrenInvoiceDto,
+    description: 'Update children invoice',
   })
-  @ApiBearerAuth()
-  @RequirePermission(['update_children_group'])
-  @Patch('group/:id')
-  updateChildrenGroup(
-    @Param('id') id: string,
-    @Body() updateChildrenGroupDto: UpdateChildrenGroupDto
-  ) {
-    return this.childrenGroupService.update(+id, updateChildrenGroupDto);
+  updateInvoice(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateChildrenInvoiceDto
+  ): Promise<APIResponse<ChildrenInvoice | undefined>> {
+    return this.childrenInvoiceService.update(id, body);
   }
 
-  @ApiOperation({ summary: 'Remove a child from a group' })
-  @ApiResponse({
-    status: 200,
-    description: 'The child has been successfully removed from the group.',
-    type: ChildrenGroupResponseDto,
+  @Delete(':id/invoice')
+  @RequirePermission(['delete_children_invoice'])
+  @ApiOperation({
+    summary: 'Delete a children invoice',
+    description: 'Delete a children invoice',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({
-    status: 404,
-    description: 'Children-group relationship not found',
+  @ApiParam({
+    name: 'id',
+    description: 'Children ID',
+    type: 'number',
+    example: 1,
   })
-  @ApiBearerAuth()
-  @RequirePermission(['delete_children_group'])
-  @Delete('group/:id')
-  removeChildrenGroup(@Param('id') id: string) {
-    return this.childrenGroupService.remove(+id);
+  deleteInvoice(
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<APIResponse<ChildrenInvoice | undefined>> {
+    return this.childrenInvoiceService.remove(id);
+  }
+
+  @Get(':id/invoice/all')
+  @RequirePermission(['read_children_invoice'])
+  @ApiOperation({
+    summary: 'Get all children invoices',
+    description: 'Get all children invoices',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Children ID',
+    type: 'number',
+    example: 1,
+  })
+  findAllInvoices() {
+    return this.childrenInvoiceService.findAll();
   }
 }

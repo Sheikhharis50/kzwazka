@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { DatabaseService } from '../db/drizzle.service';
@@ -82,7 +77,10 @@ export class MessageService {
       this.logger.error(
         `Failed to create message: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to create message: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -127,7 +125,10 @@ export class MessageService {
       this.logger.error(
         `Failed to create messages: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to create messages: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -145,7 +146,10 @@ export class MessageService {
       if (group_id) {
         const gid = Number(group_id);
         if (Number.isNaN(gid)) {
-          throw new BadRequestException('group_id must be a number');
+          return APIResponse.error({
+            message: 'group_id must be a number',
+            statusCode: 400,
+          });
         }
         whereClauses.push(eq(messageSchema.group_id, gid));
       }
@@ -177,7 +181,16 @@ export class MessageService {
       ]);
 
       const totalCount = Number(countRows[0]?.count ?? 0);
-      const groupedMessages = results.reduce(
+
+      // Process messages to convert file paths to absolute URLs
+      const processedResults = results.map((message) => ({
+        ...message,
+        content:
+          this.getContentUrl(message.content, message.content_type) ||
+          message.content,
+      }));
+
+      const groupedMessages = processedResults.reduce(
         (acc, message) => {
           const date = new Date(message.created_at).toISOString().split('T')[0];
 
@@ -194,22 +207,28 @@ export class MessageService {
 
           return acc;
         },
-        [] as Array<{ date: string; messages: typeof results }>
+        [] as Array<{ date: string; messages: typeof processedResults }>
       );
 
-      return {
+      return APIResponse.success({
         message: 'Messages retrieved successfully',
+        statusCode: 200,
         data: groupedMessages,
-        page: Number(page),
-        limit: Number(limit),
-        count: totalCount,
-        totalPages: Math.ceil(totalCount / Number(limit)),
-      };
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          count: totalCount,
+          totalPages: Math.ceil(totalCount / Number(limit)),
+        },
+      });
     } catch (error) {
       this.logger.error(
         `Failed to retrieve messages: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to retrieve messages: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -249,18 +268,33 @@ export class MessageService {
         .limit(1);
 
       if (rows.length === 0) {
-        throw new NotFoundException('Message not found');
+        return APIResponse.error({
+          message: 'Message not found',
+          statusCode: 404,
+        });
       }
 
-      return {
-        message: 'Message retrieved successfully',
-        data: rows[0],
+      const message = rows[0];
+      const processedMessage = {
+        ...message,
+        content:
+          this.getContentUrl(message.content, message.content_type) ||
+          message.content,
       };
+
+      return APIResponse.success({
+        message: 'Message retrieved successfully',
+        statusCode: 200,
+        data: processedMessage,
+      });
     } catch (error) {
       this.logger.error(
         `Failed to retrieve message: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to retrieve message: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -273,7 +307,10 @@ export class MessageService {
         .limit(1);
 
       if (existing.length === 0) {
-        throw new NotFoundException('Message not found');
+        return APIResponse.error({
+          message: 'Message not found',
+          statusCode: 404,
+        });
       }
 
       const [updated] = await this.dbService.db
@@ -287,15 +324,19 @@ export class MessageService {
 
       this.logger.log(`Message updated successfully with ID: ${id}`);
 
-      return {
+      return APIResponse.success({
         message: 'Message updated successfully',
+        statusCode: 200,
         data: updated,
-      };
+      });
     } catch (error) {
       this.logger.error(
         `Failed to update message: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to update message: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -308,7 +349,10 @@ export class MessageService {
         .limit(1);
 
       if (existing.length === 0) {
-        throw new NotFoundException('Message not found');
+        return APIResponse.error({
+          message: 'Message not found',
+          statusCode: 404,
+        });
       }
 
       const message = existing[0];
@@ -340,14 +384,18 @@ export class MessageService {
 
       this.logger.log(`Message deleted successfully with ID: ${id}`);
 
-      return {
+      return APIResponse.success({
         message: 'Message deleted successfully',
-      };
+        statusCode: 200,
+      });
     } catch (error) {
       this.logger.error(
         `Failed to delete message: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to delete message: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -366,7 +414,10 @@ export class MessageService {
         .limit(1);
 
       if (message.length === 0) {
-        throw new NotFoundException('Message not found');
+        return APIResponse.error({
+          message: 'Message not found',
+          statusCode: 404,
+        });
       }
 
       const updatedMessage = await this.dbService.db
@@ -375,12 +426,19 @@ export class MessageService {
         .where(eq(messageSchema.id, id))
         .returning();
 
-      return updatedMessage;
+      return APIResponse.success({
+        message: 'Message file uploaded successfully',
+        statusCode: 200,
+        data: updatedMessage,
+      });
     } catch (error) {
       this.logger.error(
         `Failed to upload message file: ${(error as Error).message}`
       );
-      throw error;
+      return APIResponse.error({
+        message: `Failed to upload message file: ${(error as Error).message}`,
+        statusCode: 500,
+      });
     }
   }
 
@@ -417,5 +475,35 @@ export class MessageService {
       statusCode: 200,
       data: true,
     });
+  }
+
+  /**
+   * Get the appropriate URL for message content
+   * @param content - The message content (file path or text)
+   * @param contentType - The type of content
+   * @returns The absolute URL for media files or null for text content
+   */
+  private getContentUrl(
+    content: string | null,
+    contentType: string
+  ): string | null {
+    if (!content || contentType === MESSAGE_CONTENT_TYPE.TEXT) {
+      return null;
+    }
+
+    // Check if content is a file path (starts with /)
+    if (content && content.startsWith('/')) {
+      try {
+        return this.fileStorageService.getAbsoluteUrl(content);
+      } catch (error) {
+        this.logger.error(
+          `Failed to get absolute URL for content: ${content}`,
+          error
+        );
+        return null;
+      }
+    }
+
+    return null;
   }
 }

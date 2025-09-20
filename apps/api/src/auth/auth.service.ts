@@ -341,6 +341,21 @@ export class AuthService {
     // Get children data for this user
     const children = await this.childrenService.findByUserId(userId);
 
+    const childrenwithphotoUrl =
+      children.length > 0
+        ? {
+            ...children[0],
+            user: {
+              ...children[0].user,
+              photo_url: children[0].user?.photo_url
+                ? this.fileStorageService.getAbsoluteUrl(
+                    children[0].user.photo_url
+                  )
+                : children[0].user?.photo_url,
+            },
+          }
+        : null;
+
     // Return consistent structure with user object, permissions, and related data
     return {
       message: 'Profile fetched successfully',
@@ -357,8 +372,11 @@ export class AuthService {
           created_at: userData.created_at,
           updated_at: userData.updated_at,
           permissions: permissionIds,
+          photo_url: userData.photo_url
+            ? this.fileStorageService.getAbsoluteUrl(userData.photo_url)
+            : null,
         },
-        children: children,
+        children: childrenwithphotoUrl,
       },
     };
   }

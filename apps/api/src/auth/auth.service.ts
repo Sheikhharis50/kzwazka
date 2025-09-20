@@ -316,6 +316,7 @@ export class AuthService {
         created_at: userSchema.created_at,
         updated_at: userSchema.updated_at,
         role_name: roleSchema.name,
+        photo_url: userSchema.photo_url,
         permission_ids: rolePermissionSchema.permission_id,
       })
       .from(userSchema)
@@ -371,6 +372,9 @@ export class AuthService {
           created_at: userData.created_at,
           updated_at: userData.updated_at,
           permissions: permissionIds,
+          photo_url: userData.photo_url
+            ? this.fileStorageService.getAbsoluteUrl(userData.photo_url)
+            : null,
         },
         children: childrenwithphotoUrl,
       },

@@ -392,6 +392,7 @@ export class ChildrenService {
           last_name: userSchema.last_name,
           email: userSchema.email,
           photo_url: userSchema.photo_url,
+          phone: userSchema.phone,
         },
         group: {
           id: groupSchema.id,
@@ -448,6 +449,7 @@ export class ChildrenService {
       })
       .from(childrenSchema)
       .leftJoin(userSchema, eq(childrenSchema.user_id, userSchema.id))
+      .leftJoin(groupSchema, eq(childrenSchema.group_id, groupSchema.id))
       .where(eq(childrenSchema.user_id, userId));
   }
 

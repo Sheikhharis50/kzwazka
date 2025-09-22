@@ -32,13 +32,16 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { APIRequest } from '../interfaces/request';
 import { GoogleAuthService } from './google-auth.service';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
+import { FileStorageService } from '../services/file-storage.service';
+import { APIResponse } from 'src/utils/response';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private googleAuthService: GoogleAuthService
+    private googleAuthService: GoogleAuthService,
+    private fileStorageService: FileStorageService
   ) {}
 
   @Post('signup')
@@ -505,5 +508,42 @@ export class AuthController {
       }
       throw new UnauthorizedException('Google authentication failed');
     }
+  }
+
+  @Post('download-file')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Download file',
+    description: 'Download file from file storage',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', example: 'https://example.com/file.pdf' },
+      },
+      required: ['url'],
+    },
+    description: 'File URL',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'File downloaded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'File downloaded successfully' },
+        data: { type: 'string', example: 'File content' },
+      },
+    },
+  })
+  async downloadFile(@Body() body: { url: string }) {
+    const file = await this.fileStorageService.downloadFile(body.url);
+    return APIResponse.success({
+      message: 'File downloaded successfully',
+      data: file,
+      statusCode: 200,
+    });
   }
 }

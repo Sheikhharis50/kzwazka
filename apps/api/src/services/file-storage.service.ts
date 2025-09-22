@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   ObjectCannedACL,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -458,5 +459,41 @@ export class FileStorageService {
     } else {
       return `${this.config.publicUrl}${relativePath}`;
     }
+  }
+
+  downloadFile(url: string): Promise<Buffer> {
+    if (!url) {
+      throw new BadRequestException('URL is required');
+    }
+
+    if (this.config.storage === 'digitalocean') {
+      return this.downloadFromDigitalOcean(url);
+    } else {
+      return this.downloadFromLocal(url);
+    }
+  }
+
+  private async downloadFromDigitalOcean(url: string): Promise<Buffer> {
+    if (!this.s3Client) {
+      throw new BadRequestException('S3 client not initialized');
+    }
+
+    const urlObj = new URL(url);
+    const key = urlObj.pathname.substring(1);
+
+    const downloadParams = {
+      Bucket: this.config.digitalOcean.bucket,
+      Key: key,
+    };
+    const object = await this.s3Client.send(
+      new GetObjectCommand(downloadParams)
+    );
+    return (await object.Body?.transformToByteArray()) as Buffer;
+  }
+
+  private async downloadFromLocal(url: string): Promise<Buffer> {
+    const key = url.startsWith('/') ? url.substring(1) : url;
+    const fullPath = path.join(process.cwd(), this.config.localPath, key);
+    return await fs.readFile(fullPath);
   }
 }

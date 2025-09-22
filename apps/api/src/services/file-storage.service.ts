@@ -10,6 +10,7 @@ import {
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { APIResponse } from 'src/utils/response';
 
 export interface FileUploadResult {
   url: string;
@@ -30,6 +31,13 @@ export interface StorageConfig {
     accessKey: string;
     secretKey: string;
   };
+}
+
+export interface FileDownloadResult {
+  buffer: Buffer;
+  filename?: string;
+  mimeType?: string;
+  size: number;
 }
 
 @Injectable()
@@ -461,7 +469,7 @@ export class FileStorageService {
     }
   }
 
-  downloadFile(url: string): Promise<Buffer> {
+  downloadFile(url: string): Promise<FileDownloadResult> {
     if (!url) {
       throw new BadRequestException('URL is required');
     }
@@ -473,7 +481,9 @@ export class FileStorageService {
     }
   }
 
-  private async downloadFromDigitalOcean(url: string): Promise<Buffer> {
+  private async downloadFromDigitalOcean(
+    url: string
+  ): Promise<FileDownloadResult> {
     if (!this.s3Client) {
       throw new BadRequestException('S3 client not initialized');
     }
@@ -488,12 +498,31 @@ export class FileStorageService {
     const object = await this.s3Client.send(
       new GetObjectCommand(downloadParams)
     );
-    return (await object.Body?.transformToByteArray()) as Buffer;
+
+    const buffer = Buffer.from(
+      (await object.Body?.transformToByteArray()) || []
+    );
+
+    const filename = path.basename(key);
+
+    return {
+      buffer,
+      filename,
+      mimeType: object.ContentType,
+      size: buffer.length,
+    };
   }
 
-  private async downloadFromLocal(url: string): Promise<Buffer> {
+  private async downloadFromLocal(url: string): Promise<FileDownloadResult> {
     const key = url.startsWith('/') ? url.substring(1) : url;
     const fullPath = path.join(process.cwd(), this.config.localPath, key);
-    return await fs.readFile(fullPath);
+    const buffer = await fs.readFile(fullPath);
+    const filename = path.basename(key);
+    return {
+      buffer,
+      filename,
+      mimeType: 'application/octet-stream',
+      size: buffer.length,
+    };
   }
 }

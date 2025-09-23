@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Patch,
+  Res,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,7 +19,9 @@ import {
   ApiBody,
   ApiBearerAuth,
   ApiConsumes,
+  ApiQuery,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 import { createImageUploadInterceptor } from '../utils/file-interceptor.utils';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/create-auth.dto';
@@ -33,7 +37,6 @@ import { APIRequest } from '../interfaces/request';
 import { GoogleAuthService } from './google-auth.service';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 import { FileStorageService } from '../services/file-storage.service';
-import { APIResponse } from 'src/utils/response';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -510,21 +513,16 @@ export class AuthController {
     }
   }
 
-  @Post('download-file')
+  @Get('download-file')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Download file',
     description: 'Download file from file storage',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string', example: 'https://example.com/file.pdf' },
-      },
-      required: ['url'],
-    },
+  @ApiQuery({
+    name: 'url',
+    type: String,
     description: 'File URL',
   })
   @ApiResponse({
@@ -538,12 +536,25 @@ export class AuthController {
       },
     },
   })
-  async downloadFile(@Body() body: { url: string }) {
-    const file = await this.fileStorageService.downloadFile(body.url);
-    return APIResponse.success({
-      message: 'File downloaded successfully',
-      data: file,
-      statusCode: 200,
-    });
+  async downloadFile(@Query('url') url: string, @Res() res: Response) {
+    try {
+      const result = await this.fileStorageService.downloadFile(url);
+
+      // Set appropriate headers
+      res.set({
+        'Content-Type': result.mimeType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${result.filename || 'download'}"`,
+        'Content-Length': result.size.toString(),
+        'Cache-Control': 'no-cache',
+      });
+
+      // Send the buffer directly
+      res.send(result.buffer);
+    } catch (error) {
+      res.status(400).json({
+        error: 'Failed to download file',
+        message: (error as Error).message,
+      });
+    }
   }
 }

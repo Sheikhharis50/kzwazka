@@ -7,12 +7,30 @@ interface UseFileUploadOptions {
 
 export function useFileUpload({
   maxSize = 500 * 1024,
-  validTypes = ['image/png', 'image/jpeg', 'image/jpg'],
+  validTypes = ['png', 'jpeg', 'jpg'],
 }: UseFileUploadOptions = {}) {
   const [preview, setPreview] = useState<string | null>(null);
   const [base64, setBase64] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [file, setFile] = useState<File | undefined>(undefined);
+
+  function formatFileSize(bytes: number): string {
+    const kb = 1024;
+    const mb = kb * 1024;
+
+    if (bytes < mb) {
+      return `${Math.round(bytes / kb)} KB`;
+    }
+    return `${(bytes / mb).toFixed(1)} MB`;
+  }
+
+  const formatted = validTypes
+    .map((t) => t.toUpperCase())
+    .reduce((acc, curr, idx, arr) => {
+      if (idx === 0) return curr;
+      if (idx === arr.length - 1) return `${acc} and ${curr}`;
+      return `${acc}, ${curr}`;
+    }, '');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,14 +38,15 @@ export function useFileUpload({
     setError('');
     setFile(file);
 
-    if (!validTypes.includes(file.type)) {
-      setError('Only PNG, JPG, and JPEG files are allowed');
+    if (!validTypes.includes(file.name.split('.')?.pop() || '')) {
+      console.log(file.type);
+      setError(`'Only ${formatted} files are allowed'`);
       e.target.value = '';
       return;
     }
 
     if (file.size > maxSize) {
-      setError(`File size must not exceed ${Math.round(maxSize / 1024)}KB`);
+      setError(`File size must not exceed ${formatFileSize(maxSize)}`);
       e.target.value = '';
       return;
     }
@@ -63,5 +82,6 @@ export function useFileUpload({
     handleFileChange,
     removeFile,
     file,
+    setFile,
   };
 }

@@ -11,9 +11,10 @@ import { useQueryString } from 'hooks/useQueryString';
 
 interface GroupPillsProps {
   all?: boolean;
+  onClick?: () => void;
 }
 
-const GroupPills = ({ all = false }: GroupPillsProps) => {
+const GroupPills = ({ all = false, onClick }: GroupPillsProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupId = searchParams.get('group_id');
@@ -42,11 +43,12 @@ const GroupPills = ({ all = false }: GroupPillsProps) => {
           {all && (
             <Button
               text="All"
-              className={`px-10 ${!groupId ? '' : '!bg-red/20 !text-black'}`}
+              className={`px-10 2xl:!text-base ${!groupId ? '' : '!bg-red/20 !text-black'}`}
               id="group-filter-all"
               onClick={() => {
                 removeSearchParam('group_id');
                 scrollIntoView(`group-filter-all`);
+                if (onClick) onClick();
               }}
             />
           )}
@@ -55,12 +57,13 @@ const GroupPills = ({ all = false }: GroupPillsProps) => {
               id={`group-filter-${group.id}`}
               text={group.name}
               key={group.id}
-              className={`text-nowrap ${groupId === group.id.toString() ? '' : '!bg-red/20 !text-black'}`}
+              className={`text-nowrap 2xl:!text-base ${groupId === group.id.toString() ? '' : '!bg-red/20 !text-black'}`}
               onClick={() => {
                 router.push(
                   `?${createQueryString('group_id', group.id.toString())}`
                 );
                 scrollIntoView(`group-filter-${group.id}`);
+                if (onClick) onClick();
               }}
             />
           ))}

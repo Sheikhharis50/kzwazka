@@ -1,20 +1,20 @@
 import { apiClient } from 'api/client';
-import { CreateMessagePayload } from './type';
+import { CreateMessagePayload, GetMessagesQueryParams, IMessage } from './type';
 import { handleApiError } from 'utils/apiErrorHandler';
-import { APIResponse } from 'api/common.types';
+import { APIListResponse, APIResponse } from 'api/type';
 import { toFormData } from 'axios';
 
 export const message = {
-  // getAll: async (
-  //   queryParams: PaginationParams = {}
-  // ): Promise<APIListResponse<IGroup>> => {
-  //   try {
-  //     const response = await apiClient.get(`/group`, { params: queryParams });
-  //     return response.data;
-  //   } catch (error) {
-  //     handleApiError(error, 'Failed to fetch groups, please try again later');
-  //   }
-  // },
+  getAll: async (
+    queryParams: GetMessagesQueryParams = {}
+  ): Promise<APIListResponse<IMessage>> => {
+    try {
+      const response = await apiClient.get(`/message`, { params: queryParams });
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch messages, please try again later');
+    }
+  },
 
   create: async (payload: CreateMessagePayload): Promise<APIResponse<null>> => {
     try {

@@ -7,3 +7,4 @@ export * from './location/type';
 export * from './attendance/type';
 export * from './children/type';
 export * from './message/type';
+export * from './event/type';

@@ -26,8 +26,11 @@ export class EventService {
     createEventDto: CreateEventDto
   ): Promise<APIResponse<Event | undefined>> {
     try {
-      const startDate = new Date(createEventDto.start_date);
-      if (startDate < new Date()) {
+      const startDate = new Date(createEventDto.start_date)
+        .toISOString()
+        .split('T')[0];
+
+      if (startDate < new Date().toISOString().split('T')[0]) {
         return APIResponse.error<undefined>({
           message: 'Start date cannot be in the past',
           statusCode: 400,
@@ -35,8 +38,10 @@ export class EventService {
       }
 
       if (createEventDto.end_date) {
-        const endDate = new Date(createEventDto.end_date);
-        if (endDate < new Date()) {
+        const endDate = new Date(createEventDto.end_date)
+          .toISOString()
+          .split('T')[0];
+        if (endDate < new Date().toISOString().split('T')[0]) {
           return APIResponse.error<undefined>({
             message: 'End date cannot be in the past',
             statusCode: 400,
@@ -64,8 +69,8 @@ export class EventService {
                 eventSchema.location_id,
                 createEventDto.location_id || groupSchema.location_id
               ),
-              eq(eventSchema.start_date, startDate),
-              eq(eventSchema.end_date, endDate)
+              eq(eventSchema.start_date, new Date(startDate)),
+              eq(eventSchema.end_date, new Date(endDate))
             )
           );
 
@@ -78,13 +83,13 @@ export class EventService {
       }
 
       const opening_time = createEventDto.opening_time
-        ? combineDateAndTime(startDate, createEventDto.opening_time)
+        ? combineDateAndTime(new Date(startDate), createEventDto.opening_time)
         : null;
       const closing_time = createEventDto.closing_time
         ? combineDateAndTime(
             createEventDto.end_date
               ? new Date(createEventDto.end_date)
-              : startDate,
+              : new Date(startDate),
             createEventDto.closing_time
           )
         : null;
@@ -96,7 +101,7 @@ export class EventService {
             ...createEventDto,
             event_type: EVENT_TYPE.TRAINING,
             group_id: createEventDto.group_id,
-            start_date: startDate,
+            start_date: new Date(startDate),
             location_id: null,
             coach_id: null,
             end_date: null,
@@ -117,7 +122,7 @@ export class EventService {
           ...createEventDto,
           event_type: EVENT_TYPE.ONE_TIME,
           group_id: createEventDto.group_id,
-          start_date: startDate,
+          start_date: new Date(startDate),
           end_date: createEventDto.end_date
             ? new Date(createEventDto.end_date)
             : null,

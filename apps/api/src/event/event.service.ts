@@ -6,7 +6,7 @@ import { QueryEventDto } from './dto/query-event.dto';
 import { eventSchema } from '../db/schemas/eventSchema';
 import { eq, and, gte, lte, ilike, desc, sql, SQL, inArray } from 'drizzle-orm';
 import { Event, EventWithLocationAndGroup } from '../db/schemas/eventSchema';
-import { APP_CONSTANTS, EVENT_TYPE, getPageOffset } from '../utils';
+import { EVENT_TYPE } from '../utils/constants';
 import { combineDateAndTime } from '../utils/date.utils';
 import { groupSchema } from '../db/schemas/groupSchema';
 import { locationSchema } from '../db/schemas/locationSchema';
@@ -149,54 +149,57 @@ export class EventService {
     query: QueryEventDto
   ): Promise<APIResponse<EventWithFullDetails[] | undefined>> {
     try {
-      const {
-        page = '1',
-        limit = APP_CONSTANTS.PAGINATION.DEFAULT_LIMIT.toString(),
-        ...filters
-      } = query;
-      const offset = getPageOffset(page, limit);
-
       const whereConditions: SQL<unknown>[] = [];
 
-      if (filters.search) {
-        whereConditions.push(ilike(eventSchema.title, `%${filters.search}%`));
+      if (query.search) {
+        whereConditions.push(ilike(eventSchema.title, `%${query.search}%`));
       }
-
-      if (filters.group_id) {
-        whereConditions.push(eq(eventSchema.group_id, filters.group_id));
+      if (query.group_id) {
+        whereConditions.push(eq(eventSchema.group_id, query.group_id));
       }
-
-      if (filters.location_id) {
-        whereConditions.push(eq(eventSchema.location_id, filters.location_id));
+      if (query.location_id) {
+        whereConditions.push(eq(eventSchema.location_id, query.location_id));
       }
+      if (query.date) {
+        // Filter by month - get start and end of the month
+        const inputDate = new Date(query.date);
+        const year = inputDate.getFullYear();
+        const month = inputDate.getMonth();
 
-      if (filters.from_date) {
+        // First day of the month
+        const startOfMonth = new Date(year, month, 1);
+        // Last day of the month
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
         whereConditions.push(
-          gte(eventSchema.start_date, new Date(filters.from_date))
-        );
-      }
-
-      if (filters.to_date) {
-        whereConditions.push(
-          lte(eventSchema.end_date, new Date(filters.to_date))
+          and(
+            gte(eventSchema.start_date, startOfMonth),
+            lte(eventSchema.start_date, endOfMonth)
+          )!
         );
       }
 
       const whereClause =
         whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-      // First, get the count for pagination
-      const countResult = await this.dbService.db
+      // Get count for pagination
+      const [{ count }] = await this.dbService.db
         .select({ count: sql<number>`count(*)` })
         .from(eventSchema)
         .where(whereClause);
 
-      const count = Number(countResult[0]?.count || 0);
+      if (count === 0) {
+        return APIResponse.success<EventWithFullDetails[]>({
+          data: [],
+          message: 'Events fetched successfully',
+          statusCode: 200,
+        });
+      }
 
-      // Main query to get events with group and location data
+      // Single optimized query with conditional coach selection
       const eventsWithDetails = await this.dbService.db
         .select({
-          // Event fields - make sure to include all required fields
+          // Event fields
           id: eventSchema.id,
           title: eventSchema.title,
           location_id: eventSchema.location_id,
@@ -209,95 +212,97 @@ export class EventService {
           created_at: eventSchema.created_at,
           updated_at: eventSchema.updated_at,
           coach_id: eventSchema.coach_id,
-          first_name: userSchema.first_name,
-          last_name: userSchema.last_name,
 
-          // Group details
+          // Group data
           group_name: groupSchema.name,
           group_min_age: groupSchema.min_age,
           group_max_age: groupSchema.max_age,
           group_skill_level: groupSchema.skill_level,
           group_location_id: groupSchema.location_id,
-          coach_first_name: userSchema.first_name,
-          coach_last_name: userSchema.last_name,
 
-          // Event location details (for one-time events)
+          // Event location (for ONE_TIME events)
           event_location_name: locationSchema.name,
           event_location_address1: locationSchema.address1,
           event_location_address2: locationSchema.address2,
           event_location_city: locationSchema.city,
           event_location_state: locationSchema.state,
           event_location_country: locationSchema.country,
+
+          // Coach data with SQL COALESCE for priority (event coach first, then group coach)
+          coach_first_name: sql<string>`COALESCE(event_user.first_name, group_user.first_name)`,
+          coach_last_name: sql<string>`COALESCE(event_user.last_name, group_user.last_name)`,
         })
         .from(eventSchema)
         .where(whereClause)
         .orderBy(desc(eventSchema.created_at))
+        // Core joins
         .innerJoin(groupSchema, eq(eventSchema.group_id, groupSchema.id))
         .leftJoin(
           locationSchema,
           eq(eventSchema.location_id, locationSchema.id)
         )
-        .innerJoin(coachSchema, eq(groupSchema.coach_id, coachSchema.id))
-        .innerJoin(userSchema, eq(coachSchema.user_id, userSchema.id))
-        .limit(Number(limit))
-        .offset(offset);
+        // Group coach (always exists)
+        .innerJoin(
+          sql`${coachSchema} AS group_coach`,
+          sql`group_coach.id = ${groupSchema.coach_id}`
+        )
+        .innerJoin(
+          sql`${userSchema} AS group_user`,
+          sql`group_user.id = group_coach.user_id`
+        )
+        // Event coach (optional - only for events with specific coach)
+        .leftJoin(
+          sql`${coachSchema} AS event_coach`,
+          sql`event_coach.id = ${eventSchema.coach_id}`
+        )
+        .leftJoin(
+          sql`${userSchema} AS event_user`,
+          sql`event_user.id = event_coach.user_id`
+        );
 
-      if (eventsWithDetails.length === 0) {
-        return APIResponse.success<EventWithFullDetails[]>({
-          data: [],
-          pagination: {
-            count,
-            page: Number(page),
-            limit: Number(limit),
-            totalPages: Math.ceil(count / Number(limit)),
-          },
-          message: 'Events fetched successfully',
-          statusCode: 200,
-        });
-      }
-
-      // Get all group IDs from the events
+      // Get unique group IDs for batch queries
       const groupIds = [
         ...new Set(eventsWithDetails.map((event) => event.group_id)),
       ];
 
-      // Fetch all sessions for these groups in a separate query
-      const groupSessions = await this.dbService.db
-        .select({
-          id: groupSessionSchema.id,
-          group_id: groupSessionSchema.group_id,
-          day: groupSessionSchema.day,
-          start_time: groupSessionSchema.start_time,
-          end_time: groupSessionSchema.end_time,
-        })
-        .from(groupSessionSchema)
-        .where(inArray(groupSessionSchema.group_id, groupIds));
+      // Batch fetch sessions and group locations
+      const [groupSessions, groupLocations] = await Promise.all([
+        // Sessions query
+        this.dbService.db
+          .select({
+            id: groupSessionSchema.id,
+            group_id: groupSessionSchema.group_id,
+            day: groupSessionSchema.day,
+            start_time: groupSessionSchema.start_time,
+            end_time: groupSessionSchema.end_time,
+          })
+          .from(groupSessionSchema)
+          .where(inArray(groupSessionSchema.group_id, groupIds)),
 
-      // Fetch group locations for training events
-      const groupLocations = await this.dbService.db
-        .select({
-          id: locationSchema.id,
-          name: locationSchema.name,
-          address1: locationSchema.address1,
-          address2: locationSchema.address2,
-          city: locationSchema.city,
-          state: locationSchema.state,
-          country: locationSchema.country,
-          group_id: groupSchema.id,
-        })
-        .from(groupSchema)
-        .leftJoin(
-          locationSchema,
-          eq(groupSchema.location_id, locationSchema.id)
-        )
-        .where(inArray(groupSchema.id, groupIds));
+        // Group locations query
+        this.dbService.db
+          .select({
+            group_id: groupSchema.id,
+            location_id: locationSchema.id,
+            location_name: locationSchema.name,
+            location_address1: locationSchema.address1,
+            location_address2: locationSchema.address2,
+            location_city: locationSchema.city,
+            location_state: locationSchema.state,
+            location_country: locationSchema.country,
+          })
+          .from(groupSchema)
+          .leftJoin(
+            locationSchema,
+            eq(groupSchema.location_id, locationSchema.id)
+          )
+          .where(inArray(groupSchema.id, groupIds)),
+      ]);
 
-      // Group sessions by group_id for easy lookup
+      // Create lookup maps for O(1) access
       const sessionsByGroupId = groupSessions.reduce(
         (acc, session) => {
-          if (!acc[session.group_id]) {
-            acc[session.group_id] = [];
-          }
+          if (!acc[session.group_id]) acc[session.group_id] = [];
           acc[session.group_id].push({
             id: session.id,
             start_time: session.start_time,
@@ -317,17 +322,16 @@ export class EventService {
         >
       );
 
-      // Group locations by group_id for easy lookup
-      const locationsByGroupId = groupLocations.reduce(
-        (acc, location) => {
-          acc[location.group_id] = {
-            id: location.id,
-            name: location.name,
-            address1: location.address1,
-            address2: location.address2,
-            city: location.city,
-            state: location.state,
-            country: location.country,
+      const groupLocationsByGroupId = groupLocations.reduce(
+        (acc, loc) => {
+          acc[loc.group_id] = {
+            id: loc.location_id,
+            name: loc.location_name,
+            address1: loc.location_address1,
+            address2: loc.location_address2,
+            city: loc.location_city,
+            state: loc.location_state,
+            country: loc.location_country,
           };
           return acc;
         },
@@ -345,36 +349,30 @@ export class EventService {
         >
       );
 
-      // Transform the data into the desired nested structure
+      // Transform results
       const transformedEvents: EventWithFullDetails[] = eventsWithDetails.map(
         (event) => {
-          // Determine location data based on event type
-          let locationData;
-
-          if (event.event_type === EVENT_TYPE.TRAINING) {
-            // For training events, use group's location
-            const groupLocation = locationsByGroupId[event.group_id];
-            locationData = {
-              id: groupLocation?.id || null,
-              name: groupLocation?.name || null,
-              address1: groupLocation?.address1 || null,
-              address2: groupLocation?.address2 || null,
-              city: groupLocation?.city || null,
-              state: groupLocation?.state || null,
-              country: groupLocation?.country || null,
-            };
-          } else {
-            // For one-time events, use event's location
-            locationData = {
-              id: event.location_id,
-              name: event.event_location_name,
-              address1: event.event_location_address1,
-              address2: event.event_location_address2 || null,
-              city: event.event_location_city,
-              state: event.event_location_state,
-              country: event.event_location_country,
-            };
-          }
+          // Determine location based on event type
+          const locationData =
+            event.event_type === EVENT_TYPE.TRAINING
+              ? groupLocationsByGroupId[event.group_id] || {
+                  id: null,
+                  name: null,
+                  address1: null,
+                  address2: null,
+                  city: null,
+                  state: null,
+                  country: null,
+                }
+              : {
+                  id: event.location_id,
+                  name: event.event_location_name,
+                  address1: event.event_location_address1,
+                  address2: event.event_location_address2,
+                  city: event.event_location_city,
+                  state: event.event_location_state,
+                  country: event.event_location_country,
+                };
 
           return {
             id: event.id,
@@ -388,14 +386,13 @@ export class EventService {
             group_id: event.group_id,
             created_at: event.created_at,
             updated_at: event.updated_at,
-            coach_id: event.coach_id || null,
-            first_name: event.first_name || null,
-            last_name: event.last_name || null,
+            coach_id: event.coach_id,
+            // Coach data already prioritized by COALESCE in query
+            coach_first_name: event.coach_first_name,
+            coach_last_name: event.coach_last_name,
             group: {
               id: event.group_id,
               name: event.group_name,
-              coach_first_name: event.coach_first_name,
-              coach_last_name: event.coach_last_name,
               min_age: event.group_min_age,
               max_age: event.group_max_age,
               skill_level: event.group_skill_level,
@@ -408,12 +405,6 @@ export class EventService {
 
       return APIResponse.success<EventWithFullDetails[]>({
         data: transformedEvents,
-        pagination: {
-          count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / Number(limit)),
-        },
         message: 'Events fetched successfully',
         statusCode: 200,
       });

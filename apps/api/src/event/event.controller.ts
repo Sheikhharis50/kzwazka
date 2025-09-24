@@ -74,20 +74,6 @@ export class EventController {
       'Retrieve a paginated list of all events with optional filters',
   })
   @ApiQuery({
-    name: 'page',
-    description: 'Page number for pagination',
-    required: false,
-    type: 'string',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    type: 'string',
-    example: 10,
-  })
-  @ApiQuery({
     name: 'search',
     description: 'Search term for event title',
     required: false,
@@ -100,15 +86,8 @@ export class EventController {
     type: 'number',
   })
   @ApiQuery({
-    name: 'from_date',
-    description: 'Filter events from this date',
-    required: false,
-    type: 'string',
-    format: 'date',
-  })
-  @ApiQuery({
-    name: 'to_date',
-    description: 'Filter events until this date',
+    name: 'date',
+    description: 'Filter events by date',
     required: false,
     type: 'string',
     format: 'date',

@@ -13,13 +13,11 @@ export type EventWithFullDetails = {
   created_at: Date;
   updated_at: Date;
   coach_id: number | null;
-  first_name: string | null;
-  last_name: string | null;
+  coach_first_name: string | null;
+  coach_last_name: string | null;
   group: {
     id: number;
     name: string | null;
-    coach_first_name: string | null;
-    coach_last_name: string | null;
     min_age: number | null;
     max_age: number | null;
     skill_level: string | null;

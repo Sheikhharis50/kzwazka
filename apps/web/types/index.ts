@@ -26,6 +26,7 @@ enum SortOrder {
 enum SortBy {
   CREATED_AT = 'created_at',
   DOB = 'dob',
+  NAME = 'name',
 }
 
 export type { SidebarLink, Option, SvgProp, SortOrder, SortBy };

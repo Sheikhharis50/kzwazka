@@ -1,23 +1,17 @@
 import React from 'react';
-import Input from 'components/ui/Input';
 import Heading from 'components/ui/Heading';
 import HomeButton from 'components/home/Button';
-import { useCoach } from 'hooks/useCoach';
-import Select from 'components/ui/Select';
-import { useLocation } from 'hooks/useLocation';
-import { useGroup } from 'hooks/useGroup';
+import TrainingEventForm from './training-event';
+import OneTimeEventForm from './one-time-event';
 
-const AddEventForm = () => {
+const AddEventForm = ({ closeModal }: { closeModal: () => void }) => {
   const [isTrainingType, setIsTrainingType] = React.useState<boolean>(true);
-  const { coachOptions } = useCoach();
-  const { locationOptions } = useLocation();
-  const { groupOptions } = useGroup();
 
   return (
     <>
       <Heading text="Add New Event" className={`text-center`} />
       <p
-        className={`text-center text-xs mt-2 ${isTrainingType ? 'hidden' : ''}`}
+        className={`text-center text-[11px] xs:text-xs mt-2 ${isTrainingType ? 'hidden' : ''}`}
       >
         Fill in the details below to schedule a new event. <br /> Make sure to
         double-check the time and location before saving.
@@ -38,35 +32,11 @@ const AddEventForm = () => {
           onClick={() => setIsTrainingType(false)}
         />
       </div>
-      <form className="w-full space-y-3 md:space-y-5">
-        <Input label="Event Title" placeholder="Please enter event title" />
-        <Input type="date" label="Event Date" />
-        <Select
-          numberValue
-          defaultValue={0}
-          label="Select Coach"
-          options={coachOptions}
-          placeholder="Select Coach"
-        />
-        <div className="grid grid-cols-2 gap-1 md:gap-3">
-          <Input type="time" label="Event Start Time" />
-          <Input type="time" label="Event End Time" />
-        </div>
-        <Select
-          numberValue
-          defaultValue={0}
-          label="Select Location"
-          options={locationOptions}
-          placeholder="Select Location"
-        />
-        <Select
-          numberValue
-          defaultValue={0}
-          label="Select Group"
-          options={groupOptions}
-          placeholder="Select Group"
-        />
-      </form>
+      {isTrainingType ? (
+        <TrainingEventForm closeModal={closeModal} />
+      ) : (
+        <OneTimeEventForm closeModal={closeModal} />
+      )}
     </>
   );
 };

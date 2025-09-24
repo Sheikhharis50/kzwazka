@@ -136,7 +136,7 @@ const Calendar = () => {
         onClose={() => setModalVisibility(false)}
         size="md"
       >
-        <AddEventForm />
+        <AddEventForm closeModal={() => setModalVisibility(false)} />
       </Modal>
     </>
   );

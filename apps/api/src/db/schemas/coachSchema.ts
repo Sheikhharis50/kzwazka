@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm';
 import { locationSchema } from './locationSchema';
 import { userSchema } from './userSchema';
 import { groupSchema } from './groupSchema';
+import { eventSchema } from './eventSchema';
 
 export const coachSchema = pgTable('coach', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
@@ -26,6 +27,7 @@ export const coachRelations = relations(coachSchema, ({ one, many }) => ({
     references: [locationSchema.id],
   }),
   groups: many(groupSchema),
+  events: many(eventSchema),
 }));
 
 export type Coach = typeof coachSchema.$inferSelect;

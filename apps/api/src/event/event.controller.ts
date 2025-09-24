@@ -100,18 +100,6 @@ export class EventController {
     type: 'number',
   })
   @ApiQuery({
-    name: 'min_age',
-    description: 'Minimum age filter',
-    required: false,
-    type: 'number',
-  })
-  @ApiQuery({
-    name: 'max_age',
-    description: 'Maximum age filter',
-    required: false,
-    type: 'number',
-  })
-  @ApiQuery({
     name: 'from_date',
     description: 'Filter events from this date',
     required: false,

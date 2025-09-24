@@ -7,6 +7,7 @@ import {
   MaxLength,
   IsEmail,
   Matches,
+  Allow,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -112,4 +113,8 @@ export class UpdateChildrenDto {
   @IsNumber({}, { message: 'Location ID must be a number' })
   @IsOptional()
   location_id?: number;
+
+  @Allow()
+  @IsOptional()
+  group_id?: number | null;
 }

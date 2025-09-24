@@ -26,13 +26,6 @@ export class EventService {
     createEventDto: CreateEventDto
   ): Promise<APIResponse<Event | undefined>> {
     try {
-      if (createEventDto.min_age >= createEventDto.max_age) {
-        return APIResponse.error<undefined>({
-          message: 'Minimum age must be less than maximum age',
-          statusCode: 400,
-        });
-      }
-
       const startDate = new Date(createEventDto.start_date);
       if (startDate < new Date()) {
         return APIResponse.error<undefined>({
@@ -67,7 +60,10 @@ export class EventService {
           .from(eventSchema)
           .where(
             and(
-              eq(eventSchema.location_id, createEventDto.location_id),
+              eq(
+                eventSchema.location_id,
+                createEventDto.location_id || groupSchema.location_id
+              ),
               eq(eventSchema.start_date, startDate),
               eq(eventSchema.end_date, endDate)
             )
@@ -101,6 +97,8 @@ export class EventService {
             event_type: EVENT_TYPE.TRAINING,
             group_id: createEventDto.group_id,
             start_date: startDate,
+            location_id: null,
+            coach_id: null,
             end_date: null,
             opening_time: null,
             closing_time: null,
@@ -167,14 +165,6 @@ export class EventService {
         whereConditions.push(eq(eventSchema.location_id, filters.location_id));
       }
 
-      if (filters.min_age !== undefined) {
-        whereConditions.push(gte(eventSchema.min_age, filters.min_age));
-      }
-
-      if (filters.max_age !== undefined) {
-        whereConditions.push(lte(eventSchema.max_age, filters.max_age));
-      }
-
       if (filters.from_date) {
         whereConditions.push(
           gte(eventSchema.start_date, new Date(filters.from_date))
@@ -205,8 +195,6 @@ export class EventService {
           id: eventSchema.id,
           title: eventSchema.title,
           location_id: eventSchema.location_id,
-          min_age: eventSchema.min_age,
-          max_age: eventSchema.max_age,
           start_date: eventSchema.start_date,
           end_date: eventSchema.end_date,
           opening_time: eventSchema.opening_time,
@@ -215,26 +203,32 @@ export class EventService {
           group_id: eventSchema.group_id,
           created_at: eventSchema.created_at,
           updated_at: eventSchema.updated_at,
+          coach_id: eventSchema.coach_id,
+          first_name: userSchema.first_name,
+          last_name: userSchema.last_name,
+
           // Group details
           group_name: groupSchema.name,
           group_min_age: groupSchema.min_age,
           group_max_age: groupSchema.max_age,
           group_skill_level: groupSchema.skill_level,
+          group_location_id: groupSchema.location_id,
           coach_first_name: userSchema.first_name,
           coach_last_name: userSchema.last_name,
-          // Location details
-          location_name: locationSchema.name,
-          location_address1: locationSchema.address1,
-          location_address2: locationSchema.address2,
-          location_city: locationSchema.city,
-          location_state: locationSchema.state,
-          location_country: locationSchema.country,
+
+          // Event location details (for one-time events)
+          event_location_name: locationSchema.name,
+          event_location_address1: locationSchema.address1,
+          event_location_address2: locationSchema.address2,
+          event_location_city: locationSchema.city,
+          event_location_state: locationSchema.state,
+          event_location_country: locationSchema.country,
         })
         .from(eventSchema)
         .where(whereClause)
         .orderBy(desc(eventSchema.created_at))
         .innerJoin(groupSchema, eq(eventSchema.group_id, groupSchema.id))
-        .innerJoin(
+        .leftJoin(
           locationSchema,
           eq(eventSchema.location_id, locationSchema.id)
         )
@@ -274,6 +268,25 @@ export class EventService {
         .from(groupSessionSchema)
         .where(inArray(groupSessionSchema.group_id, groupIds));
 
+      // Fetch group locations for training events
+      const groupLocations = await this.dbService.db
+        .select({
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          address2: locationSchema.address2,
+          city: locationSchema.city,
+          state: locationSchema.state,
+          country: locationSchema.country,
+          group_id: groupSchema.id,
+        })
+        .from(groupSchema)
+        .leftJoin(
+          locationSchema,
+          eq(groupSchema.location_id, locationSchema.id)
+        )
+        .where(inArray(groupSchema.id, groupIds));
+
       // Group sessions by group_id for easy lookup
       const sessionsByGroupId = groupSessions.reduce(
         (acc, session) => {
@@ -299,42 +312,93 @@ export class EventService {
         >
       );
 
+      // Group locations by group_id for easy lookup
+      const locationsByGroupId = groupLocations.reduce(
+        (acc, location) => {
+          acc[location.group_id] = {
+            id: location.id,
+            name: location.name,
+            address1: location.address1,
+            address2: location.address2,
+            city: location.city,
+            state: location.state,
+            country: location.country,
+          };
+          return acc;
+        },
+        {} as Record<
+          number,
+          {
+            id: number | null;
+            name: string | null;
+            address1: string | null;
+            address2: string | null;
+            city: string | null;
+            state: string | null;
+            country: string | null;
+          }
+        >
+      );
+
       // Transform the data into the desired nested structure
       const transformedEvents: EventWithFullDetails[] = eventsWithDetails.map(
-        (event) => ({
-          id: event.id,
-          title: event.title,
-          location_id: event.location_id,
-          min_age: event.min_age,
-          max_age: event.max_age,
-          start_date: event.start_date,
-          end_date: event.end_date,
-          opening_time: event.opening_time,
-          closing_time: event.closing_time,
-          event_type: event.event_type,
-          group_id: event.group_id,
-          created_at: event.created_at,
-          updated_at: event.updated_at,
-          group: {
-            id: event.group_id,
-            name: event.group_name,
-            coach_first_name: event.coach_first_name,
-            coach_last_name: event.coach_last_name,
-            min_age: event.group_min_age,
-            max_age: event.group_max_age,
-            skill_level: event.group_skill_level,
-            sessions: sessionsByGroupId[event.group_id] || [],
-          },
-          location: {
-            id: event.location_id,
-            name: event.location_name,
-            address1: event.location_address1,
-            address2: event.location_address2,
-            city: event.location_city,
-            state: event.location_state,
-            country: event.location_country,
-          },
-        })
+        (event) => {
+          // Determine location data based on event type
+          let locationData;
+
+          if (event.event_type === EVENT_TYPE.TRAINING) {
+            // For training events, use group's location
+            const groupLocation = locationsByGroupId[event.group_id];
+            locationData = {
+              id: groupLocation?.id || null,
+              name: groupLocation?.name || null,
+              address1: groupLocation?.address1 || null,
+              address2: groupLocation?.address2 || null,
+              city: groupLocation?.city || null,
+              state: groupLocation?.state || null,
+              country: groupLocation?.country || null,
+            };
+          } else {
+            // For one-time events, use event's location
+            locationData = {
+              id: event.location_id,
+              name: event.event_location_name,
+              address1: event.event_location_address1,
+              address2: event.event_location_address2 || null,
+              city: event.event_location_city,
+              state: event.event_location_state,
+              country: event.event_location_country,
+            };
+          }
+
+          return {
+            id: event.id,
+            title: event.title,
+            location_id: event.location_id,
+            start_date: event.start_date,
+            end_date: event.end_date,
+            opening_time: event.opening_time,
+            closing_time: event.closing_time,
+            event_type: event.event_type,
+            group_id: event.group_id,
+            created_at: event.created_at,
+            updated_at: event.updated_at,
+            coach_id: event.coach_id || null,
+            first_name: event.first_name || null,
+            last_name: event.last_name || null,
+            group: {
+              id: event.group_id,
+              name: event.group_name,
+              coach_first_name: event.coach_first_name,
+              coach_last_name: event.coach_last_name,
+              min_age: event.group_min_age,
+              max_age: event.group_max_age,
+              skill_level: event.group_skill_level,
+              sessions: sessionsByGroupId[event.group_id] || [],
+            },
+            location: locationData,
+          };
+        }
       );
 
       return APIResponse.success<EventWithFullDetails[]>({
@@ -404,18 +468,6 @@ export class EventService {
           message: `Event with ID ${id} not found`,
           statusCode: 404,
         });
-      }
-
-      if (
-        updateEventDto.min_age !== undefined &&
-        updateEventDto.max_age !== undefined
-      ) {
-        if (updateEventDto.min_age >= updateEventDto.max_age) {
-          return APIResponse.error<undefined>({
-            message: 'Minimum age must be less than maximum age',
-            statusCode: 400,
-          });
-        }
       }
 
       // Validate time range if both are provided

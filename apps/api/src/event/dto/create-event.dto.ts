@@ -2,8 +2,6 @@ import {
   IsString,
   IsNotEmpty,
   IsInt,
-  Min,
-  Max,
   IsDateString,
   IsPositive,
   IsOptional,
@@ -32,39 +30,15 @@ export class CreateEventDto {
   @IsPositive({ message: 'Group ID must be positive' })
   group_id: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Location ID where the event will take place',
     example: 1,
     type: Number,
   })
-  @IsNotEmpty({ message: 'Location ID is required' })
   @IsInt({ message: 'Location ID must be an integer' })
   @IsPositive({ message: 'Location ID must be positive' })
-  location_id: number;
-
-  @ApiPropertyOptional({
-    description: 'Minimum age required for the event',
-    example: 8,
-    minimum: 0,
-    maximum: 100,
-  })
-  @IsInt({ message: 'Minimum age must be an integer' })
-  @Min(0, { message: 'Minimum age cannot be negative' })
-  @Max(100, { message: 'Minimum age cannot exceed 100' })
-  @Min(0, { message: 'Minimum age cannot be negative' })
-  @Max(100, { message: 'Minimum age cannot exceed 100' })
-  min_age: number;
-
-  @ApiPropertyOptional({
-    description: 'Maximum age allowed for the event',
-    example: 16,
-    minimum: 0,
-    maximum: 100,
-  })
-  @IsInt({ message: 'Maximum age must be an integer' })
-  @Min(0, { message: 'Maximum age cannot be negative' })
-  @Max(100, { message: 'Maximum age cannot exceed 100' })
-  max_age: number;
+  @IsOptional()
+  location_id?: number;
 
   @ApiProperty({
     description: 'Start date and time of the event',
@@ -115,4 +89,14 @@ export class CreateEventDto {
   @IsString({ message: 'Event type must be a string' })
   @IsOptional()
   event_type?: EVENT_TYPE;
+
+  @ApiPropertyOptional({
+    description: 'Coach ID',
+    example: 1,
+    type: Number,
+  })
+  @IsInt({ message: 'Coach ID must be an integer' })
+  @IsPositive({ message: 'Coach ID must be positive' })
+  @IsOptional()
+  coach_id?: number;
 }

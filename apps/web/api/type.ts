@@ -5,3 +5,6 @@ export * from './coach/type';
 export * from './group/type';
 export * from './location/type';
 export * from './attendance/type';
+export * from './children/type';
+export * from './message/type';
+export * from './event/type';

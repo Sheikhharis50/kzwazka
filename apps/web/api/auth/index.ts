@@ -86,4 +86,20 @@ export const auth = {
       );
     }
   },
+
+  downloadFile: async ({
+    url,
+  }: {
+    url: string;
+  }): Promise<Blob | MediaSource> => {
+    try {
+      const response = await apiClient.get(`/auth/download-file/`, {
+        params: { url },
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Unable to download file, try again later');
+    }
+  },
 };

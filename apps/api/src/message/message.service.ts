@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, or, type SQL, asc, isNull } from 'drizzle-orm';
+import { eq, sql, and, or, type SQL, isNull, desc } from 'drizzle-orm';
 import {
   messageSchema,
   groupSchema,
@@ -173,7 +173,7 @@ export class MessageService {
         })
         .from(messageSchema)
         .leftJoin(userSchema, eq(messageSchema.created_by, userSchema.id))
-        .orderBy(asc(messageSchema.created_at))
+        .orderBy(desc(messageSchema.created_at))
         .offset(offset)
         .limit(Number(limit));
 
@@ -207,30 +207,10 @@ export class MessageService {
         },
       }));
 
-      const groupedMessages = processedResults.reduce(
-        (acc, message) => {
-          const date = new Date(message.created_at).toISOString().split('T')[0];
-
-          const existingDateGroup = acc.find((group) => group.date === date);
-
-          if (existingDateGroup) {
-            existingDateGroup.messages.push(message);
-          } else {
-            acc.push({
-              date,
-              messages: [message],
-            });
-          }
-
-          return acc;
-        },
-        [] as Array<{ date: string; messages: typeof processedResults }>
-      );
-
       return APIResponse.success({
         message: 'Messages retrieved successfully',
         statusCode: 200,
-        data: groupedMessages,
+        data: processedResults,
         pagination: {
           page: Number(page),
           limit: Number(limit),

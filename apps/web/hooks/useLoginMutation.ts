@@ -1,7 +1,7 @@
-import { LoginFormData } from '@/(authentication)/login/schema';
 import { useMutation } from '@tanstack/react-query';
 import * as api from 'api';
 import { APIError } from 'api/type';
+import { LoginFormData } from 'app/(authentication)/login/schema';
 import { redirect } from 'next/navigation';
 import { toast } from 'react-toastify';
 

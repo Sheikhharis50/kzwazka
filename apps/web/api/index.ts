@@ -6,3 +6,4 @@ export * from './location';
 export * from './event';
 export * from './group';
 export * from './attendance';
+export * from './message';

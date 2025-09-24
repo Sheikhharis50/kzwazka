@@ -1,8 +1,10 @@
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
 export function useQueryString() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+
   const createQueryString = useCallback(
     (name: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -13,5 +15,11 @@ export function useQueryString() {
     [searchParams]
   );
 
-  return { createQueryString };
+  const removeSearchParam = (paramKey: string) => {
+    const currentParams = new URLSearchParams(searchParams);
+    currentParams.delete(paramKey);
+    router.push(`?${currentParams.toString()}`);
+  };
+
+  return { createQueryString, removeSearchParam };
 }

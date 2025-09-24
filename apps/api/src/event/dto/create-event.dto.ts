@@ -64,9 +64,10 @@ export class CreateEventDto {
     format: 'time',
   })
   @IsString({ message: 'Opening time must be a string' })
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'Opening time must be in HH:MM format (24-hour)',
-  })
+  // @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+  //   message: 'Opening time must be in HH:MM format (24-hour)',
+  // })
+  @IsOptional()
   opening_time?: string;
 
   @ApiPropertyOptional({
@@ -75,9 +76,10 @@ export class CreateEventDto {
     format: 'time',
   })
   @IsString({ message: 'Closing time must be a string' })
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'Closing time must be in HH:MM format (24-hour)',
-  })
+  // @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+  //   message: 'Closing time must be in HH:MM format (24-hour)',
+  // })
+  @IsOptional()
   closing_time?: string;
 
   @ApiPropertyOptional({

@@ -33,24 +33,6 @@ export class QueryEventDto {
   location_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter events by minimum age',
-    example: 8,
-  })
-  @IsOptional()
-  @IsInt({ message: 'Min age must be an integer' })
-  @Min(0, { message: 'Min age cannot be negative' })
-  min_age?: number;
-
-  @ApiPropertyOptional({
-    description: 'Filter events by maximum age',
-    example: 16,
-  })
-  @IsOptional()
-  @IsInt({ message: 'Max age must be an integer' })
-  @Min(0, { message: 'Max age cannot be negative' })
-  max_age?: number;
-
-  @ApiPropertyOptional({
     description: 'Filter events from this date',
     example: '2024-01-01',
   })

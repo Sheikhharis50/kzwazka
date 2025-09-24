@@ -3,9 +3,7 @@
 export type EventWithFullDetails = {
   id: number;
   title: string;
-  location_id: number;
-  min_age: number | null;
-  max_age: number | null;
+  location_id: number | null;
   start_date: Date;
   end_date: Date | null;
   opening_time: Date | null;
@@ -14,6 +12,9 @@ export type EventWithFullDetails = {
   group_id: number;
   created_at: Date;
   updated_at: Date;
+  coach_id: number | null;
+  first_name: string | null;
+  last_name: string | null;
   group: {
     id: number;
     name: string | null;
@@ -30,12 +31,12 @@ export type EventWithFullDetails = {
     }>;
   };
   location: {
-    id: number;
+    id: number | null;
     name: string | null;
-    address1: string;
+    address1: string | null;
     address2: string | null;
-    city: string;
-    state: string;
-    country: string;
+    city: string | null;
+    state: string | null;
+    country: string | null;
   };
 };

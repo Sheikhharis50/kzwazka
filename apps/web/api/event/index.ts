@@ -14,6 +14,15 @@ export const event = {
     }
   },
 
+  getOne: async (id: string): Promise<APIResponse<IEvent>> => {
+    try {
+      const response = await apiClient.get(`/event/${id}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch event, please try again later');
+    }
+  },
+
   create: async (payload: object): Promise<APIResponse<null>> => {
     try {
       const response = await apiClient.post('event', payload);

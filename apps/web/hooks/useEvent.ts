@@ -9,6 +9,7 @@ export function useEvent(queryParams: EventQueryParams) {
   const getAllEvents = useQuery({
     queryKey: ['events', queryParams],
     queryFn: async () => await api.event.getAll(queryParams),
+    staleTime: 10 * 60 * 1000,
   });
 
   const createEventMutation = useMutation({

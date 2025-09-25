@@ -69,17 +69,10 @@ const Attendance = () => {
       <AttendanceTable
         data={attendanceData?.data}
         isLoading={isAttendanceLoading}
-        handleStatusChange={({
-          childId,
-          groupId,
-          status,
-          onError,
-          onSuccess,
-        }) =>
+        handleStatusChange={({ childId, status, onError, onSuccess }) =>
           markAttendanceMutation.mutateAsync(
             {
               children_id: childId,
-              group_id: groupId,
               date,
               status,
             },

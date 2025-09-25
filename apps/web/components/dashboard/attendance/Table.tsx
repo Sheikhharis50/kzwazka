@@ -5,23 +5,23 @@ import ProfileIcon from 'components/ui/ProfileIcon';
 import {
   attendanceOptions,
   attendanceTableHeaders,
+  eventAttendanceTableHeaders,
 } from 'constants/attendance';
 import { IAttendance } from 'api/type';
 import React, { useState, useCallback, useMemo } from 'react';
 import calculateAge from 'utils/calculateAge';
 
 interface AttendanceTableProps {
+  event?: boolean;
   data?: IAttendance[];
   isLoading: boolean;
   handleStatusChange: ({
     childId,
-    groupId,
     status,
     onError,
     onSuccess,
   }: {
     childId: number;
-    groupId: number;
     status: string;
     onError: () => void;
     onSuccess: () => void;
@@ -32,6 +32,7 @@ const AttendanceTable = ({
   data,
   isLoading,
   handleStatusChange,
+  event = false,
 }: AttendanceTableProps) => {
   const [localStatusUpdates, setLocalStatusUpdates] = useState<
     Record<number, string>
@@ -67,7 +68,6 @@ const AttendanceTable = ({
 
       handleStatusChange({
         childId,
-        groupId,
         status: newStatus,
         onError: () => {
           setLocalStatusUpdates((prev) => ({
@@ -98,19 +98,24 @@ const AttendanceTable = ({
 
       return (
         <tr
-          className="bg-white border-b border-border hover:bg-gray-50 py-1"
+          className={`bg-white ${event ? '' : 'border-b border-border hover:bg-gray-50 py-1'}`}
           key={id}
         >
-          <td className="px-6 py-1">
-            <ProfileIcon photo_url={photo_url} />
-          </td>
-          <td className="px-6">{`${first_name} ${last_name}`}</td>
+          {!event && (
+            <td className="px-6 py-1">
+              <ProfileIcon photo_url={photo_url} />
+            </td>
+          )}
+          <td
+            className={`px-6 ${event ? ' rounded-s-lg' : ''}`}
+          >{`${first_name} ${last_name}`}</td>
           <td className="px-6">{calculateAge(dob)}</td>
-          <td className="px-6">
+          <td className={`px-6 ${event ? ' py-2 rounded-e-lg' : ''}`}>
             <Select
               classes={{
                 input: getStatusClasses(currentStatus),
               }}
+              placeholder="Select"
               options={attendanceOptions}
               value={currentStatus}
               onChange={(e) =>
@@ -121,18 +126,28 @@ const AttendanceTable = ({
         </tr>
       );
     });
-  }, [data, localStatusUpdates, getStatusClasses, handleRecordStatusChange]);
+  }, [
+    data,
+    localStatusUpdates,
+    event,
+    getStatusClasses,
+    handleRecordStatusChange,
+  ]);
 
   return (
-    <div className="relative overflow-x-auto whitespace-nowrap">
-      <table className="w-full text-xs md:text-sm 2xl:text-base text-left rtl:text-right text-[#232323]">
+    <div className="relative w-full overflow-x-auto whitespace-nowrap">
+      <table
+        className={`w-full text-xs md:text-sm 2xl:text-base text-left rtl:text-right text-[#232323] ${event ? 'border-separate border-spacing-y-2' : ''}`}
+      >
         <thead className="text-white bg-[#6E86C4]">
           <tr>
-            {attendanceTableHeaders.map((header) => (
-              <th key={header} scope="col" className="px-6 py-3">
-                {header}
-              </th>
-            ))}
+            {(event ? eventAttendanceTableHeaders : attendanceTableHeaders).map(
+              (header) => (
+                <th key={header} scope="col" className="px-6 py-3">
+                  {header}
+                </th>
+              )
+            )}
           </tr>
         </thead>
         <tbody>

@@ -5,6 +5,8 @@ export const attendanceTableHeaders = [
   'Attendance',
 ];
 
+export const eventAttendanceTableHeaders = ['Name', 'Age', 'Status'];
+
 export enum attendanceEnum {
   PRESENT = 'present',
   ABSENT = 'absent',

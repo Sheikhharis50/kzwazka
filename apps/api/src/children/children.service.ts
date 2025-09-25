@@ -14,7 +14,12 @@ import { UpdateChildrenDto } from './dto/update-children.dto';
 import { QueryChildrenDto } from './dto/query-children.dto';
 import { DatabaseService } from '../db/drizzle.service';
 import { eq, sql, and, or, ilike, desc, asc, SQL } from 'drizzle-orm';
-import { childrenSchema, userSchema, groupSchema } from '../db/schemas';
+import {
+  childrenSchema,
+  userSchema,
+  groupSchema,
+  Children,
+} from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import * as bcrypt from 'bcryptjs';
@@ -537,5 +542,26 @@ export class ChildrenService {
     const today = new Date();
     const age = today.getFullYear() - dob.getFullYear();
     return age;
+  }
+
+  async getChildrenByExternalId(
+    externalId: string
+  ): Promise<APIResponse<Children | undefined>> {
+    const children = await this.dbService.db
+      .select()
+      .from(childrenSchema)
+      .where(eq(childrenSchema.external_id, externalId))
+      .limit(1);
+    if (children.length === 0) {
+      return APIResponse.error<undefined>({
+        message: 'Children not found',
+        statusCode: 404,
+      });
+    }
+    return APIResponse.success<Children>({
+      message: 'Children retrieved successfully',
+      data: children[0],
+      statusCode: 200,
+    });
   }
 }

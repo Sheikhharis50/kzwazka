@@ -8,7 +8,6 @@ import { GroupService } from '../group/group.service';
 import { ChildrenService } from '../children/children.service';
 import { ChildrenInvoiceService } from '../children/children-invoice.service';
 import { ChildrenInvoiceStatus } from '../utils/constants';
-import { IChildrenResponse } from 'src/children/children.types';
 
 export interface WebhookResult {
   handled: boolean;
@@ -808,79 +807,64 @@ export class PaymentService {
   async subscribeToGroup(
     id: number,
     group_id: number
-  ): Promise<APIResponse<IChildrenResponse | undefined | string>> {
-    try {
-      const children = await this.childrenService.findOne(id);
-      if (!children.data) {
-        return APIResponse.error<undefined>({
-          message: 'Children not found',
-          statusCode: 404,
-        });
-      }
-
-      const group = await this.groupService.findOne(group_id);
-      if (!group.data) {
-        return APIResponse.error<undefined>({
-          message: 'Group not found',
-          statusCode: 404,
-        });
-      }
-
-      // Store the intended group_id for webhook processing
-      await this.childrenService.update(id, { group_id: group_id });
-
-      // Check if children has external_id and group has external_id for Stripe subscription
-      if (children.data.external_id && group.data.external_id) {
-        try {
-          const subscription = await this.createSubscription(
-            children.data.external_id,
-            group.data.external_id
-          );
-
-          if (subscription.latest_invoice) {
-            const hostedInvoiceUrl = (
-              subscription.latest_invoice as Stripe.Invoice
-            ).hosted_invoice_url;
-
-            return APIResponse.success<string>({
-              message:
-                'Subscription created successfully. Group assignment will be activated after payment.',
-              data: hostedInvoiceUrl || '',
-              statusCode: 200,
-            });
-          }
-
-          return APIResponse.error<undefined>({
-            message: 'Failed to create subscription - no invoice generated',
-            statusCode: 500,
-          });
-        } catch (subscriptionError) {
-          this.logger.error(
-            `Stripe subscription error: ${(subscriptionError as Error).message}`
-          );
-          return APIResponse.error<undefined>({
-            message: `Failed to create subscription: ${(subscriptionError as Error).message}`,
-            statusCode: 500,
-          });
-        }
-      }
-
-      // Fallback: If no Stripe integration, group is already assigned above
-      const updatedChildren = await this.childrenService.findOne(id);
-
-      return APIResponse.success<IChildrenResponse>({
-        message: 'Children assigned to group successfully',
-        data: updatedChildren.data,
-        statusCode: 200,
-      });
-    } catch (error) {
-      this.logger.error(
-        `Error in subscribeToGroup: ${(error as Error).message}`
-      );
+  ): Promise<APIResponse<string | undefined>> {
+    const children = await this.childrenService.findOne(id);
+    if (!children.data) {
       return APIResponse.error<undefined>({
-        message: `Failed to process subscription: ${(error as Error).message}`,
-        statusCode: 500,
+        message: 'Children not found',
+        statusCode: 404,
       });
     }
+
+    const group = await this.groupService.findOne(group_id);
+    if (!group.data) {
+      return APIResponse.error<undefined>({
+        message: 'Group not found',
+        statusCode: 404,
+      });
+    }
+
+    // Check if children has external_id and group has external_id for Stripe subscription
+    if (children.data.external_id && group.data.external_id) {
+      try {
+        const subscription = await this.createSubscription(
+          children.data.external_id,
+          group.data.external_id
+        );
+
+        if (subscription.latest_invoice) {
+          const hostedInvoiceUrl = (
+            subscription.latest_invoice as Stripe.Invoice
+          ).hosted_invoice_url;
+
+          return APIResponse.success<string>({
+            message:
+              'Subscription created successfully. Group assignment will be activated after payment.',
+            data: hostedInvoiceUrl || '',
+            statusCode: 200,
+          });
+        }
+
+        return APIResponse.error<undefined>({
+          message: 'Failed to create subscription - no invoice generated',
+          statusCode: 500,
+        });
+      } catch (subscriptionError) {
+        this.logger.error(
+          `Stripe subscription error: ${(subscriptionError as Error).message}`
+        );
+        return APIResponse.error<undefined>({
+          message: `Failed to create subscription: ${(subscriptionError as Error).message}`,
+          statusCode: 500,
+        });
+      }
+    }
+
+    return APIResponse.success<string>({
+      message:
+        'Subscription created successfully. Group assignment will be activated after payment.',
+      data: '',
+      statusCode: 200,
+    });
   }
 }

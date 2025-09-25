@@ -14,7 +14,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiQuery,
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
@@ -72,25 +71,6 @@ export class EventController {
     summary: 'Get all events',
     description:
       'Retrieve a paginated list of all events with optional filters',
-  })
-  @ApiQuery({
-    name: 'search',
-    description: 'Search term for event title',
-    required: false,
-    type: 'string',
-  })
-  @ApiQuery({
-    name: 'location_id',
-    description: 'Filter by location ID',
-    required: false,
-    type: 'number',
-  })
-  @ApiQuery({
-    name: 'date',
-    description: 'Filter events by date',
-    required: false,
-    type: 'string',
-    format: 'date',
   })
   @ApiResponse({
     status: 200,

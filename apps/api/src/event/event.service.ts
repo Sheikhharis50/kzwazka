@@ -216,7 +216,7 @@ export class EventService {
     groupLocationsByGroupId?: Record<number, LocationData>,
     groupLocation?: GroupLocationData
   ): LocationData {
-    if (event.event_type === EVENT_TYPE.TRAINING) {
+    if ((event.event_type as EVENT_TYPE) === EVENT_TYPE.TRAINING) {
       if (groupLocationsByGroupId) {
         return (
           groupLocationsByGroupId[event.group_id] || {
@@ -447,6 +447,10 @@ export class EventService {
             lte(eventSchema.start_date, endOfMonth)
           )!
         );
+      }
+
+      if (query.event_type) {
+        whereConditions.push(eq(eventSchema.event_type, query.event_type));
       }
 
       const whereClause =

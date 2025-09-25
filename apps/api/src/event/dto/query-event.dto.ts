@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsEnum } from 'class-validator';
+import { EVENT_TYPE } from 'src/utils/constants';
 
 export class QueryEventDto {
   @ApiPropertyOptional({
@@ -33,4 +34,14 @@ export class QueryEventDto {
   @IsOptional()
   @IsString({ message: 'Date must be a string' })
   date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter events by event type',
+    example: EVENT_TYPE.TRAINING,
+  })
+  @IsEnum(EVENT_TYPE, {
+    message: 'Event type must be a valid event type',
+  })
+  @IsOptional()
+  event_type?: EVENT_TYPE;
 }

@@ -1,78 +1,46 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import Heading from 'components/ui/Heading';
 import Button from 'components/ui/Button';
-import Paragraph from 'components/ui/Paragraph';
 import { months } from 'constants/weekdays';
-import { Previous, Calendar as CalendarIcon } from 'svgs';
 import { useCalendarApi } from 'hooks/useCalendar';
 import { useEvent } from 'hooks/useEvent';
 import Modal from 'components/ui/Modal';
 import AddEventForm from 'components/dashboard/calendar/add-event';
+import DateNavigator from 'components/ui/DateNavigator';
+import { useRouter } from 'next/navigation';
 
 const Calendar = () => {
   const [isModalVisible, setModalVisibility] = React.useState(false);
-  const [currentDate, setCurrentDate] = React.useState<{
-    month?: string;
-    year?: number;
-  } | null>(null);
-
+  const [date, setDate] = useState<string>(
+    new Date().toISOString().substring(0, 10)
+  );
   const calendarRef = React.useRef<FullCalendar | null>(null);
-  const dateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const router = useRouter();
+
   const { withApi } = useCalendarApi(calendarRef);
   const {
     getAllEvents: { data },
-  } = useEvent();
+  } = useEvent({ date });
+
   const events = data?.data?.length
     ? data.data.map((event) => ({
         id: event.id.toString(),
         title: event.title,
-        date: event.event_date,
+        date: event.start_date,
+        start: event.opening_time || undefined,
+        end: event.closing_time || undefined,
       }))
     : [];
 
-  console.log(events, data);
-
-  const updateCurrentDate = () => {
-    withApi((api) => {
-      const currentCalendarDate = api.getDate();
-      const currentMonth = currentCalendarDate.getMonth();
-      const currentYear = currentCalendarDate.getFullYear();
-      setCurrentDate({ month: months[currentMonth], year: currentYear });
-    });
-  };
-
-  const handlePrevious = () => {
-    withApi((api) => {
-      api.prev();
-      updateCurrentDate();
-    });
-  };
-
-  const handleNext = () => {
-    withApi((api) => {
-      api.next();
-      updateCurrentDate();
-    });
-  };
-
-  const goToDate = (date: string) => {
+  React.useEffect(() => {
     withApi((api) => {
       api.gotoDate(new Date(date));
     });
-  };
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      updateCurrentDate();
-    }, 100);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [date, withApi]);
 
   return (
     <>
@@ -85,29 +53,12 @@ const Calendar = () => {
               className="hidden sm:block"
               onClick={() => setModalVisibility(true)}
             />
-            <div className="flex items-center gap-1">
-              <button onClick={handlePrevious}>
-                <Previous />
-              </button>
-              <Paragraph text={`${currentDate?.month}-${currentDate?.year}`} />
-              <button onClick={handleNext}>
-                <Previous className="-scale-x-100" />
-              </button>
-            </div>
-            <div className="relative size-6 md:size-7 md:mb-1">
-              <input
-                ref={dateInputRef}
-                type="date"
-                className="absolute size-full left-0 top-0 opacity-0"
-                onChange={(e) => goToDate(e.target.value)}
-              />
-              <button
-                className="relative"
-                onClick={() => dateInputRef?.current?.showPicker()}
-              >
-                <CalendarIcon className="w-6 md:w-7 h-auto" />
-              </button>
-            </div>
+            <DateNavigator
+              date={date}
+              setDate={setDate}
+              navigatorText={`${months[new Date(date).getMonth()]}-${new Date(date).getFullYear()}`}
+              monthly
+            />
           </div>
         </div>
         <div className="rounded-t-2xl overflow-hidden flex-1 sm:pb-5 lg:pb-0">
@@ -118,11 +69,17 @@ const Calendar = () => {
             dateClick={undefined}
             initialView="dayGridMonth"
             headerToolbar={false}
-            dayHeaderClassNames={'bg-blue !border-0 text-white !text-end !pr-5'}
+            dayHeaderClassNames={
+              'bg-blue !border-0 !text-white !text-end !pr-5'
+            }
             events={events}
-            datesSet={() => {
-              updateCurrentDate();
-            }}
+            eventClassNames={
+              'cursor-pointer !bg-blue text-white hover:!bg-blue/90'
+            }
+            displayEventTime={false}
+            eventClick={(data) =>
+              router.push(`/dashboard/calendar/event/${data.event.id}`)
+            }
           />
         </div>
         <Button

@@ -3,7 +3,7 @@ import * as api from 'api';
 import { EventQueryParams } from 'api/type';
 import { toast } from 'react-toastify';
 
-export function useEvent(queryParams: EventQueryParams = {}) {
+export function useEvent(queryParams: EventQueryParams) {
   const queryClient = useQueryClient();
 
   const getAllEvents = useQuery({

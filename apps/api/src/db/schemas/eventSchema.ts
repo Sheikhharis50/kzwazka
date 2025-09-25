@@ -1,4 +1,10 @@
-import { pgTable, integer, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  integer,
+  timestamp,
+  varchar,
+  text,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { locationSchema } from './locationSchema';
 import { groupSchema } from './groupSchema';
@@ -10,6 +16,7 @@ export const eventSchema = pgTable('event', {
   location_id: integer('location_id').references(() => locationSchema.id, {
     onDelete: 'cascade',
   }),
+  description: text('description'),
   start_date: timestamp('start_date').notNull(),
   end_date: timestamp('end_date'),
   opening_time: timestamp('opening_time'),

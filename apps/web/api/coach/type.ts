@@ -1,4 +1,5 @@
 import { IUser } from 'api/type';
+import { SortBy, SortOrder } from 'types';
 
 export type ICoach = {
   id: number;
@@ -25,4 +26,14 @@ export type EditCoachPayload = {
   last_name: string;
   phone: string;
   photo_url: File | null;
+};
+
+export type GetCoachQueryParams = {
+  search?: string;
+  location_id?: number;
+  group_id?: number;
+  sort_order?: SortOrder;
+  sort_by?: SortBy.CREATED_AT | SortBy.NAME;
+  page?: number;
+  limit?: number;
 };

@@ -15,6 +15,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
   options: Option[];
   numberValue?: boolean;
+  required?: boolean;
 }
 
 const Select = ({
@@ -26,6 +27,7 @@ const Select = ({
   placeholder,
   options,
   numberValue = false,
+  required = false,
   ...rest
 }: SelectProps) => {
   const generatedId = useId();
@@ -38,6 +40,7 @@ const Select = ({
           htmlFor={inputId}
           text={label}
           className={classes.label || ''}
+          required={required}
           {...labelProps}
         />
       )}

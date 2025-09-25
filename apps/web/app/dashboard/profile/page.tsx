@@ -14,14 +14,15 @@ import Image from 'next/image';
 import ErrorField from 'components/ui/ErrorField';
 import { useAuth } from 'hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import PlaceholderImage from '@/images/placeholder.jpg';
 
 const Profile = () => {
-  const { user, child } = useUser();
+  const { user } = useUser();
   const { updateProfile, isLoading } = useAuth();
   const { error, file, preview, handleFileChange, removeFile } =
     useFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const profileVisible = preview || child?.user.photo_url;
+  const profileVisible = preview || user?.photo_url;
   const router = useRouter();
 
   const {
@@ -56,7 +57,7 @@ const Profile = () => {
             className={`${profileVisible ? '' : 'hidden'} rounded-full size-full overflow-hidden`}
           >
             <Image
-              src={preview || child?.user.photo_url || ''}
+              src={preview || user?.photo_url || PlaceholderImage}
               alt="profile"
               width={300}
               height={300}
@@ -69,7 +70,7 @@ const Profile = () => {
               >
                 <Trash className="w-3 h-auto" />
               </button>
-            ) : child?.user.photo_url ? (
+            ) : user?.photo_url ? (
               <button
                 className="bg-smoke text-black p-1 rounded-full absolute top-[10%] right-[5%]"
                 onClick={() => fileInputRef.current?.click()}

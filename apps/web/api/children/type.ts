@@ -5,5 +5,5 @@ export type GetChildrenQueryParams = {
   search?: string;
   group_id?: string;
   sort_order?: SortOrder;
-  sort_by?: SortBy;
+  sort_by?: SortBy.CREATED_AT | SortBy.DOB;
 } & PaginationParams;

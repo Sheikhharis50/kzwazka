@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from 'hooks/useAuth';
 
 const ProfileDropdown = () => {
-  const { child, user } = useUser();
+  const { user } = useUser();
   const { logout } = useAuth();
   const [isOptionsVisible, setOptionsVisibility] = useState(false);
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -26,7 +26,7 @@ const ProfileDropdown = () => {
         id="profileDropdownButton"
         data-dropdown-toggle="profileDropdown"
       >
-        <ProfileIcon photo_url={child?.user.photo_url || ''} />
+        <ProfileIcon photo_url={user?.photo_url || ''} />
         <Paragraph
           text={safeJoin([user?.first_name, user?.last_name], ' ', 'User')}
           className="max-w-[100px] truncate"

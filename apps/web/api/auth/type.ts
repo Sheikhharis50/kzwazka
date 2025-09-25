@@ -32,6 +32,7 @@ export type IUser = {
   role: string;
   is_active: boolean;
   is_verified: boolean;
+  photo_url: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -41,7 +42,7 @@ export type IUserWithPermissions = IUser & { permissions: string[] };
 type IChildUser = Omit<
   IUser,
   'is_active' | 'is_verified' | 'created_at' | 'updated_at'
-> & { photo_url: string | null };
+>;
 
 export type IChild = {
   id: number;

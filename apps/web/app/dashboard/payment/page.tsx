@@ -3,8 +3,10 @@ import Button from 'components/ui/Button';
 import Heading from 'components/ui/Heading';
 import Loader from 'components/ui/Loader';
 import Paragraph from 'components/ui/Paragraph';
+import Image from 'next/image';
 import React from 'react';
 import formatDate from 'utils/formatDate';
+import NoRecordImage from '@/images/no-payment-record.png';
 
 const Payment = () => {
   const headers = ['Date', 'Description', 'Amount', 'Status', 'Action'];
@@ -66,8 +68,18 @@ const Payment = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="h-[50dvh]">
-                  <Paragraph text="No record found" className="text-center" />
+                <td colSpan={7} className="h-[50dvh] px-6">
+                  <Image
+                    src={NoRecordImage}
+                    alt="No payment record"
+                    height={500}
+                    width={600}
+                    className="max-w-[280px] md:max-w-[350px] h-auto object-contain mx-auto mb-2"
+                  />
+                  <Paragraph
+                    text="No Payment transaction happen yet!"
+                    className="text-center"
+                  />
                 </td>
               </tr>
             )}

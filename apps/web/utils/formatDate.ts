@@ -16,4 +16,6 @@ function formatTo12Hour(time24: string) {
   return `${hour}:${minute} ${ampm}`;
 }
 
-export { formatTo12Hour };
+const removeTimestamp = (date: Date) => date.toISOString().split('T')[0];
+
+export { formatTo12Hour, removeTimestamp };

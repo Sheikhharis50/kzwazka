@@ -5,13 +5,16 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import Heading from 'components/ui/Heading';
 import Button from 'components/ui/Button';
-import { months } from 'constants/weekdays';
+import { daysArray, months } from 'constants/weekdays';
 import { useCalendarApi } from 'hooks/useCalendar';
 import { useEvent } from 'hooks/useEvent';
 import Modal from 'components/ui/Modal';
 import AddEventForm from 'components/dashboard/calendar/add-event';
 import DateNavigator from 'components/ui/DateNavigator';
 import { useRouter } from 'next/navigation';
+import { EventType } from 'api/type';
+import { useQueryString } from 'hooks/useQueryString';
+import { removeTimestamp } from 'utils/formatDate';
 
 const Calendar = () => {
   const [isModalVisible, setModalVisibility] = React.useState(false);
@@ -21,20 +24,38 @@ const Calendar = () => {
   const calendarRef = React.useRef<FullCalendar | null>(null);
   const router = useRouter();
 
+  const { createQueryString } = useQueryString();
   const { withApi } = useCalendarApi(calendarRef);
   const {
-    getAllEvents: { data },
-  } = useEvent({ date });
+    getAllEvents: { data: oneTimeEventsData },
+  } = useEvent({ date, event_type: EventType.ONE_TIME });
+  const {
+    getAllEvents: { data: trainingEventsData },
+  } = useEvent({ event_type: EventType.TRAINING });
 
-  const events = data?.data?.length
-    ? data.data.map((event) => ({
+  const oneTimeEvents =
+    oneTimeEventsData?.data?.map((event) => ({
+      id: event.id.toString(),
+      title: event.title,
+      date: event.start_date,
+      start: event.opening_time || undefined,
+      end: event.closing_time || undefined,
+    })) || [];
+
+  const trainingEvents =
+    trainingEventsData?.data?.flatMap((event) =>
+      event.group.sessions.map((session) => ({
         id: event.id.toString(),
         title: event.title,
-        date: event.start_date,
-        start: event.opening_time || undefined,
-        end: event.closing_time || undefined,
+        startRecur: event.start_date,
+        groupId: event.group_id.toString(),
+        daysOfWeek: [daysArray.indexOf(session.day.toLocaleLowerCase())],
+        startTime: session.start_time,
+        endTime: session.end_time,
       }))
-    : [];
+    ) || [];
+
+  const events = [...oneTimeEvents, ...trainingEvents];
 
   React.useEffect(() => {
     withApi((api) => {
@@ -76,9 +97,11 @@ const Calendar = () => {
             eventClassNames={
               'cursor-pointer !bg-blue text-white hover:!bg-blue/90'
             }
-            displayEventTime={false}
+            displayEventTime={true}
             eventClick={(data) =>
-              router.push(`/dashboard/calendar/event/${data.event.id}`)
+              router.push(
+                `/dashboard/calendar/event/${data.event.id}?${createQueryString('date', removeTimestamp(data.event.start!) || '')}`
+              )
             }
           />
         </div>

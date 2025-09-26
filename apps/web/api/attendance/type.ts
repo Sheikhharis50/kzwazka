@@ -31,7 +31,6 @@ export type AttendanceQueryParams = {
 
 export type MarkAttendancePayload = {
   children_id: number;
-  group_id: number;
   date: string;
   status: string;
   notes?: string;

@@ -2,6 +2,7 @@ import React from 'react';
 import Navigator from './Navigator';
 import DatePicker from './DatePicker';
 import { formatDate } from '@fullcalendar/core/index.js';
+import { removeTimestamp } from 'utils/formatDate';
 
 interface DateNavigatorProps {
   date: string;
@@ -16,8 +17,6 @@ const DateNavigator = ({
   navigatorText = '',
   monthly = false,
 }: DateNavigatorProps) => {
-  const removeTimestamp = (date: Date) => date.toISOString().split('T')[0];
-
   const changeDate = (delta: number) => {
     const d = new Date(date);
     d.setDate(d.getDate() + delta);

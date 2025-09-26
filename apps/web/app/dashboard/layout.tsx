@@ -22,7 +22,9 @@ export default function RootLayout({
         <div className="hidden lg:flex justify-end px-1.5 pb-1.5">
           <ProfileDropdown />
         </div>
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {children}
+        </div>
       </main>
     </section>
   );

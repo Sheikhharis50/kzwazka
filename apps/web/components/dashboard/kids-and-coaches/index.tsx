@@ -20,6 +20,7 @@ import { Dashboard, ListView } from 'svgs';
 import Loader from 'components/ui/Loader';
 import CoachGridView from './coach-grid-view';
 import EditCoachForm from './edit-coach';
+import { SortBy } from 'types';
 
 const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -28,7 +29,7 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
     'add' | 'edit' | 'delete'
   >('add');
 
-  const [sortBy, setSortBy] = React.useState('');
+  const [sortBy, setSortBy] = React.useState<SortBy | undefined>();
   const [search, setSearch] = React.useState('');
   const [idToEditOrDel, setIdToEditOrDel] = React.useState<number | null>(null);
   const [debouncedSearch] = useDebounce(search, 1000);
@@ -42,11 +43,11 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
       const res = coach
         ? await api.coach.getAll({
             search: debouncedSearch,
-            sort_by: sortBy,
+            sort_by: sortBy as SortBy.CREATED_AT | SortBy.NAME | undefined,
           })
         : await api.children.getAll({
             search: debouncedSearch,
-            sort_by: sortBy,
+            sort_by: sortBy as SortBy.CREATED_AT | undefined,
           });
       return res.data;
     },
@@ -161,7 +162,7 @@ const KidsAndCoaches = ({ coach = false }: { coach?: boolean }) => {
               root: 'min-w-[100px] xs:min-w-auto',
             }}
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
             placeholder="Sort by"
           />
           <Button

@@ -8,6 +8,8 @@ export const weekdays = [
   { label: 'Sun', value: 'sunday' },
 ];
 
+export const daysArray = weekdays.map((day) => day.value);
+
 export const months = [
   'Jan',
   'Feb',

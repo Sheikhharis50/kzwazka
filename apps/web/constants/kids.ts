@@ -1,3 +1,5 @@
+import { SortBy } from 'types';
+
 export const kidsTableHeader = [
   'Player',
   'Player Name',
@@ -14,6 +16,6 @@ export const paymentStatusOptions = [
 ];
 
 export const sortByOptions = [
-  { label: 'Age', value: 'dob' },
-  { label: 'Joined', value: 'created_at' },
+  { label: 'Age', value: SortBy.DOB },
+  { label: 'Joined', value: SortBy.CREATED_AT },
 ];

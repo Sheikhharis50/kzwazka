@@ -1,6 +1,7 @@
 import Coach1Img from '@/images/coach1.png';
 // import Coach2Img from '@/images/coach2.png';
 import Coach3Img from '@/images/coach3.png';
+import { SortBy } from 'types';
 
 export const coachesData = [
   {
@@ -28,7 +29,7 @@ export const coachesData = [
 
 export const sortByOptions = [
   // { label: 'Group', value: 'group' },
-  { label: 'Joined', value: 'created_at' },
+  { label: 'Joined', value: SortBy.CREATED_AT },
 ];
 
 export const coachesTableHeader = ['Profile', 'Name', 'Email', 'Phone Number'];

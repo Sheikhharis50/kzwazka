@@ -18,15 +18,15 @@ type SvgProp = {
   className?: string;
 };
 
-enum SortOrder {
+export enum SortOrder {
   ASC = 'asc',
   DESC = 'desc',
 }
 
-enum SortBy {
+export enum SortBy {
   CREATED_AT = 'created_at',
   DOB = 'dob',
   NAME = 'name',
 }
 
-export type { SidebarLink, Option, SvgProp, SortOrder, SortBy };
+export type { SidebarLink, Option, SvgProp };

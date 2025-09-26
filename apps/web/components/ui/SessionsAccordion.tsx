@@ -1,10 +1,18 @@
 'use client';
 import { Previous } from 'svgs';
-import { ISession } from 'api/type';
 import React, { useState } from 'react';
 import { formatTo12Hour } from 'utils/formatDate';
 
-const SessionsAccordion = ({ sessions }: { sessions: ISession[] }) => {
+interface SessionsAccordionProps {
+  sessions: {
+    id: number;
+    start_time: string;
+    end_time: string;
+    day: string;
+  }[];
+}
+
+const SessionsAccordion = ({ sessions }: SessionsAccordionProps) => {
   const [active, setActive] = useState(false);
   const isMultipleSessions = sessions.length > 1;
   const session1 = `${sessions[0]?.day.slice(0, 3)}, ${formatTo12Hour(sessions[0]?.start_time || '')} - ${formatTo12Hour(sessions[0]?.end_time || '')}`;

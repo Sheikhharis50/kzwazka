@@ -3,11 +3,13 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { DatabaseService } from '../db/drizzle.service';
-import { eq, sql, and, ne, desc, inArray } from 'drizzle-orm';
+import { eq, sql, and, ne, desc, inArray, lte, gte } from 'drizzle-orm';
 import {
   groupSchema,
   locationSchema,
@@ -15,13 +17,15 @@ import {
   userSchema,
   groupSessionSchema,
   Group,
+  childrenSchema,
 } from '../db/schemas';
 import { APP_CONSTANTS } from '../utils/constants';
 import { getPageOffset } from '../utils/pagination';
 import { FileStorageService } from '../services/file-storage.service';
 import { GroupSessionService } from './groupSession.service';
 import { APIResponse } from '../utils/response';
-import { IGroupResponse } from './group.types';
+import { IGroupResponse, IGroupWithLocation } from './group.types';
+import { ChildrenService } from '../children/children.service';
 
 @Injectable()
 export class GroupService {
@@ -30,7 +34,9 @@ export class GroupService {
   constructor(
     private readonly dbService: DatabaseService,
     private readonly fileStorageService: FileStorageService,
-    private readonly groupSessionService: GroupSessionService
+    private readonly groupSessionService: GroupSessionService,
+    @Inject(forwardRef(() => ChildrenService))
+    private readonly childrenService: ChildrenService
   ) {}
 
   async create(
@@ -375,6 +381,76 @@ export class GroupService {
     });
   }
 
+  async findGroupsByChildrenAge(
+    user_id: number
+  ): Promise<APIResponse<IGroupWithLocation[] | undefined>> {
+    const children = await this.childrenService.findByUserId(user_id);
+    if (!children || children.length === 0) {
+      return APIResponse.error<undefined>({
+        message: 'Children not found',
+        statusCode: 404,
+      });
+    }
+
+    const childrenAge = await this.childrenService.calculateChildrenAge(
+      children[0].id
+    );
+
+    const groups = await this.dbService.db
+      .select({
+        id: groupSchema.id,
+        name: groupSchema.name,
+        description: groupSchema.description,
+        min_age: groupSchema.min_age,
+        max_age: groupSchema.max_age,
+        skill_level: groupSchema.skill_level,
+        max_group_size: groupSchema.max_group_size,
+        created_at: groupSchema.created_at,
+        updated_at: groupSchema.updated_at,
+        photo_url: groupSchema.photo_url,
+        external_id: groupSchema.external_id,
+        amount: groupSchema.amount,
+        location: {
+          id: locationSchema.id,
+          name: locationSchema.name,
+          address1: locationSchema.address1,
+          address2: locationSchema.address2,
+          city: locationSchema.city,
+          state: locationSchema.state,
+          country: locationSchema.country,
+          url: locationSchema.url,
+          photo_url: locationSchema.photo_url,
+        },
+      })
+      .from(groupSchema)
+      .leftJoin(locationSchema, eq(groupSchema.location_id, locationSchema.id))
+      .where(
+        and(
+          lte(groupSchema.min_age, childrenAge),
+          gte(groupSchema.max_age, childrenAge)
+        )
+      );
+    const groupsWithPhotoUrls = groups.map((group) => ({
+      ...group,
+      photo_url: group.photo_url
+        ? this.fileStorageService.getAbsoluteUrl(group.photo_url)
+        : null,
+      location: group.location
+        ? {
+            ...group.location,
+            photo_url: group.location.photo_url
+              ? this.fileStorageService.getAbsoluteUrl(group.location.photo_url)
+              : null,
+          }
+        : null,
+    }));
+    return APIResponse.success<IGroupWithLocation[]>({
+      message: 'Groups retrieved successfully',
+      data: groupsWithPhotoUrls,
+      statusCode: 200,
+    });
+  }
+
   async update(
     id: number,
     updateGroupDto: UpdateGroupDto,
@@ -538,5 +614,51 @@ export class GroupService {
       .returning();
 
     return deletedGroup[0];
+  }
+
+  async validateGroupHasSpace(group_id: number): Promise<boolean> {
+    const group = await this.dbService.db
+      .select({
+        id: groupSchema.id,
+        max_group_size: groupSchema.max_group_size,
+        children_count: sql<number>`COUNT(*)`,
+      })
+      .from(groupSchema)
+      .leftJoin(childrenSchema, eq(groupSchema.id, childrenSchema.group_id))
+      .groupBy(groupSchema.id)
+      .where(eq(groupSchema.id, group_id))
+      .limit(1);
+
+    if (group.length === 0) {
+      return false;
+    }
+
+    if (group[0].children_count >= group[0].max_group_size) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async validateChildrenAge(
+    children_id: number,
+    group_id: number
+  ): Promise<boolean> {
+    const childrenAge =
+      await this.childrenService.calculateChildrenAge(children_id);
+
+    const group = await this.dbService.db
+      .select()
+      .from(groupSchema)
+      .where(eq(groupSchema.id, group_id))
+      .limit(1);
+
+    if (group.length === 0) {
+      return false;
+    }
+    if (childrenAge >= group[0].min_age && childrenAge <= group[0].max_age) {
+      return true;
+    }
+    return false;
   }
 }

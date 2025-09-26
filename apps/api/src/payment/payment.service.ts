@@ -397,6 +397,16 @@ export class PaymentService {
         });
       }
 
+      const hasSpace = await this.groupService.validateGroupHasSpace(
+        body.group_id
+      );
+      if (!hasSpace) {
+        return APIResponse.error<undefined>({
+          message: 'Group capacity is full',
+          statusCode: 400,
+        });
+      }
+
       const child = children[0];
 
       // Ensure child has external_id (Stripe customer)

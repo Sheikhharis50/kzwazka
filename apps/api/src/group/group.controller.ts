@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -38,6 +39,7 @@ import { UpdateGroupSessionDto } from './dto/update-groupsession.dto';
 import { APIResponse } from '../utils/response';
 import { Group } from '../db/schemas';
 import { IGroupResponse } from './group.types';
+import { APIRequest } from 'src/interfaces/request';
 
 @ApiTags('Groups')
 @Controller('api/group')
@@ -131,6 +133,17 @@ export class GroupController {
     @UploadedFile() photo_url?: Express.Multer.File
   ): Promise<APIResponse<Group | undefined>> {
     return this.groupService.create(createGroupDto, photo_url);
+  }
+
+  @Get('by-age')
+  @ApiBearerAuth('JWT-auth')
+  // @RequirePermission(['read_group'])
+  @ApiOperation({
+    summary: 'Get groups by children age',
+    description: 'Get groups by children age',
+  })
+  findGroupsByChildrenAge(@Req() req: APIRequest) {
+    return this.groupService.findGroupsByChildrenAge(req.user.id);
   }
 
   @Get()

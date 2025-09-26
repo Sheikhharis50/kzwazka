@@ -40,3 +40,29 @@ export type IGroupSessionResponse = {
   location_id: number | null;
   location_name: string | null;
 };
+
+export type IGroupWithLocation = {
+  id: number;
+  name: string | null;
+  description: string | null;
+  min_age: number;
+  max_age: number;
+  skill_level: string;
+  max_group_size: number;
+  created_at: Date;
+  updated_at: Date;
+  photo_url: string | null;
+  external_id: string | null;
+  amount: number | null;
+  location: {
+    id: number;
+    name: string | null;
+    address1: string;
+    address2: string | null;
+    city: string;
+    state: string;
+    country: string;
+    url: string | null;
+    photo_url: string | null;
+  } | null;
+};

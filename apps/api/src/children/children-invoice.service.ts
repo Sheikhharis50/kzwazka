@@ -99,6 +99,22 @@ export class ChildrenInvoiceService {
     }
   }
 
+  async findOneByExternalId(
+    externalId: string
+  ): Promise<APIResponse<ChildrenInvoice | undefined>> {
+    const [invoice] = await this.dbService.db
+      .select()
+      .from(childrenInvoiceSchema)
+      .where(eq(childrenInvoiceSchema.external_id, externalId))
+      .limit(1);
+
+    return APIResponse.success<ChildrenInvoice | undefined>({
+      message: `Children invoice retrieved successfully for external id: ${externalId}`,
+      data: invoice,
+      statusCode: invoice ? 200 : 404,
+    });
+  }
+
   async update(
     id: number,
     updateData: UpdateChildrenInvoiceDto

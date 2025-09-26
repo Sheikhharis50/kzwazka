@@ -19,6 +19,8 @@ export const locationSchema = pgTable('locations', {
   address2: varchar('address2', { length: 500 }),
   city: varchar('city', { length: 100 }).notNull(),
   state: varchar('state', { length: 100 }).notNull(),
+  photo_url: text('photo_url'),
+  url: text('url'),
   country: varchar('country', { length: 100 }).notNull(),
   opening_time: time('opening_time'),
   closing_time: time('closing_time'),

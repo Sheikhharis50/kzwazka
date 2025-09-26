@@ -1,8 +1,10 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { PaymentService, WebhookResult } from './payment.service';
 import Stripe from 'stripe';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { SubscribeToGroupDto } from './dto/create-payment.dto';
+import { APIRequest } from '../interfaces/request';
 
 @Controller('api/payment')
 export class PaymentController {
@@ -20,16 +22,32 @@ export class PaymentController {
     summary: 'Subscribe children to group',
     description: 'Creates a Stripe subscription for children to join a group',
   })
+  subscribeToGroup(@Body() body: SubscribeToGroupDto, @Req() req: APIRequest) {
+    return this.paymentService.subscribeToGroup(body, req.user.id);
+  }
+
+  @Post('customer-portal')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create a customer portal session',
+    description: 'Creates a Stripe customer portal session',
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'number' },
-        group_id: { type: 'number' },
+        return_url: { type: 'string' },
       },
     },
   })
-  subscribeToGroup(@Body() body: { id: number; group_id: number }) {
-    return this.paymentService.subscribeToGroup(body.id, body.group_id);
+  createCustomerPortalSession(
+    @Req() req: APIRequest,
+    @Body() body: { return_url: string }
+  ) {
+    return this.paymentService.createCustomerPortalSession(
+      req.user.id,
+      body.return_url
+    );
   }
 }

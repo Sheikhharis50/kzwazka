@@ -113,24 +113,18 @@ export class CreateLocationDto {
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'Training session cost (up to 2 decimal places)',
-    example: '25.50',
-    pattern: '^\\d+(\\.\\d{1,2})?$',
+    description: 'Photo URL',
+    example: 'https://example.com/photo.jpg',
   })
-  @IsString({ message: 'Amount must be a string' })
+  @IsString({ message: 'Photo URL must be a string' })
   @IsOptional()
-  @Matches(/^\d+(\.\d{1,2})?$/, {
-    message: 'Amount must be a valid number with up to 2 decimal places',
-  })
-  amount?: string;
+  photo_url?: string;
 
   @ApiPropertyOptional({
-    description: 'External system identifier',
-    example: 'EXT_LOC_001',
-    maxLength: 200,
+    description: 'URL',
+    example: 'https://example.com/location',
   })
-  @IsString({ message: 'External ID must be a string' })
+  @IsString({ message: 'URL must be a string' })
   @IsOptional()
-  @MaxLength(200, { message: 'External ID cannot exceed 200 characters' })
-  external_id?: string;
+  url?: string;
 }

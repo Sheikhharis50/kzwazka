@@ -3,12 +3,19 @@ import { DatabaseService } from '../db/drizzle.service';
 import { eq, asc } from 'drizzle-orm';
 import { locationSchema } from '../db/schemas';
 import { CreateLocationDto } from './dto/create-location.dto';
+import { FileStorageService } from '../services/file-storage.service';
 
 @Injectable()
 export class LocationService {
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    private readonly fileStorageService: FileStorageService
+  ) {}
 
-  async create(createLocationDto: CreateLocationDto) {
+  async create(
+    createLocationDto: CreateLocationDto,
+    photo_url: Express.Multer.File
+  ) {
     const { opening_time, closing_time, ...locationData } = createLocationDto;
 
     const newLocation = await this.dbService.db
@@ -20,6 +27,13 @@ export class LocationService {
         is_active: true,
       })
       .returning();
+
+    if (photo_url) {
+      const photoUrl = await this.updatePhotoUrl(newLocation[0].id, photo_url);
+      newLocation[0].photo_url = photoUrl.data.photo_url
+        ? this.fileStorageService.getAbsoluteUrl(photoUrl.data.photo_url)
+        : null;
+    }
 
     return {
       message: 'Successfully created location',
@@ -36,6 +50,12 @@ export class LocationService {
       .from(locationSchema)
       .where(eq(locationSchema.is_active, true))
       .orderBy(asc(locationSchema.name));
+
+    locations.forEach((location) => {
+      location.photo_url = location.photo_url
+        ? this.fileStorageService.getAbsoluteUrl(location.photo_url)
+        : null;
+    });
 
     return {
       message: 'Successfully fetched locations',
@@ -63,7 +83,11 @@ export class LocationService {
     };
   }
 
-  async update(id: number, updateLocationDto: Partial<CreateLocationDto>) {
+  async update(
+    id: number,
+    updateLocationDto: Partial<CreateLocationDto>,
+    photo_url: Express.Multer.File
+  ) {
     const { opening_time, closing_time, ...updateData } = updateLocationDto;
 
     const updateValues = {
@@ -81,6 +105,13 @@ export class LocationService {
 
     if (updatedLocation.length === 0) {
       throw new NotFoundException('Location not found');
+    }
+
+    if (photo_url) {
+      const photoUrl = await this.updatePhotoUrl(id, photo_url);
+      updatedLocation[0].photo_url = photoUrl.data.photo_url
+        ? this.fileStorageService.getAbsoluteUrl(photoUrl.data.photo_url)
+        : null;
     }
 
     return {
@@ -121,6 +152,25 @@ export class LocationService {
 
     return {
       message: 'Successfully deactivated location',
+      data: updatedLocation[0],
+    };
+  }
+
+  async updatePhotoUrl(id: number, photo_url: Express.Multer.File) {
+    const photoUrl = await this.fileStorageService.uploadFile(
+      photo_url,
+      'location',
+      id
+    );
+
+    const updatedLocation = await this.dbService.db
+      .update(locationSchema)
+      .set({ photo_url: photoUrl.relativePath })
+      .where(eq(locationSchema.id, id))
+      .returning();
+
+    return {
+      message: 'Successfully updated photo URL',
       data: updatedLocation[0],
     };
   }

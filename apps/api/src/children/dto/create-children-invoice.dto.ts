@@ -50,6 +50,14 @@ export class CreateChildrenInvoiceDto {
   external_id: string;
 
   @ApiProperty({
+    description: 'The external url of the invoice',
+    example: 'https://example.com',
+  })
+  @IsString()
+  @IsNotEmpty()
+  external_url: string;
+
+  @ApiProperty({
     description: 'The metadata of the invoice',
     example: { key: 'value' },
     required: false,

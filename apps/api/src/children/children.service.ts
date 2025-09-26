@@ -440,6 +440,8 @@ export class ChildrenService {
         parent_last_name: childrenSchema.parent_last_name,
         created_at: childrenSchema.created_at,
         updated_at: childrenSchema.updated_at,
+        external_id: childrenSchema.external_id,
+        group_id: childrenSchema.group_id,
         user: {
           id: userSchema.id,
           first_name: userSchema.first_name,

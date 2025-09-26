@@ -8,6 +8,7 @@ import { GroupService } from '../group/group.service';
 import { ChildrenService } from '../children/children.service';
 import { ChildrenInvoiceService } from '../children/children-invoice.service';
 import { ChildrenInvoiceStatus } from '../utils/constants';
+import { SubscribeToGroupDto } from './dto/create-payment.dto';
 
 export interface WebhookResult {
   handled: boolean;
@@ -33,6 +34,7 @@ export class PaymentService {
     this.stripe = new Stripe(this.configService.get('STRIPE_SECRET_KEY')!);
   }
 
+  // CUSTOMER MANAGEMENT
   async createCustomer(
     email: string,
     name?: string,
@@ -50,105 +52,76 @@ export class PaymentService {
     return customer;
   }
 
-  async createSubscription(customerId: string, productId: string) {
+  // CHECKOUT SESSION FLOW
+  async createCheckoutSession(
+    customerId: string,
+    productId: string,
+    successUrl: string,
+    cancelUrl: string,
+    metadata?: Record<string, string>
+  ): Promise<Stripe.Checkout.Session> {
     const product = await this.stripe.products.retrieve(productId);
-    let price: string;
 
-    if (product.default_price) {
-      if (typeof product.default_price === 'string') {
-        price = product.default_price;
-      } else {
-        price = product.default_price.id;
-      }
-
-      const subscription = await this.stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: price, quantity: 1 }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        expand: ['latest_invoice.payment_intent'],
-        metadata: {
-          product_id: productId,
-          customer_id: customerId,
-        },
-      });
-
-      this.logger.log(
-        `Created subscription: ${subscription.id} for customer: ${customerId}`
-      );
-      return subscription;
+    if (!product.default_price) {
+      throw new Error('Product does not have a default price');
     }
 
-    throw new Error('Product does not have a default price');
+    const price =
+      typeof product.default_price === 'string'
+        ? product.default_price
+        : product.default_price.id;
+
+    const session = await this.stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [{ price, quantity: 1 }],
+      mode: 'subscription',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        product_id: productId,
+        customer_id: customerId,
+        ...metadata,
+      },
+    });
+
+    this.logger.log(
+      `Created checkout session: ${session.id} for customer: ${customerId}`
+    );
+    return session;
   }
 
-  verifyWebhookEvent(body: any, signature: string): Stripe.Event | null {
-    try {
-      const event = this.stripe.webhooks.constructEvent(
-        body,
-        signature,
-        this.configService.get('STRIPE_WEBHOOK_SECRET')!
-      );
-      return event;
-    } catch (error) {
-      this.logger.error(
-        `Webhook verification failed: ${(error as Error).message}`
-      );
-      return null;
-    }
-  }
-
+  // SIMPLIFIED WEBHOOK PROCESSING
   async processWebhookEvent(event: Stripe.Event): Promise<WebhookResult> {
     try {
       this.logger.log(`Processing webhook event: ${event.type} - ${event.id}`);
 
       switch (event.type) {
-        case 'customer.created':
-        case 'customer.updated':
-          return this.handleCustomerEvent(event);
-        case 'customer.subscription.created':
-          return await this.handleSubscriptionCreated(event);
-        case 'customer.subscription.updated':
-          return await this.handleSubscriptionUpdated(event);
-        case 'customer.subscription.deleted':
-          return await this.handleSubscriptionDeleted(event);
-        case 'customer.subscription.paused':
-        case 'customer.subscription.resumed':
-          return await this.handleSubscriptionPausedResumed(event);
-        case 'invoice.created':
-        case 'invoice.finalized':
-          return await this.handleInvoiceCreatedOrFinalized(event);
-        case 'invoice.paid':
+        // Focus on checkout session events only
+        case 'checkout.session.completed':
+          return await this.handleCheckoutCompleted(event);
+
+        case 'checkout.session.expired':
+          return this.handleCheckoutExpired(event);
+
+        // Handle subscription lifecycle for ongoing billing
         case 'invoice.payment_succeeded':
-          return await this.handleInvoicePaid(event);
+          return await this.handlePaymentSucceeded(event);
+
         case 'invoice.payment_failed':
-        case 'invoice.payment_action_required':
-          return await this.handleInvoicePaymentFailed(event);
-        case 'invoice.finalization_failed':
-          return await this.handleInvoiceFinalizationFailed(event);
-        case 'invoice.updated':
-        case 'invoice_payment.paid':
-          return await this.handleInvoiceUpdated(event);
-        case 'payment_intent.created':
-        case 'payment_intent.succeeded':
-        case 'payment_method.attached':
-        case 'charge.succeeded':
-          // These events don't require specific handling for our business logic
-          return {
-            handled: true,
-            reason: 'Event logged but no action required',
-          };
+          return await this.handlePaymentFailed(event);
+
+        case 'customer.subscription.deleted':
+          return await this.handleSubscriptionCanceled(event);
+
+        // Log but don't process other events
         default:
-          this.logger.warn(`Unhandled event type: ${event.type}`);
-          return {
-            handled: false,
-            reason: `Unhandled event type: ${event.type}`,
-          };
+          this.logger.log(`Event ${event.type} logged but not processed`);
+          return { handled: true, reason: 'Event logged only' };
       }
     } catch (error) {
       this.logger.error(
-        `Error processing webhook event ${event.type}: ${(error as Error).message}`,
-        (error as Error).stack
+        `Error processing webhook event ${event.type}: ${(error as Error).message}`
       );
       return {
         handled: false,
@@ -158,15 +131,319 @@ export class PaymentService {
     }
   }
 
-  // Helper methods
+  // CHECKOUT SESSION COMPLETED - Main success flow
+  private async handleCheckoutCompleted(
+    event: Stripe.Event
+  ): Promise<WebhookResult> {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    try {
+      const childrenId = parseInt(session.metadata?.children_id || '0');
+      const groupId = parseInt(session.metadata?.group_id || '0');
+
+      if (!childrenId || !groupId) {
+        return {
+          handled: false,
+          reason: 'Missing children_id or group_id in metadata',
+        };
+      }
+
+      // Create invoice record
+      await this.createInvoiceRecord({
+        children_id: childrenId,
+        group_id: groupId,
+        external_id: session.invoice as string,
+        amount: session.amount_total || 0,
+        status: ChildrenInvoiceStatus.PAID,
+        metadata: { checkout_completed: JSON.stringify(session) },
+      });
+
+      // Assign child to group
+      await this.assignChildToGroup(childrenId, groupId);
+
+      this.logger.log(
+        `Checkout completed: Child ${childrenId} assigned to group ${groupId}`
+      );
+
+      return {
+        handled: true,
+        data: {
+          children_id: childrenId,
+          group_id: groupId,
+          session_id: session.id,
+        },
+      };
+    } catch (error) {
+      return {
+        handled: false,
+        error: (error as Error).message,
+        reason: 'Error processing checkout completion',
+      };
+    }
+  }
+
+  // CHECKOUT SESSION EXPIRED
+  private handleCheckoutExpired(event: Stripe.Event): WebhookResult {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    this.logger.log(`Checkout session expired: ${session.id}`);
+
+    return {
+      handled: true,
+      reason: 'Checkout session expired - no action needed',
+    };
+  }
+
+  // RECURRING PAYMENT SUCCEEDED
+  private async handlePaymentSucceeded(
+    event: Stripe.Event
+  ): Promise<WebhookResult> {
+    const invoice = event.data.object as Stripe.Invoice;
+
+    try {
+      const customerId = invoice.customer as string;
+      const children = await this.findChildrenByCustomerId(customerId);
+
+      if (!children) {
+        return {
+          handled: false,
+          reason: `Children not found for customer: ${customerId}`,
+        };
+      }
+
+      // Update invoice record
+      await this.updateInvoiceRecord({
+        external_id: invoice.id,
+        children_id: children.id,
+        status: ChildrenInvoiceStatus.PAID,
+        amount: invoice.amount_paid || 0,
+        metadata: { payment_succeeded: JSON.stringify(invoice) },
+      });
+
+      // Ensure child is still in group (in case they were removed)
+      if (children.group_id) {
+        await this.assignChildToGroup(children.id, children.group_id);
+      }
+
+      return {
+        handled: true,
+        data: { children_id: children.id, invoice_id: invoice.id },
+      };
+    } catch (error) {
+      return {
+        handled: false,
+        error: (error as Error).message,
+        reason: 'Error processing payment success',
+      };
+    }
+  }
+
+  // PAYMENT FAILED
+  private async handlePaymentFailed(
+    event: Stripe.Event
+  ): Promise<WebhookResult> {
+    const invoice = event.data.object as Stripe.Invoice;
+
+    try {
+      const customerId = invoice.customer as string;
+      const children = await this.findChildrenByCustomerId(customerId);
+
+      if (!children) {
+        return {
+          handled: false,
+          reason: `Children not found for customer: ${customerId}`,
+        };
+      }
+
+      // Update invoice record
+      await this.updateInvoiceRecord({
+        external_id: invoice.id,
+        children_id: children.id,
+        status: ChildrenInvoiceStatus.FAILED,
+        amount: invoice.amount_due || 0,
+        metadata: { payment_failed: JSON.stringify(invoice) },
+      });
+
+      // Don't remove from group immediately - give them a chance to update payment
+      this.logger.log(
+        `Payment failed for child ${children.id} - keeping in group for now`
+      );
+
+      return {
+        handled: true,
+        data: {
+          children_id: children.id,
+          invoice_id: invoice.id,
+          status: 'payment_failed',
+        },
+      };
+    } catch (error) {
+      return {
+        handled: false,
+        error: (error as Error).message,
+        reason: 'Error processing payment failure',
+      };
+    }
+  }
+
+  // SUBSCRIPTION CANCELED
+  private async handleSubscriptionCanceled(
+    event: Stripe.Event
+  ): Promise<WebhookResult> {
+    const subscription = event.data.object as Stripe.Subscription;
+
+    try {
+      const customerId = subscription.customer as string;
+      const children = await this.findChildrenByCustomerId(customerId);
+
+      if (!children) {
+        return {
+          handled: false,
+          reason: `Children not found for customer: ${customerId}`,
+        };
+      }
+
+      // Remove child from group
+      await this.removeChildFromGroup(children.id);
+
+      // Update any pending invoices
+      await this.updateInvoiceRecord({
+        children_id: children.id,
+        status: ChildrenInvoiceStatus.CANCELED,
+        metadata: { subscription_canceled: JSON.stringify(subscription) },
+      });
+
+      this.logger.log(
+        `Subscription canceled: Child ${children.id} removed from group`
+      );
+
+      return {
+        handled: true,
+        data: {
+          children_id: children.id,
+          subscription_id: subscription.id,
+          status: 'canceled',
+        },
+      };
+    } catch (error) {
+      return {
+        handled: false,
+        error: (error as Error).message,
+        reason: 'Error processing subscription cancellation',
+      };
+    }
+  }
+
+  // CUSTOMER PORTAL
+  async createCustomerPortalSession(
+    user_id: number,
+    return_url: string
+  ): Promise<APIResponse<string | undefined>> {
+    try {
+      const children = await this.childrenService.findByUserId(user_id);
+      if (!children || children.length === 0) {
+        return APIResponse.error<undefined>({
+          message: 'Children not found',
+          statusCode: 404,
+        });
+      }
+
+      const customer_id = children[0].external_id;
+      if (!customer_id) {
+        return APIResponse.error<undefined>({
+          message: 'Children does not have a Stripe customer ID',
+          statusCode: 400,
+        });
+      }
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: customer_id,
+        return_url: return_url,
+      });
+
+      return APIResponse.success<string>({
+        message: 'Customer portal session created successfully',
+        data: session.url,
+        statusCode: 200,
+      });
+    } catch (error) {
+      return APIResponse.error<undefined>({
+        message: `Failed to create customer portal session: ${(error as Error).message}`,
+        statusCode: 500,
+      });
+    }
+  }
+
+  // MAIN SUBSCRIPTION FLOW
+  async subscribeToGroup(
+    body: SubscribeToGroupDto,
+    user_id: number
+  ): Promise<APIResponse<string | undefined>> {
+    try {
+      // Get child data
+      const children = await this.childrenService.findByUserId(user_id);
+      if (!children || children.length === 0) {
+        return APIResponse.error<undefined>({
+          message: 'Children not found',
+          statusCode: 404,
+        });
+      }
+
+      // Get group data
+      const group = await this.groupService.findOne(body.group_id);
+      if (!group.data) {
+        return APIResponse.error<undefined>({
+          message: 'Group not found',
+          statusCode: 404,
+        });
+      }
+
+      const child = children[0];
+
+      // Ensure child has external_id (Stripe customer)
+      if (!child.external_id) {
+        return APIResponse.error<undefined>({
+          message: 'Child does not have a Stripe customer ID',
+          statusCode: 400,
+        });
+      }
+
+      // Ensure group has external_id (Stripe product)
+      if (!group.data.external_id) {
+        return APIResponse.error<undefined>({
+          message: 'Group does not have a Stripe product ID',
+          statusCode: 400,
+        });
+      }
+
+      // Create checkout session
+      const session = await this.createCheckoutSession(
+        child.external_id,
+        group.data.external_id,
+        body.success_url,
+        body.cancel_url,
+        {
+          children_id: child.id.toString(),
+          group_id: group.data.id.toString(),
+        }
+      );
+
+      return APIResponse.success<string>({
+        message: 'Checkout session created successfully',
+        data: session.url || '',
+        statusCode: 200,
+      });
+    } catch (error) {
+      return APIResponse.error<undefined>({
+        message: `Failed to create subscription: ${(error as Error).message}`,
+        statusCode: 500,
+      });
+    }
+  }
+
+  // HELPER METHODS
   private async findChildrenByCustomerId(
     customerId: string
   ): Promise<Children | null> {
-    if (!customerId) {
-      this.logger.warn('Customer ID is missing');
-      return null;
-    }
-
     try {
       const result =
         await this.childrenService.getChildrenByExternalId(customerId);
@@ -179,692 +456,96 @@ export class PaymentService {
     }
   }
 
-  private async upsertInvoiceRecord(invoiceData: {
+  private async createInvoiceRecord(data: {
     children_id: number;
-    external_id?: string;
+    group_id: number;
+    external_id: string;
     amount: number;
     status: ChildrenInvoiceStatus;
-    group_id?: number;
-    metadata?: Record<string, any>;
-  }): Promise<boolean> {
+    metadata: Record<string, any>;
+  }): Promise<void> {
     try {
-      // First, try to find existing invoice
-      const existingInvoiceResponse =
-        await this.childrenInvoiceService.findOneByExternalId(
-          invoiceData.external_id || ''
-        );
+      await this.childrenInvoiceService.createChildrenInvoice({
+        children_id: data.children_id,
+        group_id: data.group_id,
+        external_id: data.external_id,
+        amount: data.amount,
+        status: data.status,
+        metadata: data.metadata,
+        external_url: '',
+      });
 
-      if (
-        existingInvoiceResponse.data &&
-        existingInvoiceResponse.statusCode === 200
-      ) {
-        // Update existing invoice
-        const updateData = {
-          status: invoiceData.status,
-          amount: invoiceData.amount,
-          ...(invoiceData.group_id && { group_id: invoiceData.group_id }),
-          metadata: {
-            ...((existingInvoiceResponse.data.metadata as Record<
-              string,
-              any
-            >) || {}),
-            ...(invoiceData.metadata || {}),
-          },
-        };
-
-        const updateResult = await this.childrenInvoiceService.update(
-          existingInvoiceResponse.data.id,
-          updateData
-        );
-
-        if (updateResult.statusCode === 200) {
-          this.logger.log(`Updated invoice: ${invoiceData.external_id}`);
-          return true;
-        } else {
-          this.logger.error(
-            `Failed to update invoice: ${updateResult.message}`
-          );
-          return false;
-        }
-      } else {
-        // Create new invoice - get group_id from children if not provided
-        let groupId = invoiceData.group_id;
-        if (!groupId) {
-          const children = await this.childrenService.findOne(
-            invoiceData.children_id
-          );
-          groupId = children.data?.group?.id || 0;
-        }
-
-        const createData = {
-          children_id: invoiceData.children_id,
-          group_id: groupId || 0,
-          external_id: invoiceData.external_id || '',
-          amount: invoiceData.amount,
-          status: invoiceData.status,
-          metadata: invoiceData.metadata || {},
-        };
-
-        const createResult =
-          await this.childrenInvoiceService.createChildrenInvoice(createData);
-
-        if (createResult.statusCode === 201) {
-          this.logger.log(`Created invoice: ${invoiceData.external_id}`);
-          return true;
-        } else {
-          this.logger.error(
-            `Failed to create invoice: ${createResult.message}`
-          );
-          return false;
-        }
-      }
+      this.logger.log(`Created invoice record: ${data.external_id}`);
     } catch (error) {
-      this.logger.error(`Error upserting invoice: ${(error as Error).message}`);
-      return false;
+      this.logger.error(
+        `Error creating invoice record: ${(error as Error).message}`
+      );
+      throw error;
     }
   }
 
-  private async updateChildrenGroupStatus(
+  private async updateInvoiceRecord(data: {
+    external_id?: string;
+    children_id?: number;
+    status?: ChildrenInvoiceStatus;
+    amount?: number;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    try {
+      if (data.external_id) {
+        // Find by external_id first
+        const existingInvoice =
+          await this.childrenInvoiceService.findOneByExternalId(
+            data.external_id
+          );
+
+        if (existingInvoice.data) {
+          await this.childrenInvoiceService.update(existingInvoice.data.id, {
+            ...(data.status && { status: data.status }),
+            ...(data.amount && { amount: data.amount }),
+            ...(data.metadata && {
+              metadata: {
+                ...(existingInvoice.data.metadata as Record<string, string>),
+                ...(data.metadata as Record<string, string>),
+              },
+            }),
+          });
+
+          this.logger.log(`Updated invoice record: ${data.external_id}`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error updating invoice record: ${(error as Error).message}`
+      );
+      // Don't throw - this shouldn't stop the main flow
+    }
+  }
+
+  private async assignChildToGroup(
     childrenId: number,
-    groupId: number | null,
-    reason: string
+    groupId: number
   ): Promise<void> {
     try {
       await this.childrenService.update(childrenId, { group_id: groupId });
-      this.logger.log(
-        `${reason}: Updated children ${childrenId} group to ${groupId}`
-      );
+      this.logger.log(`Assigned child ${childrenId} to group ${groupId}`);
     } catch (error) {
       this.logger.error(
-        `Error updating children group: ${(error as Error).message}`
+        `Error assigning child to group: ${(error as Error).message}`
       );
+      throw error;
     }
   }
 
-  private extractSubscriptionAmount(subscription: Stripe.Subscription): number {
+  private async removeChildFromGroup(childrenId: number): Promise<void> {
     try {
-      return subscription.items.data[0]?.price?.unit_amount || 0;
+      await this.childrenService.update(childrenId, { group_id: null });
+      this.logger.log(`Removed child ${childrenId} from group`);
     } catch (error) {
       this.logger.error(
-        `Error extracting subscription amount: ${(error as Error).message}`
+        `Error removing child from group: ${(error as Error).message}`
       );
-      return 0;
+      // Don't throw - this shouldn't stop the main flow
     }
-  }
-
-  private extractInvoiceId(subscription: Stripe.Subscription): string | null {
-    const invoiceId = subscription.latest_invoice;
-    if (typeof invoiceId === 'string') {
-      return invoiceId;
-    }
-    if (invoiceId && typeof invoiceId === 'object' && 'id' in invoiceId) {
-      return invoiceId.id || null;
-    }
-    return null;
-  }
-
-  // Webhook handlers
-  private handleCustomerEvent(event: Stripe.Event): WebhookResult {
-    const customer = event.data.object as Stripe.Customer;
-    this.logger.log(
-      `Customer ${event.type}: ${customer.id} - ${customer.email || 'N/A'}`
-    );
-    return {
-      handled: true,
-      data: { customer_id: customer.id, email: customer.email },
-    };
-  }
-
-  private async handleSubscriptionCreated(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const invoiceId = this.extractInvoiceId(subscription);
-      if (!invoiceId) {
-        return {
-          handled: false,
-          reason: 'No invoice ID found in subscription',
-        };
-      }
-
-      // Create invoice record regardless of group assignment
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoiceId,
-        amount: this.extractSubscriptionAmount(subscription),
-        status: ChildrenInvoiceStatus.PENDING,
-        group_id: children.group_id || undefined,
-        metadata: { subscription_created: JSON.stringify(subscription) },
-      });
-
-      return {
-        handled: success,
-        data: { children_id: children.id, subscription_id: subscription.id },
-        reason: success ? undefined : 'Failed to create invoice record',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing subscription creation',
-      };
-    }
-  }
-
-  private async handleSubscriptionUpdated(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const invoiceId = this.extractInvoiceId(subscription);
-      let invoiceStatus = ChildrenInvoiceStatus.PENDING;
-      let shouldAssignGroup = false;
-
-      // Determine status based on subscription status
-      switch (subscription.status) {
-        case 'active':
-          invoiceStatus = ChildrenInvoiceStatus.PAID;
-          shouldAssignGroup = true;
-          break;
-        case 'canceled':
-        case 'unpaid':
-        case 'past_due':
-          invoiceStatus = ChildrenInvoiceStatus.CANCELED;
-          shouldAssignGroup = false;
-          break;
-        default:
-          shouldAssignGroup = false;
-      }
-
-      // Update invoice if we have an invoice ID
-      if (invoiceId) {
-        await this.upsertInvoiceRecord({
-          children_id: children.id,
-          external_id: invoiceId,
-          amount: this.extractSubscriptionAmount(subscription),
-          status: invoiceStatus,
-          metadata: { subscription_updated: JSON.stringify(subscription) },
-        });
-      }
-
-      // Update group assignment
-      if (shouldAssignGroup && children.group_id) {
-        await this.updateChildrenGroupStatus(
-          children.id,
-          children.group_id,
-          'Subscription active'
-        );
-      } else {
-        await this.updateChildrenGroupStatus(
-          children.id,
-          null,
-          `Subscription ${subscription.status}`
-        );
-      }
-
-      return {
-        handled: true,
-        data: {
-          subscription_id: subscription.id,
-          status: subscription.status,
-          children_id: children.id,
-        },
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing subscription update',
-      };
-    }
-  }
-
-  private async handleSubscriptionDeleted(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const invoiceId = this.extractInvoiceId(subscription);
-      if (invoiceId) {
-        await this.upsertInvoiceRecord({
-          children_id: children.id,
-          external_id: invoiceId,
-          status: ChildrenInvoiceStatus.CANCELED,
-          amount: this.extractSubscriptionAmount(subscription),
-          metadata: { subscription_deleted: JSON.stringify(subscription) },
-        });
-      }
-
-      // Remove children from group
-      await this.updateChildrenGroupStatus(
-        children.id,
-        null,
-        'Subscription deleted'
-      );
-
-      return {
-        handled: true,
-        data: {
-          subscription_id: subscription.id,
-          children_id: children.id,
-          action: 'deleted',
-        },
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing subscription deletion',
-      };
-    }
-  }
-
-  private async handleSubscriptionPausedResumed(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const subscription = event.data.object as Stripe.Subscription;
-    const isPaused = event.type === 'customer.subscription.paused';
-    const customerId = subscription.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const invoiceId = this.extractInvoiceId(subscription);
-      const status = isPaused
-        ? ChildrenInvoiceStatus.PENDING
-        : ChildrenInvoiceStatus.PAID;
-
-      if (invoiceId) {
-        await this.upsertInvoiceRecord({
-          children_id: children.id,
-          external_id: invoiceId,
-          status,
-          amount: this.extractSubscriptionAmount(subscription),
-          metadata: {
-            [`subscription_${isPaused ? 'paused' : 'resumed'}`]:
-              JSON.stringify(subscription),
-          },
-        });
-      }
-
-      // Update group assignment
-      const groupId = isPaused ? null : children.group_id;
-      await this.updateChildrenGroupStatus(
-        children.id,
-        groupId,
-        `Subscription ${isPaused ? 'paused' : 'resumed'}`
-      );
-
-      return {
-        handled: true,
-        data: {
-          subscription_id: subscription.id,
-          children_id: children.id,
-          status: isPaused ? 'paused' : 'resumed',
-        },
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: `Error processing subscription ${isPaused ? 'pause' : 'resume'}`,
-      };
-    }
-  }
-
-  private async handleInvoiceCreatedOrFinalized(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      // Create or update invoice record regardless of group assignment
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoice.id,
-        amount: invoice.amount_due || 0,
-        status: ChildrenInvoiceStatus.PENDING,
-        metadata: {
-          [`invoice_${event.type.split('.')[1]}`]: JSON.stringify(invoice),
-        },
-      });
-
-      return {
-        handled: success,
-        data: success
-          ? { children_id: children.id, invoice_id: invoice.id }
-          : undefined,
-        reason: success ? undefined : 'Failed to create/update invoice record',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: `Error processing invoice ${event.type}`,
-      };
-    }
-  }
-
-  private async handleInvoicePaid(event: Stripe.Event): Promise<WebhookResult> {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      // Update invoice to paid status
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoice.id,
-        amount: invoice.amount_paid || 0,
-        status: ChildrenInvoiceStatus.PAID,
-        metadata: { invoice_paid: JSON.stringify(invoice) },
-      });
-
-      // Assign to group if payment successful and group exists
-      if (success && children.group_id) {
-        await this.updateChildrenGroupStatus(
-          children.id,
-          children.group_id,
-          'Payment successful'
-        );
-      }
-
-      return {
-        handled: success,
-        data: success
-          ? {
-              children_id: children.id,
-              invoice_id: invoice.id,
-              amount_paid: invoice.amount_paid,
-            }
-          : undefined,
-        reason: success ? undefined : 'Failed to process payment',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing invoice payment',
-      };
-    }
-  }
-
-  private async handleInvoicePaymentFailed(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const invoice = event.data.object as Stripe.Invoice;
-    const isActionRequired = event.type === 'invoice.payment_action_required';
-    const customerId = invoice.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const status = isActionRequired
-        ? ChildrenInvoiceStatus.PENDING
-        : ChildrenInvoiceStatus.FAILED;
-
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoice.id,
-        amount: invoice.amount_due || 0,
-        status,
-        metadata: { invoice_payment_failed: JSON.stringify(invoice) },
-      });
-
-      // Remove from group on payment failure
-      await this.updateChildrenGroupStatus(
-        children.id,
-        null,
-        `Payment ${isActionRequired ? 'action required' : 'failed'}`
-      );
-
-      return {
-        handled: success,
-        data: success
-          ? {
-              children_id: children.id,
-              invoice_id: invoice.id,
-              status: isActionRequired ? 'action_required' : 'failed',
-            }
-          : undefined,
-        reason: success ? undefined : 'Failed to process payment failure',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing invoice payment failure',
-      };
-    }
-  }
-
-  private async handleInvoiceFinalizationFailed(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoice.id,
-        amount: invoice.amount_due || 0,
-        status: ChildrenInvoiceStatus.FAILED,
-        metadata: { invoice_finalization_failed: JSON.stringify(invoice) },
-      });
-
-      return {
-        handled: success,
-        data: success
-          ? {
-              children_id: children.id,
-              invoice_id: invoice.id,
-              status: 'finalization_failed',
-            }
-          : undefined,
-        reason: success ? undefined : 'Failed to process finalization failure',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing invoice finalization failure',
-      };
-    }
-  }
-
-  private async handleInvoiceUpdated(
-    event: Stripe.Event
-  ): Promise<WebhookResult> {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
-
-    try {
-      const children = await this.findChildrenByCustomerId(customerId);
-      if (!children) {
-        return {
-          handled: false,
-          reason: `Children not found for customer: ${customerId}`,
-        };
-      }
-
-      // Determine status based on invoice status
-      let status = ChildrenInvoiceStatus.PENDING;
-      if (invoice.status === 'paid') {
-        status = ChildrenInvoiceStatus.PAID;
-      } else if (invoice.status === 'draft') {
-        status = ChildrenInvoiceStatus.PENDING;
-      }
-
-      const success = await this.upsertInvoiceRecord({
-        children_id: children.id,
-        external_id: invoice.id,
-        amount: invoice.amount_due || 0,
-        status,
-        metadata: { invoice_updated: JSON.stringify(invoice) },
-      });
-
-      return {
-        handled: success,
-        data: success
-          ? { children_id: children.id, invoice_id: invoice.id }
-          : undefined,
-        reason: success ? undefined : 'Failed to update invoice',
-      };
-    } catch (error) {
-      return {
-        handled: false,
-        error: (error as Error).message,
-        reason: 'Error processing invoice update',
-      };
-    }
-  }
-
-  // Helper method to get subscription status for a children
-  async getChildrenSubscriptionStatus() {
-    const invoices = await this.childrenInvoiceService.findAll();
-
-    const activeInvoice = invoices.data?.find(
-      (inv) => inv.status === 'active' || inv.status === 'paid'
-    );
-    const latestInvoice = invoices.data?.[invoices.data.length - 1];
-
-    return {
-      has_active_subscription: !!activeInvoice,
-      latest_payment_status: latestInvoice?.status || 'none',
-      total_invoices: invoices.data?.length || 0,
-      invoices: invoices.data,
-    };
-  }
-
-  async subscribeToGroup(
-    id: number,
-    group_id: number
-  ): Promise<APIResponse<string | undefined>> {
-    const children = await this.childrenService.findOne(id);
-    if (!children.data) {
-      return APIResponse.error<undefined>({
-        message: 'Children not found',
-        statusCode: 404,
-      });
-    }
-
-    const group = await this.groupService.findOne(group_id);
-    if (!group.data) {
-      return APIResponse.error<undefined>({
-        message: 'Group not found',
-        statusCode: 404,
-      });
-    }
-
-    // Check if children has external_id and group has external_id for Stripe subscription
-    if (children.data.external_id && group.data.external_id) {
-      try {
-        const subscription = await this.createSubscription(
-          children.data.external_id,
-          group.data.external_id
-        );
-
-        if (subscription.latest_invoice) {
-          const hostedInvoiceUrl = (
-            subscription.latest_invoice as Stripe.Invoice
-          ).hosted_invoice_url;
-
-          return APIResponse.success<string>({
-            message:
-              'Subscription created successfully. Group assignment will be activated after payment.',
-            data: hostedInvoiceUrl || '',
-            statusCode: 200,
-          });
-        }
-
-        return APIResponse.error<undefined>({
-          message: 'Failed to create subscription - no invoice generated',
-          statusCode: 500,
-        });
-      } catch (subscriptionError) {
-        this.logger.error(
-          `Stripe subscription error: ${(subscriptionError as Error).message}`
-        );
-        return APIResponse.error<undefined>({
-          message: `Failed to create subscription: ${(subscriptionError as Error).message}`,
-          statusCode: 500,
-        });
-      }
-    }
-
-    return APIResponse.success<string>({
-      message:
-        'Subscription created successfully. Group assignment will be activated after payment.',
-      data: '',
-      statusCode: 200,
-    });
   }
 }

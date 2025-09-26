@@ -12,6 +12,7 @@ export const childrenInvoiceSchema = pgTable('children_invoice', {
     onDelete: 'cascade',
   }),
   external_id: text('external_id'),
+  external_url: text('external_url'),
   amount: integer('amount').notNull(),
   status: text('status').notNull(),
   metadata: jsonb('metadata').notNull(),

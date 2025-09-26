@@ -9,8 +9,35 @@ import Ribbon from '@/images/login-ribbon.png';
 import Circle from '@/images/red-half-circle.png';
 import SubscriptionCard from 'components/ui/SubscriptionCard';
 import LogoMobile from 'components/ui/LogoMobile';
+import Modal from 'components/ui/Modal';
+import { useSearchParams } from 'next/navigation';
+import { PaymentFailed } from 'svgs/PaymentFailed';
+import { PaymentSuccess } from 'svgs/PaymentSuccess';
+import YellowRibbon from '@/images/modal-yellow-ribbon.png';
 
 const Subscription = () => {
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [currentModal, setCurrentModal] = React.useState<
+    'success' | 'error' | undefined
+  >();
+  const success = currentModal === 'success';
+
+  const searchParams = useSearchParams();
+  const status = searchParams.get('status');
+
+  React.useEffect(() => {
+    if (status === 'success') {
+      setCurrentModal('success');
+      setIsModalOpen(true);
+    } else if (status === 'error') {
+      setCurrentModal('error');
+      setIsModalOpen(true);
+    } else {
+      setIsModalOpen(false);
+      setCurrentModal(undefined);
+    }
+  }, [status]);
+
   return (
     <>
       <div className="m-2 rounded-3xl md:rounded-4xl 2xl:rounded-[42px] bg-yellow p-5 md:p-8 relative overflow-hidden 2xl:h-[50dvh]">
@@ -63,6 +90,45 @@ const Subscription = () => {
             </div>
           ))}
       </div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        size={success ? 'lg' : 'md'}
+      >
+        {success && (
+          <Image
+            src={YellowRibbon}
+            alt="ribbon"
+            height={200}
+            width={200}
+            className="absolute top-0 right-0 w-[120px] sm:w-[150px] md:w-[170px] h-auto"
+          />
+        )}
+        <div className="flex flex-col gap-3 items-center justify-center text-center">
+          {success ? (
+            <PaymentSuccess className="w-20 md:w-28 h-auto" />
+          ) : (
+            <PaymentFailed className="w-20 md:w-28 h-auto" />
+          )}
+          <Heading
+            text={
+              success
+                ? 'Subscription Activated Successfully!'
+                : 'Error in purchase!'
+            }
+            small
+          />
+          <Paragraph
+            mute
+            className="2xl:!text-base"
+            text={
+              success
+                ? 'Your subscription is now active. Enjoy uninterrupted access to our services!'
+                : 'Please try again or try another way to confirm this purchase.'
+            }
+          />
+        </div>
+      </Modal>
     </>
   );
 };
